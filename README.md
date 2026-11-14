@@ -58,8 +58,8 @@ fixtures still do.
   units, NASA source and labeled possible causes. Kept separate so the definition
   can be reused outside the catalog; the catalog references it.
 - **`responses.schema.json`** — every HTTP body: a resource under `data` plus a
-  `notice` that stays null until the service serves something other than a fresh
-  result.
+  `notice` for live-data unavailability. Series responses also identify their
+  provenance as live, cached or preloaded.
 - **`common.schema.json`** — the shared pieces: ids, periods, sources, Evidence
   labels.
 
@@ -75,8 +75,8 @@ fixtures still do.
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |
 
 A Region or Variable outside the catalog is rejected with `422` and an
-`errorResponse`. A request with no stored result gets `404 result_not_available`
-until ticket #13 adds the live fetch.
+`errorResponse`. A Series cache miss attempts acquisition and then uses a labelled
+preloaded fallback; if neither is available it returns `503 live_data_unavailable`.
 
 ## The stub set
 
@@ -124,3 +124,39 @@ Two numbers the spec left open are answered here, and both are easy to change:
 
 Candidates are filtered for eligibility before they are ranked, so a long session works
 its way down the list instead of running dry the moment it has seen a fixed top N.
+
+
+### Live results and preloaded fallback (#13)
+
+`GET /api/series` checks the persistent live cache, then an exact preloaded
+example, before attempting acquisition. Series responses add `provenance`:
+`live`, `cache`, or `preloaded`. A fallback also sets
+`notice.code = "live_data_unavailable"`; a normal cache hit does not.
+The UI labels preloaded and cached data separately. Different examples retain
+their actual Region, Variable and period and cannot answer the original investigation.
+
+- `WEATHER_REPORT_DATA_DIR`: catalog, preloaded Series and Discoveries (default `data/stub`).
+- `WEATHER_REPORT_CACHE_DIR`: writable live-result storage (default `.scratch/results-cache`).
+- `WEATHER_REPORT_LIVE_TIMEOUT_SECONDS`: positive finite acquisition deadline (default `15`).
+- `EARTHDATA_TOKEN`: server-only acquisition credential; never send it from the client.
+
+Malformed/inverted periods return `422` (`invalid_period`). Expected acquisition
+failures use a deterministic fallback: same Region/Variable, then same Variable,
+then another example, with identity/period ordering to break ties. Examples must
+match the schema, current engine and catalog, have aligned finite monthly values,
+and pass their quality record. Without an example the API returns `503`
+(`live_data_unavailable`). Fallbacks are never cached under the requested key.
+Cache writes are atomic; a failed write still returns successfully acquired data.
+
+**Live integration remains blocked by #6.** `api.acquisition.acquire_series` is
+an async server boundary returning an exact monthly Series payload. The default
+raises `AcquisitionUnavailable` so shipped examples work without credentials or
+NASA access. Replace that boundary when real acquisition is re-landed; translate
+expected authentication, upstream and quality failures to that exception, honor
+cancellation/transport timeouts, and keep credentials out of logs. Programming
+errors propagate. Tests substitute this external acquisition boundary and prove
+HTTP orchestration and persistence, not real NASA acquisition.
+
+The #38 globe UI lives on `ai-backend-and-integration`; this branch contains the
+older main screens. Its frontend workstream must adopt the same provenance,
+actual-identity labels and investigation guard when these branches integrate.

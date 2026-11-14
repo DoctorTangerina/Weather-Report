@@ -1,32 +1,30 @@
 import { useEffect, useState } from 'react'
 import { getSeries } from './api.js'
 
-export default function useSeries(refs) {
-  const [state, setState] = useState({ loading: true, series: [], notice: null, error: null })
-  const key = refs.map((ref) => `${ref.region_id}/${ref.variable_id}`).join('|')
+export default function useSeries(refs, period) {
+  const key = JSON.stringify([refs, period])
+  const [state, setState] = useState({ key: null, responses: [], error: null })
 
   useEffect(() => {
     let cancelled = false
-    setState({ loading: true, series: [], notice: null, error: null })
-
-    Promise.all(refs.map((ref) => getSeries(ref.region_id, ref.variable_id)))
+    const [requestedRefs, requestedPeriod] = JSON.parse(key)
+    Promise.all(requestedRefs.map((ref) => getSeries(ref.region_id, ref.variable_id, requestedPeriod)))
       .then((responses) => {
-        if (cancelled) return
-        setState({
-          loading: false,
-          series: responses.map((response) => response.data),
-          notice: responses.map((response) => response.notice).find(Boolean) ?? null,
-          error: null,
-        })
+        if (!cancelled) setState({ key, responses, error: null })
       })
       .catch((error) => {
-        if (!cancelled) setState({ loading: false, series: [], notice: null, error })
+        if (!cancelled) setState({ key, responses: [], error })
       })
-
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [key])
 
-  return state
+  const loading = state.key !== key
+  const responses = loading ? [] : state.responses
+  const substituted = responses.some(({ data, notice }, index) =>
+    notice?.code === 'live_data_unavailable' ||
+    data.region_id !== refs[index].region_id ||
+    data.variable_id !== refs[index].variable_id ||
+    (period && (data.period.start !== period.start || data.period.end !== period.end)),
+  )
+  return { loading, responses, substituted, error: loading ? null : state.error }
 }

@@ -19,8 +19,14 @@ export const getCatalog = () => request('/api/catalog')
 
 export const getDiscoveries = () => request('/api/discoveries')
 
-export const getSeries = (regionId, variableId) =>
-  request(`/api/series?region_id=${encodeURIComponent(regionId)}&variable_id=${encodeURIComponent(variableId)}`)
+export const getSeries = (regionId, variableId, period) => {
+  const params = new URLSearchParams({ region_id: regionId, variable_id: variableId })
+  if (period) {
+    params.set('period_start', period.start)
+    params.set('period_end', period.end)
+  }
+  return request(`/api/series?${params}`)
+}
 
 export const surpriseMe = (session) =>
   request('/api/discoveries/surprise', {

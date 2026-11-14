@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Chart from '../components/Chart.jsx'
+import SeriesResults from '../components/SeriesResults.jsx'
 import useSeries from '../useSeries.js'
 
 function regionName(catalog, regionId) {
@@ -44,7 +44,20 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
   const [showEvidence, setShowEvidence] = useState(false)
 
   const [predict, check, reason] = discovery.narrative.investigation.steps
-  const { loading, series, error } = useSeries(check.series)
+  const { loading, responses, substituted, error } = useSeries(check.series, discovery.period)
+
+  if (loading || error || substituted) {
+    return (
+      <section>
+        <button className="link" onClick={onBack}>← Back</button>
+        <h1>{substituted ? 'Preloaded examples' : 'Become a Detective'}</h1>
+        {loading && <p className="muted">Loading the series…</p>}
+        {error && <p className="error">{error.message}</p>}
+        {substituted && <p role="alert" className="notice">These examples cannot answer the original investigation.</p>}
+        <SeriesResults responses={responses} catalog={catalog} />
+      </section>
+    )
+  }
 
   return (
     <section>
@@ -91,15 +104,7 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
           </p>
           <p>{check.comparison}</p>
 
-          {error && <p className="error">{error.message}</p>}
-          {loading && <p className="muted">Loading the series…</p>}
-          {series.map((item) => (
-            <Chart
-              key={`${item.region_id}-${item.variable_id}`}
-              series={item}
-              label={regionName(catalog, item.region_id)}
-            />
-          ))}
+          <SeriesResults responses={responses} catalog={catalog} />
 
           <button onClick={() => setStepIndex(2)}>Why might this happen?</button>
         </div>
