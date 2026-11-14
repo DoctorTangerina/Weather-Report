@@ -130,3 +130,15 @@ def test_theme_search_can_be_customized_in_a_json_file(tmp_path, monkeypatch):
     monkeypatch.setattr("data.data_gathering.datasets.cmr_entries", lambda resource, params: calls.append(params) or iter([]))
     assert search("my-new-theme", [BOX], "2024-01", "2024-12", themes=themes) == []
     assert calls[0]["keyword"] == "snow depth"
+
+
+def test_token_is_found_beside_the_example_file_when_the_root_has_none(tmp_path, monkeypatch):
+    from data.data_gathering import config
+
+    root, beside_example = tmp_path / "root.env", tmp_path / "gathering.env"
+    beside_example.write_text("EARTHDATA_TOKEN=from-gathering-folder\n")
+    monkeypatch.delenv("EARTHDATA_TOKEN", raising=False)
+    monkeypatch.setattr(config, "ENV_PATHS", (root, beside_example))
+    assert config.settings()["EARTHDATA_TOKEN"] == "from-gathering-folder"
+    root.write_text("EARTHDATA_TOKEN=from-root\n")
+    assert config.settings()["EARTHDATA_TOKEN"] == "from-root"

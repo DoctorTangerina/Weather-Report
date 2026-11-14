@@ -218,12 +218,27 @@ def acquire(results: list[dict], areas: list[SearchArea], start: str, end: str, 
             })
         if count == 0:
             raise ValueError(f"No source files match the selected dates/box for {dataset['short_name']}.")
+    return write_manifest(destination, start, end, areas, records)
+
+
+def write_manifest(destination: Path, start: str, end: str, areas: list[SearchArea],
+                   records: list[dict]) -> Path:
+    """Record acquired files, keeping those of products acquired earlier.
+
+    A file is identified by its collection and path, so repeating an acquisition
+    refreshes its records instead of duplicating them.
+    """
     destination.mkdir(parents=True, exist_ok=True)
     manifest = destination / "acquisition-manifest.json"
+    earlier = []
+    if manifest.exists():
+        earlier = json.loads(manifest.read_text(encoding="utf-8")).get("files", [])
+    identity = lambda item: (item.get("collection_id"), item["file"])  # noqa: E731
+    replaced = {identity(item) for item in records}
     manifest.write_text(json.dumps({
         "search_period": {"start": start, "end": end},
         "regions": [{"name": area.name, "bbox": area.bbox} for area in areas],
-        "files": records,
+        "files": [item for item in earlier if identity(item) not in replaced] + records,
     }, indent=2) + "\n", encoding="utf-8")
     return manifest
 

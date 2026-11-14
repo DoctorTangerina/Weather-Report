@@ -36,6 +36,7 @@ from .contracts import (
     TrendMethods,
     direction_of,
 )
+from .quality import require_usable
 from .version import ENGINE_VERSION
 
 METHOD_CITATION = (
@@ -112,7 +113,9 @@ def estimate_trend(series: Series) -> Trend:
     is widened for lag-1 autocorrelation through an effective sample size.
     Missing months (None) stay in the calendar but out of every fit. The
     Evidence label is left at "Not enough evidence yet" for `rate_evidence`.
+    A series the quality gate excluded has no Trend (BS-003): this raises.
     """
+    require_usable(series)
     start = _month_index(series.period.start)
     raw = np.array([np.nan if v is None else v for v in series.values], dtype=float)
     index = np.arange(len(raw))

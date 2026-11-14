@@ -25,11 +25,11 @@ else:
     from config import ENV_PATH, settings
 
 
-def load_token(env_path: Path = ENV_PATH) -> str:
+def load_token(env_path: Path | None = None) -> str:
     """Read EARTHDATA_TOKEN; an exported environment value takes precedence."""
     token = settings(env_path).get("EARTHDATA_TOKEN")
     if not token or not token.strip():
-        raise ValueError(f"Set EARTHDATA_TOKEN in {env_path} or your environment.")
+        raise ValueError(f"Set EARTHDATA_TOKEN in {env_path or ENV_PATH} or your environment.")
     token = token.strip()
     if any(character.isspace() for character in token):
         raise ValueError("EARTHDATA_TOKEN must not contain whitespace.")

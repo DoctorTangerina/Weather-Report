@@ -10,7 +10,8 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r data/data_gathering/requirements.txt
 ```
 
-Keep credentials in the repository-root `.env` (ignored by Git):
+Keep credentials in a `.env` (ignored by Git), either at the repository root or
+beside `.env.example` in this folder; the root file wins if both exist:
 
 ```dotenv
 EARTHDATA_TOKEN=your_token_here
@@ -148,6 +149,59 @@ aggregation and timestamp/value pairs. Unsupported fields/groups are reported in
 excessive series counts produce a clear error. Tiled products should be mosaicked
 before extraction. CSV, GeoTIFF and HDF files lacking readable CF coordinates
 need additional format readers or conversion first; those layouts are not guessed.
+
+## Monthly series for catalog Regions and Variables (DS-001)
+
+`get_catalog_series(region_id, variable_id, period)` returns one monthly series
+in the shape of `schemas/series.schema.json`, ready for the engine's
+`Series.from_dict`. The Region's box, the Variable's units, source and land-only
+flag, and the engine version all come from the catalog (`data/stub/catalog.json`).
+Which acquired dataset holds each Variable is set in `config.json`:
+
+- `CATALOG_SERIES`: per Variable id, optional `dataset_id` (collection id) and
+  `variable` (field name; defaults to the catalog's source variable). When the
+  file's units differ from the catalog's, declare `native_units` and a
+  `conversion` (`identity` or `rate_per_second_to_per_month`). Units that do not
+  match are refused (`units_mismatch`), never relabelled.
+- `VARIABLE_RULES`: land-only fields and their land mask, by collection id.
+  Soil moisture uses the official GLDAS land mask, which is not committed:
+
+```sh
+mkdir -p data/data_gathering/downloads/masks
+curl -L -o data/data_gathering/downloads/masks/GLDASp5_landmask_025d.nc4 \
+  https://ldas.gsfc.nasa.gov/sites/default/files/ldas/gldas/VEG/GLDASp5_landmask_025d.nc4
+```
+
+Native observations become one mean per calendar month. A month with no valid
+value is `null`. The quality gate (BS-003) then runs: more than 20% missing months,
+or under 50% valid land cells for a land-only Variable, returns the series with
+`quality.included: false`, its reasons in `quality.exclusions` and every value
+withheld (`null`). The engine skips such a series (`engine.usable_series`).
+Ids outside the catalogs, a Variable the catalog does not offer for the Region,
+unacquired data, a missing land mask and unit mismatches raise
+`SeriesSelectionError`.
+
+Build files for chosen Regions and Variables from acquired data:
+
+```sh
+python -m data.data_gathering.build_series \
+  --regions amazon-basin sahel --variables temperature precipitation soil-moisture \
+  --start 2000-01 --end 2024-12   # these are the defaults
+```
+
+Acquire a product first (each run adds to `acquisition-manifest.json`; it no
+longer replaces products acquired earlier). Full 2000-2024 files are large
+(about 15 GB each for MERRA-2 temperature and precipitation, 7 GB for GLDAS):
+
+```sh
+python data/data_gathering/datasets.py --keyword M2TMNXSLV --select C1276812859-GES_DISC --download   # temperature
+python data/data_gathering/datasets.py --keyword M2TMNXFLX --select C1276812868-GES_DISC --download   # precipitation
+python data/data_gathering/datasets.py --keyword GLDAS_NOAH025_M --select C1342986036-GES_DISC --download   # soil moisture
+```
+
+Not yet supported: the vegetation index (MOD13C2) is distributed as HDF4, which
+the NetCDF reader cannot open, so `vegetation-index` series report
+`variable_not_available`.
 
 ## Callable method and quality gate
 

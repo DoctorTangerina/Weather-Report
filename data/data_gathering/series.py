@@ -13,16 +13,27 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = ROOT / "data/data_gathering/config.json"
 
 
-def _source(config_path: Path):
-    from .series_source import NetCDFSeriesSource
-
+def load_series_config(config_path: Path = DEFAULT_CONFIG) -> dict:
+    """The gathering config as a dict, or SeriesSelectionError if unreadable."""
     try:
         configuration = json.loads(Path(config_path).read_text(encoding="utf-8"))
+        if not isinstance(configuration, dict):
+            raise TypeError
+        return configuration
+    except (OSError, ValueError, TypeError):
+        raise SeriesSelectionError("series_source_unavailable", "Configure SERIES_MANIFEST and VARIABLE_RULES in the gathering config.") from None
+
+
+def open_source(config_path: Path = DEFAULT_CONFIG):
+    from .series_source import NetCDFSeriesSource
+
+    configuration = load_series_config(config_path)
+    try:
         manifest = Path(configuration["SERIES_MANIFEST"])
         rules = configuration.get("VARIABLE_RULES", {})
         if not isinstance(rules, dict):
             raise TypeError
-    except (OSError, ValueError, KeyError, TypeError):
+    except (KeyError, TypeError):
         raise SeriesSelectionError("series_source_unavailable", "Configure SERIES_MANIFEST and VARIABLE_RULES in the gathering config.") from None
     return NetCDFSeriesSource(manifest if manifest.is_absolute() else ROOT / manifest,
                               rules=rules, root=ROOT)
@@ -55,7 +66,7 @@ def get_time_series(area: Bbox | Mapping[str, float], variable: str,
         raise SeriesSelectionError("invalid_request", "Provide an area with west/east/south/north, a Variable name, and a start/end period.") from None
     # Reject invalid dates before opening any source file.
     TimeWindow.create(selected_period.start, selected_period.end)
-    result = select_series(_source(config_path), box, variable, selected_period, dataset_id)
+    result = select_series(open_source(config_path), box, variable, selected_period, dataset_id)
     payload = asdict(result)
     payload["timestamps"] = list(result.timestamps)
     payload["values"] = list(result.values)
@@ -65,4 +76,4 @@ def get_time_series(area: Bbox | Mapping[str, float], variable: str,
 
 def list_available_series(*, config_path: Path = DEFAULT_CONFIG) -> list[dict]:
     """Dataset ids and field metadata for a caller's dataset/Variable selector."""
-    return _source(config_path).available()
+    return open_source(config_path).available()

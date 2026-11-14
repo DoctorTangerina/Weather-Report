@@ -16,6 +16,7 @@ from .discovery import (
     select_surprise,
 )
 from .mirror import find_mirrors
+from .quality import usable_series
 from .store import JsonResultStore, ResultStore
 from .trend import FALSE_DISCOVERY_RATE, estimate_trend, rate_evidence
 from .version import ENGINE_VERSION
@@ -40,4 +41,5 @@ __all__ = [
     "load_catalog",
     "rate_evidence",
     "select_surprise",
+    "usable_series",
 ]

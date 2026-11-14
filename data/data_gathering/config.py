@@ -7,6 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ENV_PATH = ROOT / ".env"
+# `.env.example` sits in this folder, so a token kept beside it works too.
+ENV_PATHS = (ENV_PATH, Path(__file__).parent / ".env")
 CONFIG_PATH = Path(__file__).parent / "config.json"
 
 
@@ -17,18 +19,22 @@ def load_config(path: Path = CONFIG_PATH) -> dict:
     return values
 
 
-def settings(env_path: Path = ENV_PATH) -> dict[str, str]:
-    """Read credentials; exported environment variables override .env."""
+def settings(env_path: Path | None = None) -> dict[str, str]:
+    """Read credentials; exported environment variables override .env files.
+
+    Without `env_path`, the repository-root .env wins over the one in this folder.
+    """
     values = {}
-    if env_path.exists():
-        for line in env_path.read_text(encoding="utf-8").splitlines():
-            key, separator, value = line.strip().removeprefix("export ").partition("=")
-            if not separator or key.startswith("#"):
-                continue
-            parts = shlex.split(value, comments=True)
-            if len(parts) > 1:
-                raise ValueError(f"Quote values containing spaces in .env ({key.strip()}).")
-            values[key.strip()] = parts[0] if parts else ""
+    for path in ((env_path,) if env_path else reversed(ENV_PATHS)):
+        if path.exists():
+            for line in path.read_text(encoding="utf-8").splitlines():
+                key, separator, value = line.strip().removeprefix("export ").partition("=")
+                if not separator or key.startswith("#"):
+                    continue
+                parts = shlex.split(value, comments=True)
+                if len(parts) > 1:
+                    raise ValueError(f"Quote values containing spaces in .env ({key.strip()}).")
+                values[key.strip()] = parts[0] if parts else ""
     return {**values, **os.environ}
 
 
