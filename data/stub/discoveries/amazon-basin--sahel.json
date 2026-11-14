@@ -1,0 +1,390 @@
+{
+  "discovery_id": "amazon-basin--sahel",
+  "region_ids": [
+    "amazon-basin",
+    "sahel"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -2.1,
+          "units_per_decade": "mm/month per decade",
+          "confidence_interval_95": [
+            -3.065,
+            -1.135
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -2.1,
+              "p_value": 0.0003,
+              "r_squared": 0.52
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -2.184,
+              "p_value": 0.0005
+            },
+            "robust": {
+              "slope_per_decade": -1.89,
+              "p_value": 0.0006
+            },
+            "theil_sen": {
+              "slope_per_decade": -2.016
+            },
+            "mann_kendall": {
+              "tau": 0.3,
+              "p_value": 0.0004
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-08",
+              "slope_per_decade": -1.953,
+              "p_value": 0.0005
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.1,
+            "family_size": 96,
+            "adjusted_p_value": 0.004,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.31,
+            "effective_sample_size": 158.4
+          },
+          "source": {
+            "provider": "Synthetic (stub)",
+            "dataset": "STUB",
+            "variable": "synthetic",
+            "url": null
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 3.4,
+          "units_per_decade": "mm/month per decade",
+          "confidence_interval_95": [
+            1.85,
+            4.95
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 3.4,
+              "p_value": 0.0003,
+              "r_squared": 0.52
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 3.536,
+              "p_value": 0.0005
+            },
+            "robust": {
+              "slope_per_decade": 3.06,
+              "p_value": 0.0006
+            },
+            "theil_sen": {
+              "slope_per_decade": 3.264
+            },
+            "mann_kendall": {
+              "tau": 0.3,
+              "p_value": 0.0004
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-08",
+              "slope_per_decade": 3.162,
+              "p_value": 0.0005
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.1,
+            "family_size": 96,
+            "adjusted_p_value": 0.004,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.31,
+            "effective_sample_size": 158.4
+          },
+          "source": {
+            "provider": "Synthetic (stub)",
+            "dataset": "STUB",
+            "variable": "synthetic",
+            "url": null
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "temperature",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.28,
+          "units_per_decade": "K per decade",
+          "confidence_interval_95": [
+            0.134,
+            0.426
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.28,
+              "p_value": 0.0003,
+              "r_squared": 0.52
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.2912,
+              "p_value": 0.0005
+            },
+            "robust": {
+              "slope_per_decade": 0.252,
+              "p_value": 0.0006
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.2688
+            },
+            "mann_kendall": {
+              "tau": 0.3,
+              "p_value": 0.0004
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-08",
+              "slope_per_decade": 0.2604,
+              "p_value": 0.0005
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.1,
+            "family_size": 96,
+            "adjusted_p_value": 0.004,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.31,
+            "effective_sample_size": 158.4
+          },
+          "source": {
+            "provider": "Synthetic (stub)",
+            "dataset": "STUB",
+            "variable": "synthetic",
+            "url": null
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.42,
+          "units_per_decade": "K per decade",
+          "confidence_interval_95": [
+            0.211,
+            0.629
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.42,
+              "p_value": 0.0003,
+              "r_squared": 0.52
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.4368,
+              "p_value": 0.0005
+            },
+            "robust": {
+              "slope_per_decade": 0.378,
+              "p_value": 0.0006
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.4032
+            },
+            "mann_kendall": {
+              "tau": 0.3,
+              "p_value": 0.0004
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-08",
+              "slope_per_decade": 0.3906,
+              "p_value": 0.0005
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.1,
+            "family_size": 96,
+            "adjusted_p_value": 0.004,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.31,
+            "effective_sample_size": 158.4
+          },
+          "source": {
+            "provider": "Synthetic (stub)",
+            "dataset": "STUB",
+            "variable": "synthetic",
+            "url": null
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [
+    {
+      "series": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "precipitation"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "temperature"
+        }
+      ],
+      "correlation": -0.46,
+      "p_value": 0.0009,
+      "adjusted_p_value": 0.012,
+      "significant_after_correction": true
+    }
+  ],
+  "score": 9.2,
+  "score_components": {
+    "opposite_sign": 5.0,
+    "multi_variable": 2.0,
+    "surprising_pair": 1.0,
+    "magnitude_gap": 0.7,
+    "mirror": 0.5
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Rainfall is falling in one of these places and rising in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "amazon-basin",
+              "label": "Amazon Basin"
+            },
+            {
+              "option_id": "sahel",
+              "label": "Sahel"
+            }
+          ],
+          "answer_option_id": "sahel",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "amazon-basin",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "sahel",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Amazon Basin: -2.1 mm/month per decade (95% interval -3.065 to -1.135). Sahel: 3.4 mm/month per decade (95% interval 1.85 to 4.95).",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "Synthetic (stub)",
+            "dataset": "STUB",
+            "variable": "synthetic",
+            "url": null
+          }
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "Synthetic (stub)",
+            "dataset": "STUB",
+            "variable": "synthetic",
+            "url": null
+          }
+        }
+      ],
+      "statistics_summary": "Both series cover 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave the rate and its 95% interval. The fit was corrected for serial correlation and for testing 96 series at a false-discovery rate of 0.1.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

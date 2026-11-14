@@ -1,0 +1,122 @@
+{
+  "regions": [
+    {
+      "region_id": "amazon-basin",
+      "name": "Amazon Basin",
+      "description": "The rain forest basin of northern South America.",
+      "bbox": {
+        "west": -70.0,
+        "east": -50.0,
+        "south": -10.0,
+        "north": 2.0
+      },
+      "variable_ids": [
+        "temperature",
+        "precipitation"
+      ]
+    },
+    {
+      "region_id": "sahel",
+      "name": "Sahel",
+      "description": "The dry belt between the Sahara and the African savannah.",
+      "bbox": {
+        "west": -15.0,
+        "east": 25.0,
+        "south": 12.0,
+        "north": 18.0
+      },
+      "variable_ids": [
+        "temperature",
+        "precipitation"
+      ]
+    },
+    {
+      "region_id": "central-india",
+      "name": "Central India",
+      "description": "The monsoon-fed plateau of central India.",
+      "bbox": {
+        "west": 74.0,
+        "east": 84.0,
+        "south": 18.0,
+        "north": 26.0
+      },
+      "variable_ids": [
+        "temperature",
+        "precipitation"
+      ]
+    },
+    {
+      "region_id": "greenland-coast",
+      "name": "Greenland Coast",
+      "description": "The ice-free coastal strip of southwest Greenland.",
+      "bbox": {
+        "west": -53.0,
+        "east": -45.0,
+        "south": 60.0,
+        "north": 67.0
+      },
+      "variable_ids": [
+        "temperature",
+        "precipitation"
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "variable_id": "temperature",
+      "name": "Air temperature",
+      "units": "K",
+      "definition": "How warm the air near the ground is, averaged over a month.",
+      "source": {
+        "provider": "GES DISC",
+        "dataset": "unresolved, see ticket #3",
+        "variable": "unresolved, see ticket #3",
+        "url": null
+      },
+      "land_only": false,
+      "possible_causes": [
+        {
+          "text": "More greenhouse gases in the atmosphere hold in heat.",
+          "kind": "context"
+        },
+        {
+          "text": "Less vegetation means less cooling from evaporation.",
+          "kind": "context"
+        },
+        {
+          "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+          "kind": "context"
+        }
+      ]
+    },
+    {
+      "variable_id": "precipitation",
+      "name": "Precipitation",
+      "units": "mm/month",
+      "definition": "How much rain and snow falls, added up over a month.",
+      "source": {
+        "provider": "GES DISC",
+        "dataset": "unresolved, see ticket #3",
+        "variable": "unresolved, see ticket #3",
+        "url": null
+      },
+      "land_only": false,
+      "possible_causes": [
+        {
+          "text": "Shifting wind belts move storm tracks away from a region.",
+          "kind": "context"
+        },
+        {
+          "text": "A warmer atmosphere can carry more water vapour.",
+          "kind": "context"
+        },
+        {
+          "text": "Changes in ocean temperature alter where rain forms.",
+          "kind": "context"
+        }
+      ]
+    }
+  ],
+  "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+  "engine_version": "0.1.0"
+}
