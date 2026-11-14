@@ -26,9 +26,9 @@ OCEAN_REGION_IDS = {"equatorial-pacific", "north-atlantic"}
 # simulate ice sheets, so land-only Variables are not offered there either.
 ICE_REGION_IDS = {"greenland-coast", "antarctic-peninsula"}
 
-# Confirmed on 2026-11-14 against NASA's CMR collection and variable records
-# (and, for the vegetation index, the AppEEARS product API, which does not
-# offer MOD13C2). See docs/catalog-sources.md for the units and conversions.
+# Confirmed on 2026-11-14 against NASA's CMR collection and variable records,
+# and the vegetation index against the AppEEARS product API it is requested
+# from. See docs/catalog-sources.md for the units and conversions.
 VERIFIED_SOURCES = {
     "temperature": ("GES DISC", "M2TMNXSLV", "T2M", "10.5067/AP1B0BA5PD2K"),
     "precipitation": ("GES DISC", "M2TMNXFLX", "PRECTOTCORR", "10.5067/0JRLVL8YV2Y4"),
@@ -39,10 +39,10 @@ VERIFIED_SOURCES = {
         "10.5067/SXAVCZFAQLNO",
     ),
     "vegetation-index": (
-        "LP DAAC",
-        "MOD13C2",
-        "CMG 0.05 Deg Monthly NDVI",
-        "10.5067/MODIS/MOD13C2.061",
+        "AppEEARS",
+        "MOD13A3",
+        "_1_km_monthly_NDVI",
+        "10.5067/MODIS/MOD13A3.061",
     ),
 }
 
