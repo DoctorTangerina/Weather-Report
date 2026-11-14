@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://weather-report.local/schemas/discovery.schema.json",
+  "title": "Discovery",
+  "description": "A pair of Regions whose Trends or Mirrors contrast in a way the engine scores as notable (BS-004). A Candidate Discovery uses this same shape; it becomes a Discovery once selected for a user.",
+  "type": "object",
+  "properties": {
+    "discovery_id": { "type": "string", "minLength": 1 },
+    "region_ids": {
+      "description": "The two Regions being contrasted. Every trends array in this Discovery is ordered to match.",
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/regionId" },
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true
+    },
+    "period": { "$ref": "common.schema.json#/$defs/period" },
+    "contrasts": {
+      "description": "One entry per Variable that contrasts between the two Regions. More than one entry is a multi-Variable contrast, which stays a single Discovery.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/contrast" },
+      "minItems": 1
+    },
+    "mirrors": {
+      "description": "Mirrors found between the two Regions. Empty when there are none; a Mirror adds to the score but is not required.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/mirror" }
+    },
+    "score": { "type": "number" },
+    "score_components": { "$ref": "#/$defs/scoreComponents" },
+    "evidence_label": { "$ref": "common.schema.json#/$defs/evidenceLabel" },
+    "headline_eligible": {
+      "description": "False whenever evidence_label is \"Not enough evidence yet\". Surprise Me! never headlines such a Discovery (BS-004).",
+      "type": "boolean"
+    },
+    "narrative": { "$ref": "#/$defs/narrative" },
+    "engine_version": { "$ref": "common.schema.json#/$defs/engineVersion" }
+  },
+  "required": [
+    "discovery_id",
+    "region_ids",
+    "period",
+    "contrasts",
+    "mirrors",
+    "score",
+    "score_components",
+    "evidence_label",
+    "headline_eligible",
+    "narrative",
+    "engine_version"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": { "evidence_label": { "const": "Not enough evidence yet" } },
+        "required": ["evidence_label"]
+      },
+      "then": {
+        "properties": { "headline_eligible": { "const": false } }
+      }
+    }
+  ],
+  "$defs": {
+    "contrast": {
+      "type": "object",
+      "properties": {
+        "variable_id": { "$ref": "common.schema.json#/$defs/variableId" },
+        "kind": {
+          "description": "opposite_sign: the two Trends run in opposite directions. magnitude_gap: they run the same way but differ a lot in rate.",
+          "type": "string",
+          "enum": ["opposite_sign", "magnitude_gap"]
+        },
+        "trends": {
+          "description": "The two Trends, ordered to match region_ids. Each Trend also carries its own region_id, so the order is checkable.",
+          "type": "array",
+          "items": { "$ref": "trend.schema.json" },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": ["variable_id", "kind", "trends"],
+      "additionalProperties": false
+    },
+    "mirror": {
+      "description": "Two Region-Variable series that move together or in opposite directions beyond what chance explains, measured on the deseasonalized and detrended monthly series. The two series may be of different Variables in different Regions.",
+      "type": "object",
+      "properties": {
+        "series": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/seriesRef" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "correlation": { "type": "number", "minimum": -1, "maximum": 1 },
+        "p_value": { "$ref": "common.schema.json#/$defs/pValue" },
+        "adjusted_p_value": { "$ref": "common.schema.json#/$defs/pValue" },
+        "significant_after_correction": { "type": "boolean" }
+      },
+      "required": ["series", "correlation", "p_value", "adjusted_p_value", "significant_after_correction"],
+      "additionalProperties": false
+    },
+    "scoreComponents": {
+      "description": "What the score is made of, so a ranking can be explained and tuned. Weights are not decided yet; the ordering is opposite signs highest, then multi-Variable and surprising pairs, then the magnitude gap.",
+      "type": "object",
+      "properties": {
+        "opposite_sign": { "type": "number" },
+        "multi_variable": { "type": "number" },
+        "surprising_pair": { "type": "number" },
+        "magnitude_gap": { "type": "number" },
+        "mirror": { "type": "number" }
+      },
+      "required": ["opposite_sign", "multi_variable", "surprising_pair", "magnitude_gap", "mirror"],
+      "additionalProperties": false
+    },
+    "narrative": {
+      "description": "Everything shown to the student, built from templates over the computed numbers (BS-007). No number appears here that is not also in a Trend or Mirror above.",
+      "type": "object",
+      "properties": {
+        "question": {
+          "description": "The thought-provoking question shown with the Discovery (US-001).",
+          "type": "string",
+          "minLength": 1
+        },
+        "investigation": { "$ref": "#/$defs/investigation" },
+        "how_do_we_know": { "$ref": "#/$defs/howDoWeKnow" }
+      },
+      "required": ["question", "investigation", "how_do_we_know"],
+      "additionalProperties": false
+    },
+    "investigation": {
+      "description": "Become a Detective, in order: Predict, Check, Reason (BS-006). The order is fixed by the array positions.",
+      "type": "object",
+      "properties": {
+        "steps": {
+          "type": "array",
+          "prefixItems": [
+            { "$ref": "#/$defs/predictStep" },
+            { "$ref": "#/$defs/checkStep" },
+            { "$ref": "#/$defs/reasonStep" }
+          ],
+          "minItems": 3,
+          "maxItems": 3,
+          "items": false
+        }
+      },
+      "required": ["steps"],
+      "additionalProperties": false
+    },
+    "predictStep": {
+      "description": "Asked before any chart is shown.",
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "const": "predict" },
+        "question": { "type": "string", "minLength": 1 },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "option_id": { "type": "string", "minLength": 1 },
+              "label": { "type": "string", "minLength": 1 }
+            },
+            "required": ["option_id", "label"],
+            "additionalProperties": false
+          },
+          "minItems": 2
+        },
+        "answer_option_id": {
+          "description": "The option the computed Trends support.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["kind", "question", "options", "answer_option_id"],
+      "additionalProperties": false
+    },
+    "checkStep": {
+      "description": "Shows both Regions' charts and whether the prediction matched the computed Trends. The series are referenced rather than embedded, so their values live in one place.",
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "const": "check" },
+        "series": {
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/seriesRef" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "comparison": { "type": "string", "minLength": 1 }
+      },
+      "required": ["kind", "series", "comparison"],
+      "additionalProperties": false
+    },
+    "reasonStep": {
+      "description": "Possible causes, each labeled as context from scientists rather than a result of the data (BS-006).",
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string", "const": "reason" },
+        "prompt": { "type": "string", "minLength": 1 },
+        "possible_causes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": { "type": "string", "minLength": 1 },
+              "kind": { "type": "string", "const": "context" }
+            },
+            "required": ["text", "kind"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["kind", "prompt", "possible_causes"],
+      "additionalProperties": false
+    },
+    "howDoWeKnow": {
+      "description": "The evidence view (BS-008). It carries the NASA source and the method citation; the rate per decade, its 95% interval and the Evidence label are read from contrasts[].trends so no number is stored twice.",
+      "type": "object",
+      "properties": {
+        "period": { "$ref": "common.schema.json#/$defs/period" },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "region_id": { "$ref": "common.schema.json#/$defs/regionId" },
+              "variable_id": { "$ref": "common.schema.json#/$defs/variableId" },
+              "source": { "$ref": "common.schema.json#/$defs/source" }
+            },
+            "required": ["region_id", "variable_id", "source"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "statistics_summary": {
+          "description": "Plain-language account of what was tested and how the Evidence label was reached.",
+          "type": "string",
+          "minLength": 1
+        },
+        "method_citation": { "type": "string", "minLength": 1 }
+      },
+      "required": ["period", "sources", "statistics_summary", "method_citation"],
+      "additionalProperties": false
+    }
+  }
+}
