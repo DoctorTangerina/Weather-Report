@@ -1,0 +1,38 @@
+﻿{
+    "generated_at_utc":  "2026-11-14T20:15:17.1601645Z",
+    "branch":  "front/surprise",
+    "base_revision":  "5a86839b9e2bbb4a4d48f3a8fe7952c45f7b62a1",
+    "current_revision":  "b02c4d409bfe942760558b0538e54da1a3749935",
+    "repository":  "DoctorTangerina/Weather-Report",
+    "working_directory":  "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+    "source_hashes":  [
+                          {
+                              "path":  "src/App.jsx",
+                              "sha256":  "7818D205CE8B79C9CF61B0E4D26CE518B3ECA587961EEB375C39200B3DAA6AA1"
+                          },
+                          {
+                              "path":  "src/screens/MainScreen.jsx",
+                              "sha256":  "100EC36202B00E0D4C09C6A86589208F9BBF9FC2170433C946935EF32C687B37"
+                          },
+                          {
+                              "path":  "src/components/Globe.jsx",
+                              "sha256":  "BCD73CDF28B34CFD36A38D81922AAA588ACC4D53E485F49A1CAB903694CA24E2"
+                          },
+                          {
+                              "path":  "src/useSeries.js",
+                              "sha256":  "66F319F97810AF2458B0148A2531FBD51F28393173733CE646E84EDDF89CB9C5"
+                          },
+                          {
+                              "path":  "src/api.js",
+                              "sha256":  "C133BAC27DBE9CA374FC4CFE16BF51A5E59B7E929D975D86B7F96675005F0B93"
+                          },
+                          {
+                              "path":  "docs/issue-14-smoke.md",
+                              "sha256":  "92592AFC1E29913E0F08D655E93AFF6DA1B49FF8FD5FE02964D0444EC7FE0D1C"
+                          },
+                          {
+                              "path":  "../tests/test_api.py",
+                              "sha256":  "3F009DEDC73B4193EA058BDFEED474A5C028B12A3EA811F8124154ABFFE2F9D2"
+                          }
+                      ]
+}

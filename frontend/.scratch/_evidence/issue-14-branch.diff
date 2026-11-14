@@ -1,0 +1,530 @@
+﻿diff --git a/frontend/docs/issue-14-smoke.md b/frontend/docs/issue-14-smoke.md
+new file mode 100644
+index 0000000..c3c0b81
+--- /dev/null
++++ b/frontend/docs/issue-14-smoke.md
+@@ -0,0 +1,32 @@
++﻿# Issue #14 — local evidence
++
++Validated on 2026-11-14 against the stub API on port 8000 and Vite on port 5173. No automated UI tests were added.
++
++## Implemented flow
++
++MainScreen is the entry screen. Startup loads only the catalog, without selecting a Discovery or populating session history. The initial sidebar shows a single Region and Variable.
++
++Surprise Me! sends session history to the engine, highlights the selected pair on the existing globe, and updates the existing sidebar with the question, Evidence label, Region descriptions, Variable definition and charts. The timeline controls those charts. Become a Detective opens the investigation; Back returns to MainScreen with the selected Discovery.
++
++## Verification
++
++- Production build: `npm run build` passed. Vite retains its large globe bundle warning.
++- API checks: `pytest tests/test_api.py -q` passed, 10 tests, including exhaustion instead of repeated Regions.
++- Full existing suite: `pytest tests -q` passed, 30 tests. The environment reports a Starlette/httpx deprecation warning. Temporary pytest, jsonschema and httpx dependencies were used because the existing Python environment lacked the test packages.
++- No TypeScript/typecheck script is configured in this JavaScript frontend.
++
++## Manual browser smoke test
++
++- Initial page: MainScreen with a globe, catalog selectors and one series; no Discovery question, evidence label or highlighted comparison pair.
++- First Surprise Me!: request body contained empty `shown_discovery_ids` and `shown_region_ids`. MainScreen remained mounted and the exact same globe canvas remained in the document. The Amazon Basin and Sahel were highlighted, with the question, Strong evidence label and two precipitation charts in the sidebar.
++- Timeline playback: selected timestamp advanced from 2000-01 to 2000-12 and both chart values updated to that month.
++- Next Surprise Me!: request contained `amazon-basin--sahel`, `amazon-basin` and `sahel`. The stub returned `no_discovery_left_in_session`; the message was displayed, the existing Discovery stayed visible and Surprise Me! became disabled. Selection rules remain at the engine interface, as required by BS-005/#9.
++- Loading: held surprise and series responses in the browser. The sidebar showed the corresponding loading messages, both selection buttons were disabled while selecting, and the page remained MainScreen.
++- Fallback: injected a notice into successful surprise and series responses in the browser. Both notices appeared in the sidebar. This verifies display of the #13 contract, not live fetch itself; the current stub returns null notices.
++- Investigation: Become a Detective opened Predict; Back returned to MainScreen with the selected pair.
++- Desktop: visually inspected at 1440 × 900, including both highlighted Regions and the sidebar charts.
++- Mobile: visually inspected at 390 × 844; viewport, page content and MainScreen width were all 390 pixels, with both charts present and no horizontal overflow.
++
++To repeat, start the stub API using the repository README, run `npm run dev` in frontend, and open http://127.0.0.1:5173. Reload starts a new in-memory session. The globe requires WebGL and uses the existing external Earth texture URLs.
++
++All work remains local. No commit, push or issue-tracker publication was performed.
+diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+index 78c69df..b5b0bba 100644
+--- a/frontend/src/App.jsx
++++ b/frontend/src/App.jsx
+@@ -1,6 +1,5 @@
+-﻿import { useEffect, useState } from 'react'
+-import { getCatalog, getDiscoveries, surpriseMe } from './api.js'
+-import DiscoveryScreen from './screens/DiscoveryScreen.jsx'
++﻿import { useEffect, useRef, useState } from 'react'
++import { getCatalog, surpriseMe } from './api.js'
+ import InvestigationScreen from './screens/InvestigationScreen.jsx'
+ import MainScreen from './screens/MainScreen.jsx'
+ 
+@@ -12,20 +11,21 @@ export default function App() {
+   const [busy, setBusy] = useState(false)
+   const [loading, setLoading] = useState(true)
+   const [error, setError] = useState(null)
++  const [notice, setNotice] = useState(null)
++  const requestPending = useRef(false)
++
++  const remember = (next) => setSession((current) => ({
++    shownDiscoveryIds: [...new Set([...current.shownDiscoveryIds, next.discovery_id])],
++    shownRegionIds: [...new Set([...current.shownRegionIds, ...next.region_ids])],
++  }))
+ 
+   useEffect(() => {
+     let cancelled = false
+-    Promise.all([getCatalog(), getDiscoveries()])
+-      .then(([catalogResponse, discoveriesResponse]) => {
++    getCatalog()
++      .then((catalogResponse) => {
+         if (cancelled) return
+-        const initialDiscovery = discoveriesResponse.data[0]
+-        if (!initialDiscovery) throw new Error('No discoveries are available.')
+-        setDiscovery(initialDiscovery)
+         setCatalog(catalogResponse.data)
+-        setSession({
+-          shownDiscoveryIds: [initialDiscovery.discovery_id],
+-          shownRegionIds: [...initialDiscovery.region_ids],
+-        })
++        setNotice(catalogResponse.notice ?? null)
+       })
+       .catch((error) => { if (!cancelled) setError(error) })
+       .finally(() => { if (!cancelled) setLoading(false) })
+@@ -33,19 +33,21 @@ export default function App() {
+   }, [])
+ 
+   const onSurprise = () => {
++    if (requestPending.current || loading || !catalog) return
++    requestPending.current = true
+     setBusy(true)
+     setError(null)
+     surpriseMe(session)
+-      .then(({ data: next }) => {
++      .then(({ data: next, notice: nextNotice }) => {
+         setDiscovery(next)
+-        setSession((current) => ({
+-          shownDiscoveryIds: [...current.shownDiscoveryIds, next.discovery_id],
+-          shownRegionIds: [...current.shownRegionIds, ...next.region_ids],
+-        }))
+-        setView('discovery')
++        remember(next)
++        setNotice(nextNotice ?? null)
+       })
+       .catch(setError)
+-      .finally(() => setBusy(false))
++      .finally(() => {
++        requestPending.current = false
++        setBusy(false)
++      })
+   }
+ 
+   return (
+@@ -54,23 +56,17 @@ export default function App() {
+         <MainScreen
+           discovery={discovery}
+           catalog={catalog}
+-          onInvestigate={() => setView('investigation')}
++          onInvestigate={discovery ? () => setView('investigation') : undefined}
+           onSurprise={onSurprise}
+           loading={loading}
+           busy={busy}
+           error={error}
+-        />
+-      )}
+-      {view === 'discovery' && discovery && (
+-        <DiscoveryScreen
+-          discovery={discovery}
+-          catalog={catalog}
+-          onInvestigate={() => setView('investigation')}
+-          onBack={() => setView('home')}
++          discoveryNotice={notice}
+         />
+       )}
+       {view === 'investigation' && discovery && (
+         <InvestigationScreen
++          key={discovery.discovery_id}
+           discovery={discovery}
+           catalog={catalog}
+           onBack={() => setView('home')}
+diff --git a/frontend/src/components/Globe.jsx b/frontend/src/components/Globe.jsx
+index 1ca2e73..8b04b2f 100644
+--- a/frontend/src/components/Globe.jsx
++++ b/frontend/src/components/Globe.jsx
+@@ -15,7 +15,7 @@ class GlobeBoundary extends Component {
+   }
+ }
+ 
+-export default function RegionGlobe() {
++export default function RegionGlobe({ regions = [] }) {
+   const globeRef = useRef(null)
+   const containerRef = useRef(null)
+   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+@@ -33,16 +33,39 @@ export default function RegionGlobe() {
+     const globe = globeRef.current
+     if (!globe) return
+     const controls = globe.controls()
+-    controls.autoRotate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
++    controls.autoRotate = regions.length === 0 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+     controls.autoRotateSpeed = 0.5
+     controls.enableZoom = true
+     const aspect = dimensions.width / dimensions.height
+-    globe.pointOfView({ altitude: Math.max(2.5, 2.5 / aspect) }, 0)
++    const centers = regions.map(({ bbox }) => ({
++      lat: (bbox.north + bbox.south) / 2,
++      lng: (bbox.west + bbox.east) / 2,
++    }))
++    globe.pointOfView({
++      lat: centers.length ? centers.reduce((sum, center) => sum + center.lat, 0) / centers.length : 0,
++      lng: centers.length ? centers.reduce((sum, center) => sum + center.lng, 0) / centers.length : 0,
++      altitude: Math.max(2.5, 2.5 / aspect),
++    }, 0)
+   }
+ 
+   useEffect(() => {
+     configureGlobe()
+-  }, [dimensions.width, dimensions.height])
++  }, [dimensions.width, dimensions.height, regions])
++
++  const polygons = regions.map((region, index) => ({
++    ...region,
++    color: index === 0 ? '#8bd9ed' : '#ffb579',
++    geometry: {
++      type: 'Polygon',
++      coordinates: [[
++        [region.bbox.west, region.bbox.south],
++        [region.bbox.west, region.bbox.north],
++        [region.bbox.east, region.bbox.north],
++        [region.bbox.east, region.bbox.south],
++        [region.bbox.west, region.bbox.south],
++      ]],
++    },
++  }))
+ 
+   return (
+     <div ref={containerRef} className="globe-viewport">
+@@ -60,6 +83,20 @@ export default function RegionGlobe() {
+             atmosphereAltitude={0.18}
+             animateIn={false}
+             onGlobeReady={configureGlobe}
++            polygonsData={polygons}
++            polygonCapColor={(region) => region.color}
++            polygonSideColor={() => '#ffffff33'}
++            polygonStrokeColor={() => '#ffffff'}
++            polygonAltitude={0.012}
++            polygonsTransitionDuration={0}
++            labelsData={regions}
++            labelLat={({ bbox }) => bbox.north + 3}
++            labelLng={({ bbox }) => (bbox.west + bbox.east) / 2}
++            labelText="name"
++            labelColor={() => '#ffffff'}
++            labelSize={1.25}
++            labelDotRadius={0.35}
++            labelResolution={2}
+           />
+         )}
+       </GlobeBoundary>
+diff --git a/frontend/src/components/RegionMap.jsx b/frontend/src/components/RegionMap.jsx
+index 3c27df7..c97b253 100644
+--- a/frontend/src/components/RegionMap.jsx
++++ b/frontend/src/components/RegionMap.jsx
+@@ -1,30 +1,22 @@
+-const WIDTH = 520
+-const HEIGHT = 260
+-
+-// Placeholder for the real map, which is ticket #14: an equirectangular box
+-// with each Region's bounding box drawn on it.
+-const x = (longitude) => ((longitude + 180) / 360) * WIDTH
+-const y = (latitude) => ((90 - latitude) / 180) * HEIGHT
++﻿import RegionGlobe from './Globe.jsx'
+ 
+ export default function RegionMap({ regions }) {
+   return (
+-    <svg className="map" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label="Regions compared">
+-      <rect className="map-ground" x="0" y="0" width={WIDTH} height={HEIGHT} />
+-      <line x1="0" y1={y(0)} x2={WIDTH} y2={y(0)} className="map-equator" />
+-      {regions.map((region) => (
+-        <g key={region.region_id}>
+-          <rect
+-            className="map-region"
+-            x={x(region.bbox.west)}
+-            y={y(region.bbox.north)}
+-            width={Math.max(x(region.bbox.east) - x(region.bbox.west), 3)}
+-            height={Math.max(y(region.bbox.south) - y(region.bbox.north), 3)}
+-          />
+-          <text x={x(region.bbox.west)} y={y(region.bbox.north) - 4}>
+-            {region.name}
+-          </text>
+-        </g>
+-      ))}
+-    </svg>
++    <figure className="region-map">
++      <div className="discovery-globe" role="group" aria-label={`Map highlighting ${regions.map((region) => region.name).join(' and ')}`}>
++        <RegionGlobe regions={regions} />
++      </div>
++      <figcaption>
++        <p className="muted">Drag to explore · Scroll or pinch to zoom. Highlights show the Region boundaries from the catalog.</p>
++        <ol className="region-legend">
++          {regions.map((region) => (
++            <li key={region.region_id}>
++              <strong>{region.name}</strong>
++              <p>{region.description}</p>
++            </li>
++          ))}
++        </ol>
++      </figcaption>
++    </figure>
+   )
+ }
+diff --git a/frontend/src/screens/DiscoveryScreen.jsx b/frontend/src/screens/DiscoveryScreen.jsx
+index 3d1abee..fc3587e 100644
+--- a/frontend/src/screens/DiscoveryScreen.jsx
++++ b/frontend/src/screens/DiscoveryScreen.jsx
+@@ -1,42 +1,45 @@
++﻿import { useEffect, useRef } from 'react'
+ import Chart from '../components/Chart.jsx'
+ import RegionMap from '../components/RegionMap.jsx'
+ import useSeries from '../useSeries.js'
+ 
+-export default function DiscoveryScreen({ discovery, catalog, onInvestigate, onBack }) {
++export default function DiscoveryScreen({ discovery, catalog, onInvestigate, onBack, onSurprise, busy, error: selectionError, discoveryNotice }) {
++  const headingRef = useRef(null)
++  useEffect(() => { headingRef.current?.focus() }, [])
+   const headline = discovery.contrasts[0]
+-  const refs = headline.trends.map((trend) => ({
+-    region_id: trend.region_id,
+-    variable_id: trend.variable_id,
+-  }))
++  const variable = catalog.variables.find((item) => item.variable_id === headline.variable_id)
++  const refs = headline.trends.map(({ region_id, variable_id }) => ({ region_id, variable_id }))
+   const { loading, series, notice, error } = useSeries(refs)
+-  const regions = discovery.region_ids.map((id) =>
+-    catalog.regions.find((region) => region.region_id === id),
+-  )
++  const regions = discovery.region_ids.map((id) => catalog.regions.find((region) => region.region_id === id))
+ 
+   return (
+-    <section>
+-      <button className="link" onClick={onBack}>
+-        ← Back
+-      </button>
+-
+-      <h1>{discovery.narrative.question}</h1>
++    <section aria-busy={busy || loading}>
++      <button className="link" onClick={onBack} disabled={busy}>← Back to main screen</button>
++      <p className="eyebrow">Your Discovery</p>
++      <h1 ref={headingRef} tabIndex={-1}>{discovery.narrative.question}</h1>
+       <p className="label">{discovery.evidence_label}</p>
+-
+-      <RegionMap regions={regions}/>
+-
+-      {notice && <p className="notice">{notice.message}</p>}
+-      {error && <p className="error">{error.message}</p>}
+-      {loading && <p className="muted">Loading the series…</p>}
+-
+-      {series.map((item, index) => (
++      <RegionMap regions={regions} />
++      {discoveryNotice && <p className="notice" role="status">{discoveryNotice.message}</p>}
++      {notice && <p className="notice" role="status">{notice.message}</p>}
++      {(error || selectionError) && <p className="error" role="alert">{(selectionError || error).message}</p>}
++      <h2>{variable?.name ?? headline.variable_id}</h2>
++      {variable && <p className="muted">{variable.definition}</p>}
++      <div role="status">{loading && <p className="muted">Loading the series…</p>}</div>
++      {series.map((item) => (
+         <Chart
+           key={`${item.region_id}-${item.variable_id}`}
+           series={item}
+-          label={regions[index]?.name ?? item.region_id}
++          label={catalog.regions.find((region) => region.region_id === item.region_id)?.name ?? item.region_id}
+         />
+       ))}
+-
+-      <button onClick={onInvestigate}>Become a Detective</button>
++      <p className="muted">Each chart has its own vertical scale. Compare the direction of the Trends.</p>
++      <div className="actions">
++        <button onClick={onInvestigate} disabled={busy}>Become a Detective</button>
++        <button className="secondary" onClick={onSurprise} disabled={busy || selectionError?.code === 'no_discovery_left_in_session'}>
++          {busy ? 'Looking for a Discovery…' : 'Surprise Me!'}
++        </button>
++      </div>
++      <div role="status">{busy && <p className="muted">Looking for a Discovery…</p>}</div>
+     </section>
+   )
+ }
+diff --git a/frontend/src/screens/ExperienceScreen.jsx b/frontend/src/screens/ExperienceScreen.jsx
+index b97ac38..a30da6e 100644
+--- a/frontend/src/screens/ExperienceScreen.jsx
++++ b/frontend/src/screens/ExperienceScreen.jsx
+@@ -1,28 +1,27 @@
+-export default function ExperienceScreen({ catalog, onSurprise, onBrowse, busy, error }) {
++﻿export default function ExperienceScreen({ catalog, onSurprise, onBrowse, loading, ready, busy, error, notice }) {
+   return (
+-    <section>
++    <section aria-busy={loading || busy}>
++      <p className="eyebrow">Explore our changing planet</p>
+       <h1>Earth System Trend Detective</h1>
+       <p>
+-        The engine reads NASA Earth science series and looks for places that are changing in
+-        opposite directions. Pick where to start.
++        The engine reads NASA Earth science series and looks for Regions with contrasting
++        Trends. Pick where to start.
+       </p>
+-
+       <div className="actions">
+-        <button onClick={onSurprise} disabled={busy}>
++        <button onClick={onSurprise} disabled={loading || !catalog || busy || error?.code === 'no_discovery_left_in_session'}>
+           {busy ? 'Looking for a Discovery…' : 'Surprise Me!'}
+         </button>
+-        <button className="secondary" onClick={onBrowse} disabled={busy}>
++        <button className="secondary" onClick={onBrowse} disabled={!ready || busy}>
+           Become a Detective
+         </button>
+       </div>
+-
+-      {error && <p className="error">{error.message}</p>}
+-
+-      {catalog && (
+-        <p className="muted">
+-          {catalog.regions.length} Regions and {catalog.variables.length} Variables in the catalog.
+-        </p>
+-      )}
++      <div role="status">
++        {loading && <p className="muted">Loading the catalog…</p>}
++        {busy && <p className="muted">Looking for a Discovery…</p>}
++      </div>
++      {notice && <p className="notice" role="status">{notice.message}</p>}
++      {error && <p className="error" role="alert">{error.message}</p>}
++      {catalog && <p className="muted">{catalog.regions.length} Regions and {catalog.variables.length} Variables in the catalog.</p>}
+     </section>
+   )
+ }
+diff --git a/frontend/src/screens/MainScreen.jsx b/frontend/src/screens/MainScreen.jsx
+index ef9c834..f08f949 100644
+--- a/frontend/src/screens/MainScreen.jsx
++++ b/frontend/src/screens/MainScreen.jsx
+@@ -1,63 +1,86 @@
+-﻿import { useState } from 'react'
++import { useMemo, useState } from 'react'
+ import Timeline from '../components/Timeline.jsx'
+ import Chart from '../components/Chart.jsx'
+ import useSeries from '../useSeries.js'
+ import RegionGlobe from '../components/Globe.jsx'
+ 
+-export default function MainScreen({ discovery, catalog, onInvestigate, onSurprise, loading, busy, error }) {
++export default function MainScreen({ discovery, catalog, onInvestigate, onSurprise, loading, busy, error, discoveryNotice }) {
+   const [timestamp, setTimestamp] = useState(null)
+-  const refs = discovery?.contrasts[0]?.trends.map(({ region_id, variable_id }) => ({
+-    region_id,
+-    variable_id,
+-  })) ?? []
++  const [regionId, setRegionId] = useState('')
++  const [variableId, setVariableId] = useState('')
++  const region = catalog?.regions.find((item) => item.region_id === regionId) ?? catalog?.regions[0]
++  const variables = catalog?.variables.filter((item) => region?.variable_ids.includes(item.variable_id)) ?? []
++  const variable = discovery
++    ? catalog?.variables.find((item) => item.variable_id === discovery.contrasts[0].variable_id)
++    : variables.find((item) => item.variable_id === variableId) ?? variables[0]
++  const regions = useMemo(() => discovery?.region_ids.map((id) => catalog.regions.find((item) => item.region_id === id)) ?? [], [discovery, catalog])
++  const refs = discovery
++    ? discovery.contrasts[0].trends.map(({ region_id, variable_id }) => ({ region_id, variable_id }))
++    : region && variable ? [{ region_id: region.region_id, variable_id: variable.variable_id }] : []
+   const { loading: seriesLoading, series, notice, error: seriesError } = useSeries(refs)
+-  const ready = Boolean(discovery && catalog)
++  const ready = Boolean(catalog)
+ 
+   return (
+     <div className="main-screen">
+       <header className="main-header">
+         <h1 className="sr-only">Earth System Trend Detective</h1>
+         <div className="top-actions" aria-label="Explore discoveries">
+-          <button onClick={onInvestigate} disabled={!ready || busy}>Become a Detective</button>
+-          <button className="secondary" onClick={onSurprise} disabled={!ready || busy}>
++          <button onClick={onInvestigate} disabled={!onInvestigate || busy}>Become a Detective</button>
++          <button className="secondary" onClick={onSurprise} disabled={!ready || busy || error?.code === 'no_discovery_left_in_session'}>
+             {busy ? 'Looking for a Discovery…' : 'Surprise Me!'}
+           </button>
+         </div>
+       </header>
+       <section className="globe-panel" aria-label="Interactive Earth globe">
+-        <RegionGlobe />
++        <RegionGlobe regions={regions} />
+         <p className="globe-hint">Drag to explore · Scroll or pinch to zoom</p>
+       </section>
+-      <aside className="sidebar" tabIndex={0} aria-labelledby="discovery-heading" aria-busy={loading || seriesLoading}>
+-        <p className="eyebrow">Featured Discovery</p>
+-        <h2 id="discovery-heading">{discovery?.narrative.question ?? 'Discover the story behind the data'}</h2>
+-        {discovery && <p className="label">{discovery.evidence_label}</p>}
+-        {loading && <p className="muted">Loading the Discovery…</p>}
++      <aside className="sidebar" tabIndex={0} aria-labelledby="explore-heading" aria-busy={loading || seriesLoading || busy}>
++        <p className="eyebrow">{discovery ? 'Your Discovery' : 'Explore Earth'}</p>
++        <h2 id="explore-heading">{discovery ? discovery.narrative.question : 'Explore a Region'}</h2>
++        {discovery ? (
++          <>
++            <p className="label">{discovery.evidence_label}</p>
++            <ol className="region-legend">
++              {regions.map((item) => <li key={item.region_id}><strong>{item.name}</strong><p>{item.description}</p></li>)}
++            </ol>
++          </>
++        ) : <p>Choose a Region and a Variable to view its time series. Try Surprise Me! to discover a contrast between two Regions.</p>}
++        {loading && <p className="muted" role="status">Loading the catalog…</p>}
++        {busy && <p className="muted" role="status">Looking for a Discovery…</p>}
+         {ready && (
+           <>
+-            <h3>Compare the Regions</h3>
+-            {seriesLoading && <p className="muted">Loading the series…</p>}
+-            {series.map((item) => (
+-              <Chart
+-                key={`${item.region_id}-${item.variable_id}`}
+-                series={item}
+-                timestamp={timestamp}
+-                label={catalog.regions.find((region) => region.region_id === item.region_id)?.name ?? item.region_id}
+-              />
++            {!discovery && <div className="catalog-controls">
++              <label htmlFor="explore-region">Region</label>
++              <select id="explore-region" value={region?.region_id ?? ''} onChange={(event) => setRegionId(event.target.value)}>
++                {catalog.regions.map((item) => <option key={item.region_id} value={item.region_id}>{item.name}</option>)}
++              </select>
++              <label htmlFor="explore-variable">Variable</label>
++              <select id="explore-variable" value={variable?.variable_id ?? ''} onChange={(event) => setVariableId(event.target.value)}>
++                {variables.map((item) => <option key={item.variable_id} value={item.variable_id}>{item.name}</option>)}
++              </select>
++            </div>}
++            {!discovery && region && <p className="muted">{region.description}</p>}
++            {discovery && <h3>{variable?.name ?? discovery.contrasts[0].variable_id}</h3>}
++            {variable && <p className="muted">{variable.definition}</p>}
++            {seriesLoading && <p className="muted" role="status">Loading the series…</p>}
++            {!seriesLoading && series.map((item) => (
++              <Chart key={`${item.region_id}-${item.variable_id}`} series={item} timestamp={timestamp} label={catalog.regions.find((entry) => entry.region_id === item.region_id)?.name ?? item.region_id} />
+             ))}
++            {discovery && !seriesLoading && <p className="muted">Each chart has its own vertical scale. Compare the direction of the Trends.</p>}
+           </>
+         )}
+         {(error || seriesError) && <p className="error" role="alert">{(error || seriesError).message}</p>}
+-        {notice && <p className="notice">{notice.message}</p>}
++        {notice && <p className="notice" role="status">{notice.message}</p>}
++        {discoveryNotice && <p className="notice" role="status">{discoveryNotice.message}</p>}
+         {!loading && !ready && <p className="muted">Check that the API is running, then reload to try again.</p>}
+       </aside>
+       <Timeline
+-        key={discovery?.discovery_id ?? 'loading'}
+-        series={series}
++        key={discovery?.discovery_id ?? `${region?.region_id}/${variable?.variable_id}`}
++        series={seriesLoading ? [] : series}
+         loading={loading || seriesLoading}
+         onTimestampChange={setTimestamp}
+       />
+     </div>
+   )
+ }
+-
+diff --git a/frontend/src/styles.css b/frontend/src/styles.css
+index bba6f02..f903218 100644
+--- a/frontend/src/styles.css
++++ b/frontend/src/styles.css
+@@ -302,3 +302,17 @@ button.link {
+   border-top: 1px solid #dfe3dd;
+   padding-top: 1rem;
+ }
++
++.region-map { margin: 1.25rem 0; }
++.discovery-globe { display: grid; height: clamp(18rem, 55vw, 28rem); background: #070e1d; border-radius: 0.6rem; overflow: hidden; color: #f1f6fc; }
++.region-map figcaption > p { font-size: 0.85rem; }
++.region-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; list-style: none; padding: 0; }
++.region-legend li { border-left: 5px solid #8bd9ed; padding-left: 0.75rem; }
++.region-legend li:nth-child(2) { border-color: #ffb579; }
++.region-legend p { margin: 0.25rem 0; font-size: 0.9rem; }
++@media (max-width: 480px) { .region-legend { grid-template-columns: minmax(0, 1fr); } }
++
++.catalog-controls { display: grid; gap: 0.4rem; margin: 1rem 0; }
++.catalog-controls label { font-size: 0.85rem; font-weight: 600; }
++.catalog-controls select { width: 100%; min-width: 0; padding: 0.55rem; border: 1px solid #aab8c4; border-radius: 0.3rem; background: white; color: var(--ink); font: inherit; }
++.catalog-controls select:focus-visible { outline: 3px solid #47b5d7; outline-offset: 2px; }
