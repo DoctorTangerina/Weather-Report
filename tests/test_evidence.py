@@ -91,13 +91,17 @@ def test_a_flat_noisy_series_is_not_enough_evidence():
 
 def test_a_trend_every_method_agrees_on_is_strong_evidence():
     trend = estimate_trend(synthetic_series(0.5, seed=0))
+    flat_family = [estimate_trend(synthetic_series(0.0, seed=s)) for s in FLAT_SEEDS]
     # Given the fits and the Mann-Kendall test agree and the Trend survives
     # removing its most extreme month.
     assert method_directions(trend) == {"rising"}
     assert trend.methods.outlier_check.survives
 
-    (rated,) = rate_evidence([trend], q=Q)
+    rated, *_ = rate_evidence([trend, *flat_family], q=Q)
 
+    # ...and it is significant after correction for many comparisons.
+    assert rated.multiple_comparisons.family_size == 1 + len(FLAT_SEEDS)
+    assert rated.multiple_comparisons.significant
     assert rated.evidence_label == "Strong evidence"
 
 
