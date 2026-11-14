@@ -8,9 +8,6 @@ series are generated from an explicit slope, so every Trend here reports the
 slope it was built from: no statistics are computed. Ticket #12 replaces this
 with the seed set computed from real data.
 
-`data/stub/catalog.json` is the one file this script reads rather than writes: it
-is maintained by hand, and the series and discoveries are generated against it.
-
 Because the fixtures are built through `engine.contracts`, the committed JSON
 cannot drift from the Python contract objects.
 """
@@ -29,6 +26,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from engine.contracts import (  # noqa: E402
     Autocorrelation,
+    Bbox,
+    Catalog,
     CheckStep,
     Contrast,
     Discovery,
@@ -43,6 +42,7 @@ from engine.contracts import (  # noqa: E402
     Narrative,
     OutlierCheck,
     Period,
+    PossibleCause,
     PredictOption,
     PredictStep,
     ReasonStep,
@@ -59,7 +59,6 @@ from engine.contracts import (  # noqa: E402
     as_dict,
     direction_of,
 )
-from engine.catalog import load_catalog  # noqa: E402
 from engine.version import ENGINE_VERSION  # noqa: E402
 
 PERIOD = Period(start="2000-01", end="2024-12")
@@ -72,12 +71,84 @@ METHOD_CITATION = (
     "river-influenced coastal regions (see docs/challenge-brief.md)."
 )
 
+UNRESOLVED_SOURCE = Source(
+    provider="GES DISC",
+    dataset="unresolved, see ticket #3",
+    variable="unresolved, see ticket #3",
+    url=None,
+)
+
 STUB_SOURCE = Source(
     provider="Synthetic (stub)",
     dataset="STUB",
     variable="synthetic",
     url=None,
 )
+
+REGIONS = (
+    Region(
+        region_id="amazon-basin",
+        name="Amazon Basin",
+        description="The rain forest basin of northern South America.",
+        bbox=Bbox(west=-70.0, east=-50.0, south=-10.0, north=2.0),
+        variable_ids=("temperature", "precipitation"),
+    ),
+    Region(
+        region_id="sahel",
+        name="Sahel",
+        description="The dry belt between the Sahara and the African savannah.",
+        bbox=Bbox(west=-15.0, east=25.0, south=12.0, north=18.0),
+        variable_ids=("temperature", "precipitation"),
+    ),
+    Region(
+        region_id="central-india",
+        name="Central India",
+        description="The monsoon-fed plateau of central India.",
+        bbox=Bbox(west=74.0, east=84.0, south=18.0, north=26.0),
+        variable_ids=("temperature", "precipitation"),
+    ),
+    Region(
+        region_id="greenland-coast",
+        name="Greenland Coast",
+        description="The ice-free coastal strip of southwest Greenland.",
+        bbox=Bbox(west=-53.0, east=-45.0, south=60.0, north=67.0),
+        variable_ids=("temperature", "precipitation"),
+    ),
+)
+
+VARIABLES = (
+    Variable(
+        variable_id="temperature",
+        name="Air temperature",
+        units="K",
+        definition="How warm the air near the ground is, averaged over a month.",
+        source=UNRESOLVED_SOURCE,
+        land_only=False,
+        possible_causes=(
+            PossibleCause(text="More greenhouse gases in the atmosphere hold in heat."),
+            PossibleCause(text="Less vegetation means less cooling from evaporation."),
+            PossibleCause(
+                text="Changes in cloud cover alter how much sunlight reaches the ground."
+            ),
+        ),
+    ),
+    Variable(
+        variable_id="precipitation",
+        name="Precipitation",
+        units="mm/month",
+        definition="How much rain and snow falls, added up over a month.",
+        source=UNRESOLVED_SOURCE,
+        land_only=False,
+        possible_causes=(
+            PossibleCause(
+                text="Shifting wind belts move storm tracks away from a region."
+            ),
+            PossibleCause(text="A warmer atmosphere can carry more water vapour."),
+            PossibleCause(text="Changes in ocean temperature alter where rain forms."),
+        ),
+    ),
+)
+
 
 @dataclass(frozen=True)
 class Profile:
@@ -465,9 +536,16 @@ def write(path: Path, payload: object) -> None:
 
 def main() -> None:
     out = ROOT / "data" / "stub"
-    catalog = load_catalog(out / "catalog.json")
-    regions = {region.region_id: region for region in catalog.regions}
-    variables = {variable.variable_id: variable for variable in catalog.variables}
+    regions = {region.region_id: region for region in REGIONS}
+    variables = {variable.variable_id: variable for variable in VARIABLES}
+
+    catalog = Catalog(
+        regions=REGIONS,
+        variables=VARIABLES,
+        method_citation=METHOD_CITATION,
+        engine_version=ENGINE_VERSION,
+    )
+    write(out / "catalog.json", as_dict(catalog))
 
     trends: dict[tuple[str, str], Trend] = {}
     for spec in SPECS:
