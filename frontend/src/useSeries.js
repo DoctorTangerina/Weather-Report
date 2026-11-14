@@ -26,5 +26,12 @@ export default function useSeries(refs, period) {
     data.variable_id !== refs[index].variable_id ||
     (period && (data.period.start !== period.start || data.period.end !== period.end)),
   )
-  return { loading, responses, substituted, error: loading ? null : state.error }
+  return {
+    loading,
+    responses,
+    series: responses.map(({ data }) => data),
+    notice: responses.map(({ notice }) => notice).find(Boolean) ?? null,
+    substituted,
+    error: loading ? null : state.error,
+  }
 }

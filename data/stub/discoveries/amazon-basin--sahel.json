@@ -153,7 +153,7 @@
             "end": "2024-12"
           },
           "rate_per_decade": 0.28,
-          "units_per_decade": "K per decade",
+          "units_per_decade": "\u00b0C per decade",
           "confidence_interval_95": [
             0.134,
             0.426
@@ -216,7 +216,7 @@
             "end": "2024-12"
           },
           "rate_per_decade": 0.42,
-          "units_per_decade": "K per decade",
+          "units_per_decade": "\u00b0C per decade",
           "confidence_interval_95": [
             0.211,
             0.629

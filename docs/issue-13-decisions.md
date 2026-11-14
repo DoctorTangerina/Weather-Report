@@ -40,7 +40,7 @@ Status: complete design confirmed by the maintainer; implementation authorized.
 - Fallback can ship independently of #6, using stored examples and the existing
   `live_data_unavailable` notice code. This does not close the live acquisition
   acceptance criterion.
-- #38 already displays the notice. In the current checkout, DiscoveryScreen
+- #38 already displays the notice. At interview time, DiscoveryScreen
   displays `notice.message`, but chart labels still derive from the requested
   Discovery and the investigation action stays enabled. Showing the notice alone
   therefore does not implement the agreed identity and investigation treatment.
@@ -94,11 +94,13 @@ The maintainer confirmed the complete design and invoked `implement`.
 
 ## Implementation boundary
 
-The current branch is based on the older main frontend. #38 was merged into
-`ai-backend-and-integration` and removed DiscoveryScreen in favor of a globe UI.
-This branch updates the screens it actually contains; the response contract and
-substitution guard must also be adopted by the #38 frontend before integration.
-No claim is made that the globe UI has been changed here.
+The initial implementation was based on the older main frontend. Resolving PR
+#43 against its current `data-engineering` base preserves the #38 globe UI and
+#16 comparison API. DiscoveryScreen remains deleted; MainScreen and DiscoveryPanel
+now adopt the provenance contract, actual example identity/highlights and
+substitution guard. InvestigationScreen keeps the same guard for direct entry.
+The hook retains the `series` and `notice` fields expected by the integrated UI
+alongside per-response provenance.
 
 The default acquisition boundary deliberately reports unavailability until #6
 provides real live acquisition adapted to the monthly Series contract. The

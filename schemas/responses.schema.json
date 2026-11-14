@@ -44,6 +44,45 @@
       "required": ["data", "notice"],
       "additionalProperties": false
     },
+    "comparisonResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "trends": {
+              "type": "array",
+              "items": {
+                "$ref": "trend.schema.json"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "$ref": "series.schema.json"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "trends",
+            "series"
+          ],
+          "additionalProperties": false
+        },
+        "notice": {
+          "$ref": "common.schema.json#/$defs/notice"
+        }
+      },
+      "required": [
+        "data",
+        "notice"
+      ],
+      "additionalProperties": false
+    },
     "errorResponse": {
       "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region.",
       "type": "object",

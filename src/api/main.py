@@ -27,8 +27,11 @@ from engine import (
     ENGINE_VERSION,
     JsonResultStore,
     Period,
+    Series,
     applies_to,
+    estimate_trend,
     load_catalog,
+    rate_evidence,
     select_surprise,
 )
 from engine.contracts import Discovery, as_dict
@@ -37,12 +40,18 @@ from engine.discovery import SessionHistory
 from .acquisition import AcquisitionUnavailable, acquire_series
 from .results import example_response, select_example, usable
 
-DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "stub"
-DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(DEFAULT_DATA_DIR)))
+ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(ROOT / "data" / "stub")))
+
+# The catalog is configuration rather than a result set, so it does not move
+# when DATA_DIR points at a different set of results.
+CATALOG_PATH = Path(
+    os.environ.get("WEATHER_REPORT_CATALOG", str(ROOT / "data" / "catalog.json"))
+)
 
 app = FastAPI(title="Weather Report", version=ENGINE_VERSION)
 
-catalog = load_catalog(DATA_DIR / "catalog.json")
+catalog = load_catalog(CATALOG_PATH)
 store = JsonResultStore(DATA_DIR, ENGINE_VERSION)
 live_store = JsonResultStore(
     Path(os.environ.get("WEATHER_REPORT_CACHE_DIR", ".scratch/results-cache")),
@@ -170,6 +179,46 @@ async def get_series(
     return error(
         503, "live_data_unavailable", "No live data or usable examples available."
     )
+
+
+@app.get("/api/comparison")
+def compare_regions(
+    region_a: str,
+    region_b: str,
+    variable_id: str,
+    period_start: str = "2000-01",
+    period_end: str = "2024-12",
+) -> Any:
+    """Analyze any catalog pair, whether or not it forms a Discovery.
+
+    The two requested Trends form the multiple-comparison family for this
+    analysis. Statistics and Evidence labels are computed by the engine.
+    """
+    for region_id in (region_a, region_b):
+        rejection = reject_outside_catalog(region_id, variable_id)
+        if rejection is not None:
+            return rejection
+
+    period = Period(period_start, period_end)
+    series = []
+    for region_id in (region_a, region_b):
+        item = store.series(region_id, variable_id, period)
+        if item is None:
+            return error(
+                404,
+                "result_not_available",
+                "No stored series for this pair and period.",
+            )
+        series.append(item)
+    try:
+        trends = rate_evidence(
+            [estimate_trend(Series.from_dict(item)) for item in series]
+        )
+    except ValueError:
+        return error(
+            404, "result_not_available", "Not enough data to analyze this pair."
+        )
+    return ok({"trends": [as_dict(trend) for trend in trends], "series": series})
 
 
 @app.get("/api/discoveries")
