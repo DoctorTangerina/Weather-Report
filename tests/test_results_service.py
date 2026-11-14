@@ -57,7 +57,9 @@ def test_http_returns_the_exact_result_for_each_key_component(
 ):
     root, payloads = stored_results
     expected = payloads[result_index]
-    monkeypatch.setattr(main, "store", JsonResultStore(root, expected["engine_version"]))
+    monkeypatch.setattr(
+        main, "store", JsonResultStore(root, expected["engine_version"])
+    )
 
     with TestClient(main.app) as client:
         response = client.get(
@@ -71,7 +73,9 @@ def test_http_returns_the_exact_result_for_each_key_component(
         )
 
     assert response.status_code == 200
-    validator_for("responses.schema.json", "#/$defs/seriesResponse").validate(response.json())
+    validator_for("responses.schema.json", "#/$defs/seriesResponse").validate(
+        response.json()
+    )
     assert response.json() == {"data": expected, "notice": None}
 
 
@@ -107,7 +111,9 @@ def test_http_cache_miss_does_not_return_a_result_with_a_different_key(
         )
 
     assert response.status_code == 404
-    validator_for("responses.schema.json", "#/$defs/errorResponse").validate(response.json())
+    validator_for("responses.schema.json", "#/$defs/errorResponse").validate(
+        response.json()
+    )
     assert response.json()["error"]["code"] == "result_not_available"
 
 
@@ -136,5 +142,7 @@ def test_http_rejects_requests_outside_the_catalog_before_reading_results(
         )
 
     assert response.status_code == 422
-    validator_for("responses.schema.json", "#/$defs/errorResponse").validate(response.json())
+    validator_for("responses.schema.json", "#/$defs/errorResponse").validate(
+        response.json()
+    )
     assert response.json()["error"]["code"] == expected_code
