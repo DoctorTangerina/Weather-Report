@@ -1,0 +1,68 @@
+"""Public methods for an API or another Python caller; no HTTP dependencies."""
+
+import json
+import math
+from collections.abc import Mapping
+from dataclasses import asdict
+from pathlib import Path
+
+from .models import Bbox, Period
+from .selection import SeriesSelectionError, TimeWindow, select_series
+
+ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_CONFIG = ROOT / "data/data_gathering/config.json"
+
+
+def _source(config_path: Path):
+    from .series_source import NetCDFSeriesSource
+
+    try:
+        configuration = json.loads(Path(config_path).read_text(encoding="utf-8"))
+        manifest = Path(configuration["SERIES_MANIFEST"])
+        rules = configuration.get("VARIABLE_RULES", {})
+        if not isinstance(rules, dict):
+            raise TypeError
+    except (OSError, ValueError, KeyError, TypeError):
+        raise SeriesSelectionError("series_source_unavailable", "Configure SERIES_MANIFEST and VARIABLE_RULES in the gathering config.") from None
+    return NetCDFSeriesSource(manifest if manifest.is_absolute() else ROOT / manifest,
+                              rules=rules, root=ROOT)
+
+
+def get_time_series(area: Bbox | Mapping[str, float], variable: str,
+                    period: Period | Mapping[str, str], *, dataset_id: str | None = None,
+                    config_path: Path = DEFAULT_CONFIG) -> dict:
+    """Return a JSON-ready, quality-approved selection or raise SeriesSelectionError.
+
+    area: west/east/south/north in degrees, or a Bbox.
+    period: inclusive start/end in YYYY-MM or YYYY-MM-DD, or a Period.
+    variable: a native field name (including a layer suffix when necessary).
+    dataset_id: optional, required if the field occurs in multiple datasets.
+
+    No data is downloaded. No failed series values are returned. HTTP response
+    formatting and status-code decisions belong to the calling API.
+    """
+    try:
+        box = area if isinstance(area, Bbox) else Bbox(**dict(area))
+        selected_period = period if isinstance(period, Period) else Period(**dict(period))
+        if (not isinstance(variable, str) or not variable.strip()
+                or not all(isinstance(value, str) for value in (selected_period.start, selected_period.end))
+                or not all(isinstance(value, (int, float)) and math.isfinite(value)
+                           for value in (box.west, box.east, box.south, box.north))):
+            raise ValueError
+        if not (-180 <= box.west < box.east <= 180 and -90 <= box.south < box.north <= 90):
+            raise ValueError
+    except (TypeError, ValueError):
+        raise SeriesSelectionError("invalid_request", "Provide an area with west/east/south/north, a Variable name, and a start/end period.") from None
+    # Reject invalid dates before opening any source file.
+    TimeWindow.create(selected_period.start, selected_period.end)
+    result = select_series(_source(config_path), box, variable, selected_period, dataset_id)
+    payload = asdict(result)
+    payload["timestamps"] = list(result.timestamps)
+    payload["values"] = list(result.values)
+    payload["quality"]["exclusions"] = list(result.quality.exclusions)
+    return payload
+
+
+def list_available_series(*, config_path: Path = DEFAULT_CONFIG) -> list[dict]:
+    """Dataset ids and field metadata for a caller's dataset/Variable selector."""
+    return _source(config_path).available()
