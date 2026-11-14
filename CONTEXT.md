@@ -24,6 +24,14 @@ _Avoid_: Variable list, dataset list
 The direction and rate of change of one Variable over one Region across a period, together with its uncertainty and statistical significance.
 _Avoid_: Slope, change, tendency
 
+**Contrast**:
+The difference between the Trends of two Regions on one Variable. A Discovery has one or more Contrasts.
+_Avoid_: Multi-Variable contrast (say a Discovery with more than one Contrast), comparison
+
+**Lead Contrast**:
+The first Contrast of a Discovery, the most notable one. It alone drives the question and the Predict, Check and Reason steps of an investigation.
+_Avoid_: Headline (that word is reserved for whether a Discovery may open Surprise Me!), main contrast
+
 **Evidence label**:
 The plain-language rating of how strongly the data support a Trend or Discovery: Strong evidence, Some evidence, or Not enough evidence yet. Shown to students.
 _Avoid_: Confidence level, grade, p-value badge
@@ -33,7 +41,7 @@ Two Region–Variable series, possibly of different Variables in different Regio
 _Avoid_: Correlation pair, teleconnection
 
 **Discovery**:
-A pair of Regions whose Trends or Mirrors, on one or more Variables, contrast in a way the engine scores as notable.
+A pair of Regions whose Contrasts or Mirrors, on one or more Variables, are notable according to the engine's score.
 _Avoid_: Finding, insight, result
 
 **Candidate Discovery**:
