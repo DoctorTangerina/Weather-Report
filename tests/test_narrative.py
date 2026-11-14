@@ -309,3 +309,54 @@ def test_bs008_how_do_we_know_names_a_source_for_every_trend_shown(
         }
         assert shown == carried
         assert evidence.period == discovery.period
+
+
+# --- The thought-provoking question and the summary stay within the evidence ----
+
+
+def discovery_named(discoveries: list[Discovery], discovery_id: str) -> Discovery:
+    return next(d for d in discoveries if d.discovery_id == discovery_id)
+
+
+# BS-007 (ADR 0001: no claim beyond the computed results). The question may
+# state a direction only when the Trends support one.
+def test_bs007_the_question_states_directions_the_trends_support(
+    stub_discoveries, catalog
+):
+    opposite = discovery_named(stub_discoveries, "amazon-basin--sahel")
+
+    question = build_narrative(opposite, catalog).question
+
+    assert question.startswith("Precipitation")
+    assert "rising" in question
+    assert "falling" in question
+    assert question.endswith("?")
+
+
+# BS-007 (ADR 0001). A Trend labeled "Not enough evidence yet" has no
+# established direction, so the question asks whether the difference is real
+# instead of stating that the Variable is rising or falling.
+def test_bs007_the_question_claims_no_direction_without_enough_evidence(
+    stub_discoveries, catalog
+):
+    weak = discovery_named(stub_discoveries, "greenland-coast--amazon-basin")
+    labels = {trend.evidence_label for trend in weak.contrasts[0].trends}
+    assert "Not enough evidence yet" in labels
+
+    question = build_narrative(weak, catalog).question
+
+    assert question.startswith("Air temperature")
+    assert "rising" not in question
+    assert "falling" not in question
+    assert question.endswith("?")
+
+
+# BS-008. A multi-Variable Discovery carries more than two series, so the
+# summary must not describe them as a pair.
+def test_bs008_the_summary_does_not_call_many_series_both(stub_discoveries, catalog):
+    multi = discovery_named(stub_discoveries, "amazon-basin--sahel")
+    evidence = build_narrative(multi, catalog).how_do_we_know
+    assert len(evidence.sources) > 2
+
+    assert "Both series" not in evidence.statistics_summary
+    assert "2000-01 to 2024-12" in evidence.statistics_summary

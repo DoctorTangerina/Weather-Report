@@ -229,6 +229,13 @@ def _rate_text(trend: Trend) -> str:
 
 def _question(headline: Contrast, variable: Variable) -> str:
     first, second = headline.trends
+    if NOT_ENOUGH_EVIDENCE in (first.evidence_label, second.evidence_label):
+        # A Trend without enough evidence has no established direction, so the
+        # question may not state one (ADR 0001).
+        return (
+            f"{variable.name} seems to be changing faster in one of these "
+            "places than in the other. Is the difference real?"
+        )
     if headline.kind == "opposite_sign":
         return (
             f"{variable.name} is rising in one of these places and falling in "
@@ -265,7 +272,7 @@ def _statistics_summary(discovery: Discovery, headline: Contrast) -> str:
     comparisons = headline.trends[0].multiple_comparisons
     period = discovery.period
     return (
-        f"Both series cover {period.start} to {period.end}. The seasonal cycle "
+        f"Each series covers {period.start} to {period.end}. The seasonal cycle "
         "was removed, then a least-squares fit gave each rate per decade and its "
         "95% interval. Fits on annual anomalies, a robust fit, a rerun without the "
         "most extreme month and a Theil-Sen fit with a Mann-Kendall test checked "
