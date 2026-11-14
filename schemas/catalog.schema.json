@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://weather-report.local/schemas/catalog.schema.json",
   "title": "Catalog",
-  "description": "The fixed Region catalog and Variable catalog. Users pick only from these; the engine analyzes only these. Content is ticket #3; this file fixes the shape it loads through.",
+  "description": "The fixed Region catalog and Variable catalog. Users pick only from these; the engine analyzes only these. A Variable is defined in variable.schema.json so its definition can be reused outside the catalog.",
   "type": "object",
   "properties": {
     "regions": {
@@ -12,7 +12,7 @@
     },
     "variables": {
       "type": "array",
-      "items": { "$ref": "#/$defs/variable" },
+      "items": { "$ref": "variable.schema.json" },
       "minItems": 1
     },
     "method_citation": {
@@ -57,40 +57,6 @@
         "north": { "type": "number", "minimum": -90, "maximum": 90 }
       },
       "required": ["west", "east", "south", "north"],
-      "additionalProperties": false
-    },
-    "variable": {
-      "type": "object",
-      "properties": {
-        "variable_id": { "$ref": "common.schema.json#/$defs/variableId" },
-        "name": { "type": "string", "minLength": 1 },
-        "units": { "type": "string", "minLength": 1 },
-        "definition": {
-          "description": "Plain-language definition a high school student can read.",
-          "type": "string",
-          "minLength": 1
-        },
-        "source": { "$ref": "common.schema.json#/$defs/source" },
-        "land_only": {
-          "description": "True when the Variable needs a land mask, which also brings the land-fraction gate into play (BS-003).",
-          "type": "boolean"
-        },
-        "possible_causes": {
-          "description": "Hand-written causes the Reason step offers, each labeled as context from scientists rather than a result of the data.",
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "text": { "type": "string", "minLength": 1 },
-              "kind": { "type": "string", "const": "context" }
-            },
-            "required": ["text", "kind"],
-            "additionalProperties": false
-          },
-          "minItems": 1
-        }
-      },
-      "required": ["variable_id", "name", "units", "definition", "source", "land_only", "possible_causes"],
       "additionalProperties": false
     }
   }
