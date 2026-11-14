@@ -43,7 +43,7 @@ class DatasetSearchTests(unittest.TestCase):
         with patch("data.data_gathering.config.load_config", return_value={"BBOX": [0, -10, 20, 10]}):
             self.assertEqual(datasets.default_area().bbox, (0, -10, 20, 10))
             self.assertEqual(datasets.default_area().name, "box")
-        amazon = datasets.region_area("amazon-basin", datasets.ROOT / "data/stub/catalog.json")
+        amazon = datasets.region_area("amazon-basin", datasets.ROOT / "data/catalog.json")
         self.assertEqual(amazon.bbox, (-70, -10, -50, 2))
 
     def test_only_datasets_overlapping_every_selected_region_are_listed(self):

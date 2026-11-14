@@ -155,14 +155,19 @@ need additional format readers or conversion first; those layouts are not guesse
 `get_catalog_series(region_id, variable_id, period)` returns one monthly series
 in the shape of `schemas/series.schema.json`, ready for the engine's
 `Series.from_dict`. The Region's box, the Variable's units, source and land-only
-flag, and the engine version all come from the catalog (`data/stub/catalog.json`).
+flag, and the engine version all come from the catalog (`data/catalog.json`).
 Which acquired dataset holds each Variable is set in `config.json`:
 
 - `CATALOG_SERIES`: per Variable id, optional `dataset_id` (collection id) and
   `variable` (field name; defaults to the catalog's source variable). When the
   file's units differ from the catalog's, declare `native_units` and a
-  `conversion` (`identity` or `rate_per_second_to_per_month`). Units that do not
-  match are refused (`units_mismatch`), never relabelled.
+  `conversion`: `identity` (soil moisture: 1 kg m-2 of water is 1 mm),
+  `kelvin_to_celsius`, or `rate_per_second_to_per_month` (precipitation, done by
+  `engine.precipitation_rate_to_monthly_total`, which refuses values that cannot
+  be a rate: `implausible_values`). Units that do not match are refused
+  (`units_mismatch`), never relabelled. The precipitation conversion imports the
+  engine, so run from the repository root with `pip install -e .` or
+  `PYTHONPATH=src`.
 - `VARIABLE_RULES`: land-only fields and their land mask, by collection id.
   Soil moisture uses the official GLDAS land mask, which is not committed:
 
@@ -199,9 +204,10 @@ python data/data_gathering/datasets.py --keyword M2TMNXFLX --select C1276812868-
 python data/data_gathering/datasets.py --keyword GLDAS_NOAH025_M --select C1342986036-GES_DISC --download   # soil moisture
 ```
 
-Not yet supported: the vegetation index (MOD13C2) is distributed as HDF4, which
-the NetCDF reader cannot open, so `vegetation-index` series report
-`variable_not_available`.
+Not yet supported: the vegetation index. The catalog sources it from MODIS
+MOD13A3 through AppEEARS (see `docs/catalog-sources.md`), which this package does
+not call yet, so `vegetation-index` series report `variable_not_available`
+(tracked in #41).
 
 ## Callable method and quality gate
 

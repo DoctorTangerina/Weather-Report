@@ -25,7 +25,7 @@ from engine import (
 )
 from engine.contracts import SeriesQuality
 
-CATALOG_PATH = Path(__file__).resolve().parents[1] / "data" / "stub" / "catalog.json"
+CATALOG_PATH = Path(__file__).resolve().parents[1] / "data" / "catalog.json"
 
 TOO_MANY_MISSING = SeriesQuality(
     included=False,

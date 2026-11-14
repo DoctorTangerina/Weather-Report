@@ -292,7 +292,7 @@ def main() -> None:
     location = parser.add_mutually_exclusive_group()
     location.add_argument("--region", nargs="+", help="Region ids from the catalog; otherwise use BBOX from config.json")
     location.add_argument("--bbox", nargs=4, type=float, metavar=("WEST", "SOUTH", "EAST", "NORTH"))
-    parser.add_argument("--catalog", type=Path, default=ROOT / "data/stub/catalog.json")
+    parser.add_argument("--catalog", type=Path, default=ROOT / "data/catalog.json")
     parser.add_argument("--start", default=load_config().get("DATA_START"), help="YYYY-MM or YYYY-MM-DD; defaults to DATA_START in config.json")
     parser.add_argument("--end", default=load_config().get("DATA_END"), help="YYYY-MM or YYYY-MM-DD; defaults to DATA_END in config.json")
     parser.add_argument("--limit", type=int, default=20, help="Maximum candidate results (default: 20)")

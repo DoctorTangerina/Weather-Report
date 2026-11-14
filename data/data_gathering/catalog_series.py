@@ -16,7 +16,6 @@ from __future__ import annotations
 import json
 import math
 import re
-from calendar import monthrange
 from collections.abc import Callable, Mapping
 from dataclasses import asdict
 from pathlib import Path
@@ -26,16 +25,37 @@ from .quality_gate import assess_quality, months_in
 from .selection import SeriesSelectionError, TimeWindow
 from .series import DEFAULT_CONFIG, ROOT, load_series_config, open_source
 
-DEFAULT_CATALOG = ROOT / "data/stub/catalog.json"
+DEFAULT_CATALOG = ROOT / "data/catalog.json"
 DEFAULT_PERIOD = Period("2000-01", "2024-12")
-SECONDS_PER_DAY = 86400
 
-# A conversion turns one monthly mean in the file's units into catalog units.
-CONVERSIONS: dict[str, Callable[[float, str], float]] = {
-    "identity": lambda value, month: value,
-    "rate_per_second_to_per_month": lambda value, month: (
-        value * SECONDS_PER_DAY * monthrange(int(month[:4]), int(month[5:7]))[1]
-    ),
+# A conversion turns the monthly means in the file's units into catalog units.
+# It gets the values, the first month (YYYY-MM) and the file's units, and keeps
+# missing months missing.
+Conversion = Callable[[list[float | None], str, str], list[float | None]]
+
+
+def _kelvin_to_celsius(values, start, units):
+    return [None if value is None else value - 273.15 for value in values]
+
+
+def _rate_to_monthly_total(values, start, units):
+    """MERRA-2's mean rate (kg m-2 s-1) to mm per month, by the engine's own helper.
+
+    The helper multiplies each month by its own length and refuses anything that
+    cannot be a precipitation rate, so a wrong value never passes as a total.
+    """
+    from engine import precipitation_rate_to_monthly_total
+
+    try:
+        return precipitation_rate_to_monthly_total(values, start, units)
+    except ValueError as error:
+        raise SeriesSelectionError("implausible_values", str(error)) from None
+
+
+CONVERSIONS: dict[str, Conversion] = {
+    "identity": lambda values, start, units: values,
+    "kelvin_to_celsius": _kelvin_to_celsius,
+    "rate_per_second_to_per_month": _rate_to_monthly_total,
 }
 
 
@@ -77,8 +97,9 @@ def get_catalog_series(region_id: str, variable_id: str,
     for stamp, value in native.observations.items():
         if window.contains(stamp) and value is not None and math.isfinite(value):
             buckets.setdefault(stamp[:7], []).append(value)
-    monthly = [convert(sum(buckets[month]) / len(buckets[month]), month) if month in buckets else None
+    monthly = [sum(buckets[month]) / len(buckets[month]) if month in buckets else None
                for month in months]
+    monthly = convert(monthly, selected.start, native.units)
 
     try:
         quality = assess_quality(monthly, land_only=land_only,
@@ -124,7 +145,7 @@ def _months(period: Period) -> tuple[str, ...]:
         raise SeriesSelectionError("invalid_period", "Use whole months in YYYY-MM, with start no later than end.") from None
 
 
-def _conversion(entry: dict, native_units: str, catalog_units: str) -> Callable[[float, str], float]:
+def _conversion(entry: dict, native_units: str, catalog_units: str) -> Conversion:
     """Pick how the file's units become catalog units, or refuse.
 
     A conversion runs only when the config names the units it expects and the

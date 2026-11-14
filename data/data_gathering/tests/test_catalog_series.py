@@ -30,7 +30,8 @@ def series_validator() -> Draft202012Validator:
     return Draft202012Validator(series, registry=registry)
 
 
-def write_grid(path, *, times, missing=(), land_cells=2, time_units="days since 2020-01-01"):
+def write_grid(path, *, times, missing=(), land_cells=2, rate_level=1e-5,
+               time_units="days since 2020-01-01"):
     """Fields on a 2x2 grid. Land is the first row; the second row is water (999)."""
     with Dataset(path, "w") as data:
         for name, size in (("time", len(times)), ("lat", 2), ("lon", 2)):
@@ -48,7 +49,7 @@ def write_grid(path, *, times, missing=(), land_cells=2, time_units="days since 
             field = data.createVariable(name, "f8", ("time", "lat", "lon"), fill_value=-9999)
             field.units = units
             for index in range(len(times)):
-                level = {"rate": 1e-5}.get(name, index + 1.0)
+                level = {"rate": rate_level}.get(name, index + 1.0)
                 field[index] = np.array([[level, level], [999.0, 999.0]]) if name == "soil" else level
         for index in missing:
             for name in ("t2m", "soil", "rate"):
@@ -62,7 +63,7 @@ CATALOG = {
     "regions": [
         {"region_id": "test-region", "name": "Test", "description": "d",
          "bbox": {"west": -0.5, "east": 1.5, "south": -0.5, "north": 1.5},
-         "variable_ids": ["temperature", "soil-moisture", "precipitation"]},
+         "variable_ids": ["temperature", "soil-moisture", "precipitation", "temperature-c", "soil-mm"]},
         {"region_id": "ocean-region", "name": "Ocean", "description": "d",
          "bbox": {"west": -0.5, "east": 1.5, "south": -0.5, "north": 1.5},
          "variable_ids": ["temperature"]},
@@ -80,6 +81,14 @@ CATALOG = {
          "definition": "d", "land_only": False, "possible_causes": [{"text": "c", "kind": "context"}],
          "source": {"provider": "GES DISC", "dataset": "TEST-P", "variable": "rate",
                     "url": "https://example.org/p"}},
+        {"variable_id": "temperature-c", "name": "Air temperature", "units": "°C",
+         "definition": "d", "land_only": False, "possible_causes": [{"text": "c", "kind": "context"}],
+         "source": {"provider": "GES DISC", "dataset": "TEST-T", "variable": "t2m",
+                    "url": "https://example.org/t"}},
+        {"variable_id": "soil-mm", "name": "Soil moisture", "units": "mm",
+         "definition": "d", "land_only": True, "possible_causes": [{"text": "c", "kind": "context"}],
+         "source": {"provider": "GES DISC", "dataset": "TEST-S", "variable": "soil",
+                    "url": "https://example.org/s"}},
     ],
     "method_citation": "m",
     "engine_version": "9.9.9",
@@ -202,6 +211,46 @@ def test_a_rate_per_second_is_converted_to_the_catalog_units_when_configured(tmp
     assert result["units"] == "mm/month"
     assert result["values"][0] == pytest.approx(january)
     assert result["values"][1] == pytest.approx(february)
+
+
+def test_kelvin_is_shown_as_celsius_when_the_catalog_says_celsius(tmp_path):
+    configured = {"temperature-c": {"native_units": "K", "conversion": "kelvin_to_celsius"}}
+    result = series(tmp_path, variable="temperature-c", series_config=configured)
+    assert result["units"] == "°C"
+    assert result["values"] == pytest.approx([month - 273.15 for month in range(1, 11)])
+
+
+def test_kelvin_is_never_relabelled_as_celsius(tmp_path):
+    with pytest.raises(SeriesSelectionError) as error:
+        series(tmp_path, variable="temperature-c")
+    assert error.value.code == "units_mismatch"
+
+
+def test_kg_per_square_metre_is_shown_as_mm_only_when_declared(tmp_path):
+    declared = {"soil-mm": {"native_units": "kg m-2", "conversion": "identity"}}
+    result = series(tmp_path, variable="soil-mm", series_config=declared)
+    assert result["units"] == "mm"
+    assert result["values"] == pytest.approx(list(range(1, 11)))
+    (tmp_path / "undeclared").mkdir()
+    with pytest.raises(SeriesSelectionError) as error:
+        series(tmp_path / "undeclared", variable="soil-mm")
+    assert error.value.code == "units_mismatch"
+
+
+def test_a_missing_precipitation_month_stays_missing_after_conversion(tmp_path):
+    configured = {"precipitation": {"native_units": "kg m-2 s-1",
+                                    "conversion": "rate_per_second_to_per_month"}}
+    result = series(tmp_path, variable="precipitation", series_config=configured, missing=[3])
+    assert result["values"][3] is None
+    assert result["values"][2] == pytest.approx(31 * 86400 * 1e-5)  # March 2020
+
+
+def test_a_precipitation_value_that_cannot_be_a_rate_is_refused_not_converted(tmp_path):
+    configured = {"precipitation": {"native_units": "kg m-2 s-1",
+                                    "conversion": "rate_per_second_to_per_month"}}
+    with pytest.raises(SeriesSelectionError) as error:
+        series(tmp_path, variable="precipitation", series_config=configured, rate_level=1.0)
+    assert error.value.code == "implausible_values"
 
 
 def test_units_that_differ_from_the_catalog_are_never_passed_off_as_catalog_units(tmp_path):

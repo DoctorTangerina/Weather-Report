@@ -29,7 +29,9 @@
   },
   "CATALOG_SERIES": {
     "temperature": {
-      "dataset_id": "C1276812859-GES_DISC"
+      "dataset_id": "C1276812859-GES_DISC",
+      "native_units": "K",
+      "conversion": "kelvin_to_celsius"
     },
     "precipitation": {
       "dataset_id": "C1276812868-GES_DISC",
@@ -37,7 +39,9 @@
       "conversion": "rate_per_second_to_per_month"
     },
     "soil-moisture": {
-      "dataset_id": "C1342986036-GES_DISC"
+      "dataset_id": "C1342986036-GES_DISC",
+      "native_units": "kg m-2",
+      "conversion": "identity"
     }
   }
 }
