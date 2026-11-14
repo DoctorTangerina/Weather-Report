@@ -21,7 +21,7 @@
             "end": "2024-12"
           },
           "rate_per_decade": 0.05,
-          "units_per_decade": "K per decade",
+          "units_per_decade": "\u00b0C per decade",
           "confidence_interval_95": [
             0.0075,
             0.0925
@@ -84,7 +84,7 @@
             "end": "2024-12"
           },
           "rate_per_decade": 0.28,
-          "units_per_decade": "K per decade",
+          "units_per_decade": "\u00b0C per decade",
           "confidence_interval_95": [
             0.134,
             0.426
@@ -183,7 +183,7 @@
               "variable_id": "temperature"
             }
           ],
-          "comparison": "Greenland Coast: 0.05 K per decade (95% interval 0.0075 to 0.0925). Amazon Basin: 0.28 K per decade (95% interval 0.134 to 0.426).",
+          "comparison": "Greenland Coast: 0.05 \u00b0C per decade (95% interval 0.0075 to 0.0925). Amazon Basin: 0.28 \u00b0C per decade (95% interval 0.134 to 0.426).",
           "kind": "check"
         },
         {

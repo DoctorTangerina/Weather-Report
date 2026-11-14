@@ -30,12 +30,18 @@ from engine import (
 from engine.contracts import Discovery, as_dict
 from engine.discovery import SessionHistory
 
-DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "stub"
-DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(DEFAULT_DATA_DIR)))
+ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(ROOT / "data" / "stub")))
+
+# The catalog is configuration rather than a result set, so it does not move
+# when DATA_DIR points at a different set of results.
+CATALOG_PATH = Path(
+    os.environ.get("WEATHER_REPORT_CATALOG", str(ROOT / "data" / "catalog.json"))
+)
 
 app = FastAPI(title="Weather Report", version=ENGINE_VERSION)
 
-catalog = load_catalog(DATA_DIR / "catalog.json")
+catalog = load_catalog(CATALOG_PATH)
 store = JsonResultStore(DATA_DIR, ENGINE_VERSION)
 
 
