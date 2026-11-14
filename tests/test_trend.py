@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 import random
+import socket
 
 import pytest
 
@@ -16,6 +17,31 @@ from engine import Period, Series, estimate_trend
 from engine.contracts import SeriesQuality, Source, as_dict
 
 MONTHS = 300  # 2000-01 .. 2024-12
+
+
+class NetworkAccessed(AssertionError):
+    pass
+
+
+@pytest.fixture(autouse=True)
+def no_network(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail any test in this module that tries to reach the network."""
+
+    def refuse(*args: object, **kwargs: object) -> None:
+        raise NetworkAccessed("the engine must not use the network")
+
+    monkeypatch.setattr(socket.socket, "connect", refuse)
+    monkeypatch.setattr(socket.socket, "connect_ex", refuse)
+    monkeypatch.setattr(socket, "getaddrinfo", refuse)
+    monkeypatch.setattr(socket, "create_connection", refuse)
+
+
+def test_the_network_guard_fires():
+    # Proves the autouse guard works, so a pass below means no attempt was made.
+    with pytest.raises(NetworkAccessed):
+        socket.create_connection(("example.com", 80))
+    with pytest.raises(NetworkAccessed):
+        socket.socket().connect(("127.0.0.1", 9))
 
 
 def synthetic_series(
