@@ -10,10 +10,10 @@ from __future__ import annotations
 import dataclasses
 import math
 import random
-from decimal import ROUND_HALF_UP, Decimal
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
 from itertools import combinations
 
 from .contracts import (
