@@ -44,3 +44,8 @@ def schema_paths() -> list[Path]:
 @pytest.fixture(scope="session")
 def stub_dir() -> Path:
     return ROOT / "data" / "stub"
+
+
+@pytest.fixture(scope="session")
+def catalog_path() -> Path:
+    return ROOT / "data" / "catalog.json"

@@ -324,6 +324,23 @@
       ]
     },
     {
+      "region_id": "siberian-arctic",
+      "name": "Siberian Arctic",
+      "description": "Treeless tundra on the Taymyr Peninsula, north of the Arctic Circle.",
+      "bbox": {
+        "west": 85,
+        "east": 110,
+        "south": 67,
+        "north": 73
+      },
+      "variable_ids": [
+        "temperature",
+        "precipitation",
+        "soil-moisture",
+        "vegetation-index"
+      ]
+    },
+    {
       "region_id": "canadian-boreal",
       "name": "Canadian Boreal Forest",
       "description": "A huge belt of evergreen forest and lakes in northern Canada.",
@@ -343,7 +360,7 @@
     {
       "region_id": "greenland-coast",
       "name": "Greenland Coast",
-      "description": "The ice-free coastal strip of southwest Greenland.",
+      "description": "The southwest coast of Greenland, where rocky land meets the edge of the ice sheet.",
       "bbox": {
         "west": -53,
         "east": -45,
@@ -373,7 +390,7 @@
     {
       "region_id": "equatorial-pacific",
       "name": "Equatorial Pacific",
-      "description": "A band of warm ocean along the equator, home of El Niño.",
+      "description": "A band of warm ocean along the equator, home of El Ni\u00f1o.",
       "bbox": {
         "west": -170,
         "east": -120,
@@ -405,13 +422,13 @@
     {
       "variable_id": "temperature",
       "name": "Air temperature",
-      "units": "K",
-      "definition": "How warm the air near the ground is, averaged over a month.",
+      "units": "\u00b0C",
+      "definition": "How warm the air is about two metres above the ground, averaged over a month.",
       "source": {
         "provider": "GES DISC",
         "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
         "variable": "T2M",
-        "url": "https://disc.gsfc.nasa.gov/datasets/M2TMNXSLV_5.12.4/summary"
+        "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
       },
       "land_only": false,
       "possible_causes": [
@@ -442,7 +459,7 @@
         "provider": "GES DISC",
         "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
         "variable": "PRECTOTCORR",
-        "url": "https://disc.gsfc.nasa.gov/datasets/M2TMNXFLX_5.12.4/summary"
+        "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
       },
       "land_only": false,
       "possible_causes": [
@@ -467,13 +484,13 @@
     {
       "variable_id": "soil-moisture",
       "name": "Soil moisture",
-      "units": "kg/m²",
-      "definition": "How much water is held in the top 10 centimeters of soil, where plant roots start.",
+      "units": "mm",
+      "definition": "How much water is held in the top 10 centimetres of soil, where plant roots start, measured as millimetres of water.",
       "source": {
         "provider": "GES DISC",
-        "dataset": "GLDAS Noah Land Surface Model L4 monthly 0.25 degree v2.1 (GLDAS_NOAH025_M)",
+        "dataset": "GLDAS_NOAH025_M v2.1",
         "variable": "SoilMoi0_10cm_inst",
-        "url": "https://disc.gsfc.nasa.gov/datasets/GLDAS_NOAH025_M_2.1/summary"
+        "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
       },
       "land_only": true,
       "possible_causes": [
@@ -498,13 +515,13 @@
     {
       "variable_id": "vegetation-index",
       "name": "Vegetation index (NDVI)",
-      "units": "NDVI (unitless, -1 to 1)",
-      "definition": "A satellite measure of how green and leafy the land is: higher means more healthy plants.",
+      "units": "NDVI",
+      "definition": "A satellite measure of how green and leafy the land is. It has no units: about 0 for bare rock, sand or snow, and close to 1 for dense, healthy plants.",
       "source": {
         "provider": "AppEEARS",
-        "dataset": "MODIS/Terra Vegetation Indices Monthly L3 Global 0.05 Deg CMG v6.1 (MOD13C2)",
-        "variable": "CMG 0.05 Deg Monthly NDVI",
-        "url": "https://appeears.earthdatacloud.nasa.gov/"
+        "dataset": "MODIS/Terra MOD13A3 v061",
+        "variable": "_1_km_monthly_NDVI",
+        "url": "https://doi.org/10.5067/MODIS/MOD13A3.061"
       },
       "land_only": true,
       "possible_causes": [
@@ -527,6 +544,6 @@
       ]
     }
   ],
-  "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+  "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
   "engine_version": "0.1.0"
 }

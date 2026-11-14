@@ -48,8 +48,8 @@ def load_discovery(stub_dir: Path, name: str) -> Discovery:
 
 
 @pytest.fixture(scope="module")
-def catalog(stub_dir: Path) -> Catalog:
-    return load_catalog(stub_dir / "catalog.json")
+def catalog(catalog_path: Path) -> Catalog:
+    return load_catalog(catalog_path)
 
 
 @pytest.fixture(scope="module")
