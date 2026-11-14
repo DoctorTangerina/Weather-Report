@@ -402,9 +402,7 @@ def _number(value: float) -> str:
     5.500 is 5.5. A value that rounds to zero is 0, never -0. The frontend
     applies the same rule to the rates it lists (see the Discovery schema).
     """
-    rounded = Decimal(repr(float(value))).quantize(
-        Decimal("0.001"), rounding=ROUND_HALF_UP
-    )
+    rounded = Decimal(repr(value)).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
     text = format(rounded, "f")
     if "." in text:
         text = text.rstrip("0").rstrip(".")
