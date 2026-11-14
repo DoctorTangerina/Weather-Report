@@ -1,84 +1,113 @@
-import { useEffect, useState } from 'react'
-import { getCatalog, getDiscoveries, surpriseMe } from './api.js'
-import DiscoveryScreen from './screens/DiscoveryScreen.jsx'
-import ExperienceScreen from './screens/ExperienceScreen.jsx'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getCatalog, surpriseMe } from './api.js'
+import { REGION_COLORS } from './palette.js'
 import InvestigationScreen from './screens/InvestigationScreen.jsx'
+import MainScreen from './screens/MainScreen.jsx'
 
+const NEW_SESSION = { shownDiscoveryIds: [], shownRegionIds: [] }
+
+// loading → welcome → drawing → discovery ⇄ drawing … → complete → welcome
+// unreachable when the catalog cannot be fetched; investigation is ticket #15.
 export default function App() {
   const [catalog, setCatalog] = useState(null)
-  const [view, setView] = useState('home')
+  const [phase, setPhase] = useState('loading')
   const [discovery, setDiscovery] = useState(null)
-  const [session, setSession] = useState({ shownDiscoveryIds: [], shownRegionIds: [] })
-  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState(null)
+  const [session, setSession] = useState(NEW_SESSION)
   const [error, setError] = useState(null)
+  const drawing = useRef(false)
 
-  useEffect(() => {
+  const loadCatalog = useCallback(() => {
+    setPhase('loading')
     getCatalog()
-      .then((response) => setCatalog(response.data))
-      .catch(setError)
+      .then((response) => {
+        setCatalog(response.data)
+        setNotice(response.notice)
+        setPhase('welcome')
+      })
+      .catch(() => setPhase('unreachable'))
   }, [])
 
-  const show = (next) => {
-    setDiscovery(next)
-    setSession((current) => ({
-      shownDiscoveryIds: [...current.shownDiscoveryIds, next.discovery_id],
-      shownRegionIds: [...current.shownRegionIds, ...next.region_ids],
-    }))
-  }
+  useEffect(loadCatalog, [loadCatalog])
 
-  const run = (load, nextView) => {
-    setBusy(true)
+  const highlights = useMemo(() => {
+    if (!discovery || !catalog) return []
+    return discovery.region_ids
+      .map((id, index) => ({
+        region: catalog.regions.find((region) => region.region_id === id),
+        color: REGION_COLORS[index],
+      }))
+      .filter((highlight) => highlight.region)
+  }, [discovery, catalog])
+
+  // Guards against a double click firing two draws before the first returns,
+  // which would send the same session history twice.
+  const draw = (nextPhase) => {
+    if (drawing.current || !catalog) return
+    drawing.current = true
+    const settled = discovery ? 'discovery' : 'welcome'
+    setPhase('drawing')
     setError(null)
-    load()
-      .then((next) => {
-        show(next)
-        setView(nextView)
+    surpriseMe(session)
+      .then((response) => {
+        const next = response.data
+        setDiscovery(next)
+        setNotice(response.notice)
+        setSession((current) => ({
+          shownDiscoveryIds: [...new Set([...current.shownDiscoveryIds, next.discovery_id])],
+          shownRegionIds: [...new Set([...current.shownRegionIds, ...next.region_ids])],
+        }))
+        setPhase(nextPhase)
       })
-      .catch(setError)
-      .finally(() => setBusy(false))
+      .catch((failure) => {
+        if (failure.code === 'no_discovery_left_in_session') {
+          setPhase('complete')
+          return
+        }
+        setError(failure)
+        setPhase(settled)
+      })
+      .finally(() => {
+        drawing.current = false
+      })
   }
 
-  const onSurprise = () => run(() => surpriseMe(session).then((r) => r.data), 'discovery')
+  const startOver = () => {
+    setSession(NEW_SESSION)
+    setDiscovery(null)
+    setError(null)
+    setPhase('welcome')
+  }
 
-  const onBrowse = () =>
-    run(() => getDiscoveries().then((r) => r.data[0]), 'investigation')
-
-  if (!catalog) {
+  if (phase === 'investigation' && discovery) {
     return (
-      <main>
-        {error ? <p className="error">{error.message}</p> : <p className="muted">Loading…</p>}
+      <main className="detail-screen">
+        <InvestigationScreen
+          key={discovery.discovery_id}
+          discovery={discovery}
+          catalog={catalog}
+          onBack={() => setPhase('discovery')}
+        />
       </main>
     )
   }
 
   return (
-    <main>
-      {view === 'home' && (
-        <ExperienceScreen
-          catalog={catalog}
-          onSurprise={onSurprise}
-          onBrowse={onBrowse}
-          busy={busy}
-          error={error}
-        />
-      )}
-
-      {view === 'discovery' && discovery && (
-        <DiscoveryScreen
-          discovery={discovery}
-          catalog={catalog}
-          onInvestigate={() => setView('investigation')}
-          onBack={() => setView('home')}
-        />
-      )}
-
-      {view === 'investigation' && discovery && (
-        <InvestigationScreen
-          discovery={discovery}
-          catalog={catalog}
-          onBack={() => setView('home')}
-        />
-      )}
+    <main className="app-home">
+      <MainScreen
+        phase={phase}
+        catalog={catalog}
+        discovery={discovery}
+        highlights={highlights}
+        notice={notice}
+        error={error}
+        seen={session.shownDiscoveryIds.length}
+        onSurprise={() => draw('discovery')}
+        onDetective={() => draw('investigation')}
+        onInvestigate={() => setPhase('investigation')}
+        onNewSession={startOver}
+        onRetry={loadCatalog}
+      />
     </main>
   )
 }

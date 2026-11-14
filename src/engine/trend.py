@@ -13,6 +13,7 @@ A Trend returned by `estimate_trend` alone carries the conservative label
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from dataclasses import replace
 
@@ -139,7 +140,7 @@ def estimate_trend(series: Series) -> Trend:
     # Positive serial correlation shrinks the information in n months; negative
     # correlation is not allowed to claim more than n.
     n_eff = float(np.clip(n * (1 - lag1) / (1 + lag1), 3.0, n))
-    standard_error = float(fit.stderr) * np.sqrt(n / n_eff)
+    standard_error = float(fit.stderr) * math.sqrt(n / n_eff)
     margin = float(stats.t.ppf(0.975, n_eff - 2)) * standard_error
     interval = (slope - margin, slope + margin)
 

@@ -226,8 +226,8 @@ def test_months_a_series_is_missing_are_left_out_of_the_comparison():
 
 
 @pytest.fixture(scope="module")
-def catalog(stub_dir) -> Catalog:
-    return load_catalog(stub_dir / "catalog.json")
+def catalog(catalog_path) -> Catalog:
+    return load_catalog(catalog_path)
 
 
 def mirror_between(first: SeriesRef, second: SeriesRef, **overrides) -> Mirror:

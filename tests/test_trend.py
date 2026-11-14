@@ -6,6 +6,7 @@ network.
 
 from __future__ import annotations
 
+import dataclasses
 import math
 import random
 import socket
@@ -154,6 +155,30 @@ def test_trend_follows_the_trend_schema(validator_for):
     payload["confidence_interval_95"] = list(payload["confidence_interval_95"])
 
     validator_for("trend.schema.json").validate(payload)
+
+
+def _numbers(value: object):
+    """Every number inside a contract value, however deeply it is nested."""
+    if dataclasses.is_dataclass(value):
+        for field in dataclasses.fields(value):
+            yield from _numbers(getattr(value, field.name))
+    elif isinstance(value, tuple | list):
+        for item in value:
+            yield from _numbers(item)
+    elif not isinstance(value, str | None):
+        yield value
+
+
+# Contract: a Trend carries Python numbers only. A NumPy scalar is a float
+# subclass, so it serializes, but its repr is "np.float64(0.5)" and it breaks any
+# code that formats numbers with repr (the narrative text did).
+def test_a_trend_carries_python_numbers_only():
+    trend = estimate_trend(synthetic_series(0.35, seed=0))
+
+    numbers = list(_numbers(trend))
+
+    assert numbers  # the walk reached the rate and the interval
+    assert {type(number) for number in numbers} <= {float, int, bool}
 
 
 def test_a_lone_trend_is_not_yet_rated():
