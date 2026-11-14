@@ -22,7 +22,7 @@ export default function DiscoveryScreen({ discovery, catalog, onInvestigate, onB
       <h1>{discovery.narrative.question}</h1>
       <p className="label">{discovery.evidence_label}</p>
 
-      <RegionMap regions={regions} />
+      <RegionMap regions={regions}/>
 
       {notice && <p className="notice">{notice.message}</p>}
       {error && <p className="error">{error.message}</p>}
