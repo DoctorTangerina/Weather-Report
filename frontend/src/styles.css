@@ -302,3 +302,17 @@ button.link {
   border-top: 1px solid #dfe3dd;
   padding-top: 1rem;
 }
+
+.region-map { margin: 1.25rem 0; }
+.discovery-globe { display: grid; height: clamp(18rem, 55vw, 28rem); background: #070e1d; border-radius: 0.6rem; overflow: hidden; color: #f1f6fc; }
+.region-map figcaption > p { font-size: 0.85rem; }
+.region-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; list-style: none; padding: 0; }
+.region-legend li { border-left: 5px solid #8bd9ed; padding-left: 0.75rem; }
+.region-legend li:nth-child(2) { border-color: #ffb579; }
+.region-legend p { margin: 0.25rem 0; font-size: 0.9rem; }
+@media (max-width: 480px) { .region-legend { grid-template-columns: minmax(0, 1fr); } }
+
+.catalog-controls { display: grid; gap: 0.4rem; margin: 1rem 0; }
+.catalog-controls label { font-size: 0.85rem; font-weight: 600; }
+.catalog-controls select { width: 100%; min-width: 0; padding: 0.55rem; border: 1px solid #aab8c4; border-radius: 0.3rem; background: white; color: var(--ink); font: inherit; }
+.catalog-controls select:focus-visible { outline: 3px solid #47b5d7; outline-offset: 2px; }

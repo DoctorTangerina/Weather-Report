@@ -1,6 +1,5 @@
-﻿import { useEffect, useState } from 'react'
-import { getCatalog, getDiscoveries, surpriseMe } from './api.js'
-import DiscoveryScreen from './screens/DiscoveryScreen.jsx'
+﻿import { useEffect, useRef, useState } from 'react'
+import { getCatalog, surpriseMe } from './api.js'
 import InvestigationScreen from './screens/InvestigationScreen.jsx'
 import MainScreen from './screens/MainScreen.jsx'
 
@@ -12,20 +11,21 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const requestPending = useRef(false)
+
+  const remember = (next) => setSession((current) => ({
+    shownDiscoveryIds: [...new Set([...current.shownDiscoveryIds, next.discovery_id])],
+    shownRegionIds: [...new Set([...current.shownRegionIds, ...next.region_ids])],
+  }))
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getCatalog(), getDiscoveries()])
-      .then(([catalogResponse, discoveriesResponse]) => {
+    getCatalog()
+      .then((catalogResponse) => {
         if (cancelled) return
-        const initialDiscovery = discoveriesResponse.data[0]
-        if (!initialDiscovery) throw new Error('No discoveries are available.')
-        setDiscovery(initialDiscovery)
         setCatalog(catalogResponse.data)
-        setSession({
-          shownDiscoveryIds: [initialDiscovery.discovery_id],
-          shownRegionIds: [...initialDiscovery.region_ids],
-        })
+        setNotice(catalogResponse.notice ?? null)
       })
       .catch((error) => { if (!cancelled) setError(error) })
       .finally(() => { if (!cancelled) setLoading(false) })
@@ -33,19 +33,21 @@ export default function App() {
   }, [])
 
   const onSurprise = () => {
+    if (requestPending.current || loading || !catalog) return
+    requestPending.current = true
     setBusy(true)
     setError(null)
     surpriseMe(session)
-      .then(({ data: next }) => {
+      .then(({ data: next, notice: nextNotice }) => {
         setDiscovery(next)
-        setSession((current) => ({
-          shownDiscoveryIds: [...current.shownDiscoveryIds, next.discovery_id],
-          shownRegionIds: [...current.shownRegionIds, ...next.region_ids],
-        }))
-        setView('discovery')
+        remember(next)
+        setNotice(nextNotice ?? null)
       })
       .catch(setError)
-      .finally(() => setBusy(false))
+      .finally(() => {
+        requestPending.current = false
+        setBusy(false)
+      })
   }
 
   return (
@@ -54,23 +56,17 @@ export default function App() {
         <MainScreen
           discovery={discovery}
           catalog={catalog}
-          onInvestigate={() => setView('investigation')}
+          onInvestigate={discovery ? () => setView('investigation') : undefined}
           onSurprise={onSurprise}
           loading={loading}
           busy={busy}
           error={error}
-        />
-      )}
-      {view === 'discovery' && discovery && (
-        <DiscoveryScreen
-          discovery={discovery}
-          catalog={catalog}
-          onInvestigate={() => setView('investigation')}
-          onBack={() => setView('home')}
+          discoveryNotice={notice}
         />
       )}
       {view === 'investigation' && discovery && (
         <InvestigationScreen
+          key={discovery.discovery_id}
           discovery={discovery}
           catalog={catalog}
           onBack={() => setView('home')}
