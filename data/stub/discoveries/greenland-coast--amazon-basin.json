@@ -200,10 +200,6 @@
             {
               "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
               "kind": "context"
-            },
-            {
-              "text": "Cities and farmland absorb and release heat differently from forests.",
-              "kind": "context"
             }
           ],
           "kind": "reason"
