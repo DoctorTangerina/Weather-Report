@@ -11,5 +11,7 @@
     "LPCLOUD"
   ],
   "DATA_START": "2000-01",
-  "DATA_END": "2024-12"
+  "DATA_END": "2024-12",
+  "SERIES_MANIFEST": "data/data_gathering/downloads/acquisition-manifest.json",
+  "VARIABLE_RULES": {}
 }

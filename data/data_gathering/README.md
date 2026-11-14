@@ -148,3 +148,38 @@ aggregation and timestamp/value pairs. Unsupported fields/groups are reported in
 excessive series counts produce a clear error. Tiled products should be mosaicked
 before extraction. CSV, GeoTIFF and HDF files lacking readable CF coordinates
 need additional format readers or conversion first; those layouts are not guessed.
+
+## Callable method and quality gate
+
+The implementation, models, reader, quality gate, configuration, tests and
+integration documentation are all contained in this folder. No engine, API or
+frontend implementation is needed to call the method.
+
+```python
+from data.data_gathering import get_time_series
+
+series = get_time_series(
+    area={"west": -70, "east": -50, "south": -10, "north": 2},
+    variable="T2M",
+    period={"start": "2024-01", "end": "2024-12"},
+)
+```
+
+The method selects the requested dataset/field, box and period, validates that
+selection, and returns a JSON-ready dict. More than 20% missing calendar months
+or less than 50% valid land cells for a land-only Variable raises
+`SeriesSelectionError` instead of returning values. Exactly 20% missing and
+exactly 50% land pass. Land-only Variables require a configured, aligned land
+mask; water cells are removed before averaging. Native timestamps and units
+are preserved.
+
+See [SERIES_ACCESS.md](SERIES_ACCESS.md) for the API developer's integration
+contract and trusted land-mask configuration. The caller owns HTTP handling.
+
+Run the self-contained data tests from the repository root:
+
+```sh
+.venv/bin/python -m pip install -r data/data_gathering/requirements-dev.txt
+MPLCONFIGDIR=/tmp/weather-report-matplotlib \
+  .venv/bin/python -m pytest data/data_gathering/tests -q
+```

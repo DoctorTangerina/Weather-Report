@@ -146,7 +146,7 @@ def geography(variables, area, aggregation, latitude=None, longitude=None, area_
 
 def extract(records: list[dict], area, *, aggregation="area-mean", variables=None,
             time_coordinate=None, latitude=None, longitude=None, area_variable=None,
-            max_series=10000, verbose=True) -> dict:
+            max_series=10000, time_window=None, land_mask_provider=None, verbose=True) -> dict:
     output = {"bbox": list(area.bbox), "aggregation": aggregation, "datasets": {}, "skipped": []}
     total = 0
     for record in records:
@@ -192,6 +192,9 @@ def extract(records: list[dict], area, *, aggregation="area-mean", variables=Non
                         spatial = tuple(dim for dim in (geo["dims"] if geo else ()) if dim in variable.dimensions)
                         if spatial and len(spatial) != len(geo["dims"]):
                             raise ValueError("Field contains only part of the geographic coordinate axes.")
+                        land = land_mask_provider(record, available, geo) if land_mask_provider else None
+                        if land is not None and not spatial:
+                            raise ValueError("A land-only field requires geographic axes.")
                         remaining = [dim for dim in variable.dimensions if dim != time.dimensions[0]
                                      and (aggregation == "none" or dim not in spatial)]
                         choices = []
@@ -227,10 +230,19 @@ def extract(records: list[dict], area, *, aggregation="area-mean", variables=Non
                                     "coordinates": coordinates, "coordinate_units": coordinate_units,
                                     "spatial_aggregation": aggregation if spatial else "none",
                                     "observations": {}}
+                            if land is not None:
+                                inside = geo["inside"]
+                                fraction = float(np.mean(land if inside is None else land[inside]))
+                                previous = fields[key].get("valid_land_fraction")
+                                if previous is not None and not np.isclose(previous, fraction):
+                                    raise ValueError("Land-mask coverage changed between files.")
+                                fields[key]["valid_land_fraction"] = fraction
                             field = fields[key]
                             if field["units"] != getattr(variable, "units", "unknown") or field["calendar"] != calendar:
                                 raise ValueError(f"Units or calendar changed between files for {key}.")
                             for time_index, timestamp in enumerate(timestamps):
+                                if time_window is not None and not (time_window[0] <= timestamp < time_window[1]):
+                                    continue
                                 selectors = []
                                 for dim in variable.dimensions:
                                     if dim == time.dimensions[0]:
@@ -248,6 +260,8 @@ def extract(records: list[dict], area, *, aggregation="area-mean", variables=Non
                                     if geo["inside"] is not None:
                                         inside = np.transpose(geo["inside"], axes)
                                         values = np.ma.masked_where(~inside, values)
+                                    if land is not None:
+                                        values = np.ma.masked_where(~np.transpose(land, axes), values)
                                     reduced = np.ma.average(values, weights=weights)
                                 else:
                                     reduced = values.item() if not np.ma.is_masked(values) else np.ma.masked
@@ -257,7 +271,7 @@ def extract(records: list[dict], area, *, aggregation="area-mean", variables=Non
                                 field["observations"][timestamp] = value
                     except (ValueError, TypeError) as error:
                         # Conflicts and resource limits must never silently yield partial series.
-                        if "Duplicate/overlapping" in str(error) or "Series limit" in str(error) or "changed between files" in str(error):
+                        if hasattr(error, "code") or "Duplicate/overlapping" in str(error) or "Series limit" in str(error) or "changed between files" in str(error):
                             raise
                         output["skipped"].append({"file": str(path), "variable": full_name, "reason": str(error)})
         if verbose:
