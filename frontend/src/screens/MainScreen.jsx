@@ -6,6 +6,7 @@ import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/Pa
 import Timeline from '../components/Timeline.jsx'
 import { REGION_COLORS } from '../palette.js'
 import useSeries from '../useSeries.js'
+import useComparison from '../useComparison.js'
 
 const NONE = []
 
@@ -25,14 +26,17 @@ export default function MainScreen({
 }) {
   const [timestamp, setTimestamp] = useState(null)
   const [regionId, setRegionId] = useState('')
+  const [secondRegionId, setSecondRegionId] = useState('')
   const [variableId, setVariableId] = useState('')
 
   const exploring = phase === 'welcome' && Boolean(catalog)
   const showing = phase === 'discovery' && Boolean(discovery)
 
   const region = catalog?.regions.find((item) => item.region_id === regionId) ?? catalog?.regions[0]
+  const otherRegions = catalog?.regions.filter((item) => item.region_id !== region?.region_id) ?? NONE
+  const secondRegion = otherRegions.find((item) => item.region_id === secondRegionId) ?? otherRegions[0]
   const variables =
-    catalog?.variables.filter((item) => region?.variable_ids.includes(item.variable_id)) ?? NONE
+    catalog?.variables.filter((item) => region?.variable_ids.includes(item.variable_id) && secondRegion?.variable_ids.includes(item.variable_id)) ?? NONE
   const variable = variables.find((item) => item.variable_id === variableId) ?? variables[0]
 
   const refs = useMemo(() => {
@@ -42,23 +46,26 @@ export default function MainScreen({
         variable_id,
       }))
     }
-    if (exploring && region && variable) {
-      return [{ region_id: region.region_id, variable_id: variable.variable_id }]
-    }
     return NONE
-  }, [showing, exploring, discovery, region, variable])
+  }, [showing, discovery])
 
   const explored = useMemo(
-    () => (exploring && region ? [{ region, color: REGION_COLORS[0] }] : NONE),
-    [exploring, region],
+    () => (exploring ? [region, secondRegion].filter(Boolean).map((region, index) => ({ region, color: REGION_COLORS[index] })) : NONE),
+    [exploring, region, secondRegion],
   )
 
+  const discoverySeries = useSeries(refs)
+  const comparison = useComparison(
+    exploring ? region?.region_id : null,
+    exploring ? secondRegion?.region_id : null,
+    exploring ? variable?.variable_id : null,
+  )
   const { loading: seriesLoading, series, notice: seriesNotice, error: seriesError } =
-    useSeries(refs)
+    exploring ? comparison : discoverySeries
   const banner = notice ?? seriesNotice
   const timelineKey = showing
     ? discovery.discovery_id
-    : `${region?.region_id}/${variable?.variable_id}`
+    : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
 
   return (
     <div className="main-screen">
@@ -96,7 +103,7 @@ export default function MainScreen({
         )}
         {seriesError && (
           <p className="error" role="alert">
-            The monthly series could not be loaded: {seriesError.message}
+            The analysis could not be loaded: {seriesError.message}
           </p>
         )}
 
@@ -108,14 +115,17 @@ export default function MainScreen({
             <Explorer
               catalog={catalog}
               region={region}
+              secondRegion={secondRegion}
               variable={variable}
               variables={variables}
               onRegion={setRegionId}
+              onSecondRegion={setSecondRegionId}
               onVariable={setVariableId}
               series={series}
               seriesLoading={seriesLoading}
               timestamp={timestamp}
-              color={REGION_COLORS[0]}
+              highlights={explored}
+              trends={comparison.trends}
             />
           </>
         )}

@@ -13,7 +13,7 @@ export function EvidenceLabel({ label }) {
   return <span className={`evidence-label evidence-${LABEL_TONE[label] ?? 'none'}`}>{label}</span>
 }
 
-function RegionRate({ trend, highlight }) {
+export function RegionRate({ trend, highlight }) {
   const { rate, interval, units } = formatRate(trend)
   return (
     <li className="region-rate" style={{ '--region': highlight.color }}>
