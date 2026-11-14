@@ -22,6 +22,16 @@ Precipitation is a rate, not a monthly total. Multiplying by a fixed 30 days wou
 make February about 7% too wet and 31-day months about 3% too dry, so the
 conversion has to use each month's own length.
 
+`engine.precipitation_rate_to_monthly_total(rates, start, units)` does this, and
+the fetch layer should call it rather than redo the arithmetic. Each value is
+multiplied by its own month's length, with leap Februaries. A missing month
+stays missing: MERRA-2's fill value, NaN and infinity all come back as None. It
+refuses, with an error, anything that cannot be a precipitation rate:
+- units other than `kg m-2 s-1`, so a series cannot be converted twice;
+- a negative rate;
+- a monthly total wetter than any month ever recorded, which catches, for
+  example, millimetres per day labelled as a rate.
+
 Source URLs in the catalog are DOIs (`https://doi.org/...`), which resolve to the
 product pages. Don't copy the "landing page" links from the CMR records for the
 three GES DISC products: when checked, they pointed at unrelated datasets (GPM and
