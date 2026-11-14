@@ -14,11 +14,23 @@ from dataclasses import dataclass
 from .contracts import (
     NOT_ENOUGH_EVIDENCE,
     Catalog,
+    CheckStep,
+    Contrast,
     Discovery,
+    EvidenceSource,
+    HowDoWeKnow,
+    Investigation,
     Mirror,
     Narrative,
+    PossibleCause,
+    PredictOption,
+    PredictStep,
+    ReasonStep,
+    Region,
     Series,
+    SeriesRef,
     Trend,
+    Variable,
 )
 
 # How many of the highest-scoring eligible Candidates the Surprise Me! draw
@@ -121,5 +133,144 @@ def _weighted_draw(ranked: Sequence[Discovery], rng: random.Random) -> Discovery
 
 
 def build_narrative(discovery: Discovery, catalog: Catalog) -> Narrative:
-    """Ticket #10."""
-    raise NotImplementedError("explanations and investigation content: ticket #10")
+    """The question, the Become a Detective steps and "How do we know?".
+
+    Templates over the Discovery's own computed values, with no LLM (ADR 0001):
+    every number in the text is a value carried by one of its Trends or its
+    period, written out exactly as computed so nothing is rounded into a value
+    the engine never produced.
+
+    The first contrast is the headline: it drives the question and the three
+    steps. "How do we know?" names the source of every Trend the Discovery
+    carries, since the evidence view reads their rates from `contrasts`.
+    """
+    if not discovery.contrasts:
+        raise ValueError(
+            f"{discovery.discovery_id}: a Discovery needs at least one contrast"
+        )
+    headline = discovery.contrasts[0]
+    variable = _catalog_variable(catalog, headline.variable_id)
+    first, second = headline.trends
+    regions = {
+        trend.region_id: _catalog_region(catalog, trend.region_id)
+        for trend in headline.trends
+    }
+    faster = (
+        first if abs(first.rate_per_decade) >= abs(second.rate_per_decade) else second
+    )
+    subject = variable.name.lower()
+
+    predict = PredictStep(
+        question=f"Where do you think {subject} is changing faster?",
+        options=tuple(
+            PredictOption(
+                option_id=trend.region_id, label=regions[trend.region_id].name
+            )
+            for trend in headline.trends
+        ),
+        answer_option_id=faster.region_id,
+    )
+    check = CheckStep(
+        series=(
+            SeriesRef(first.region_id, first.variable_id),
+            SeriesRef(second.region_id, second.variable_id),
+        ),
+        comparison=(
+            f"{regions[first.region_id].name}: {_rate_text(first)}. "
+            f"{regions[second.region_id].name}: {_rate_text(second)}. "
+            f"{regions[faster.region_id].name} is changing faster."
+        ),
+    )
+    reason = ReasonStep(
+        prompt=f"What could make {subject} change this way?",
+        # Rebuilt so each cause is always labeled context, never a data result.
+        possible_causes=tuple(
+            PossibleCause(text=cause.text) for cause in variable.possible_causes
+        ),
+    )
+    return Narrative(
+        question=_question(headline, variable),
+        investigation=Investigation(steps=(predict, check, reason)),
+        how_do_we_know=HowDoWeKnow(
+            period=discovery.period,
+            sources=_evidence_sources(discovery),
+            statistics_summary=_statistics_summary(discovery, headline),
+            method_citation=first.method_citation,
+        ),
+    )
+
+
+def _catalog_variable(catalog: Catalog, variable_id: str) -> Variable:
+    variable = catalog.variable(variable_id)
+    if variable is None:
+        raise ValueError(f"Variable {variable_id!r} is not in the catalog")
+    return variable
+
+
+def _catalog_region(catalog: Catalog, region_id: str) -> Region:
+    region = catalog.region(region_id)
+    if region is None:
+        raise ValueError(f"Region {region_id!r} is not in the catalog")
+    return region
+
+
+def _number(value: float) -> str:
+    """A computed value written exactly, so the text holds no rounded number."""
+    return str(value)
+
+
+def _rate_text(trend: Trend) -> str:
+    low, high = trend.confidence_interval_95
+    return (
+        f"{_number(trend.rate_per_decade)} {trend.units_per_decade} "
+        f"(95% interval {_number(low)} to {_number(high)})"
+    )
+
+
+def _question(headline: Contrast, variable: Variable) -> str:
+    first, second = headline.trends
+    if headline.kind == "opposite_sign":
+        return (
+            f"{variable.name} is rising in one of these places and falling in "
+            "the other. Which is which?"
+        )
+    if first.direction == second.direction and first.direction != "flat":
+        return (
+            f"{variable.name} is {first.direction} in both of these places. Why "
+            "would it change so much faster in one of them?"
+        )
+    return (
+        f"{variable.name} is changing at very different rates in these two "
+        "places. Why would one change so much faster?"
+    )
+
+
+def _evidence_sources(discovery: Discovery) -> tuple[EvidenceSource, ...]:
+    sources: dict[tuple[str, str], EvidenceSource] = {}
+    for contrast in discovery.contrasts:
+        for trend in contrast.trends:
+            key = (trend.region_id, trend.variable_id)
+            sources.setdefault(
+                key,
+                EvidenceSource(
+                    region_id=trend.region_id,
+                    variable_id=trend.variable_id,
+                    source=trend.source,
+                ),
+            )
+    return tuple(sources.values())
+
+
+def _statistics_summary(discovery: Discovery, headline: Contrast) -> str:
+    comparisons = headline.trends[0].multiple_comparisons
+    period = discovery.period
+    return (
+        f"Both series cover {period.start} to {period.end}. The seasonal cycle "
+        "was removed, then a least-squares fit gave each rate per decade and its "
+        "95% interval. Fits on annual anomalies, a robust fit, a rerun without the "
+        "most extreme month and a Theil-Sen fit with a Mann-Kendall test checked "
+        "that result. The fits were corrected for month-to-month autocorrelation "
+        f"and, because {_number(comparisons.family_size)} series were tested, for "
+        f"false discoveries at a rate of {_number(comparisons.q)}. Together these "
+        f"give the Evidence label: {discovery.evidence_label}."
+    )
