@@ -16,6 +16,7 @@ from .discovery import (
     select_surprise,
 )
 from .mirror import find_mirrors
+from .quality import usable_series
 from .store import JsonResultStore, ResultStore
 from .trend import FALSE_DISCOVERY_RATE, estimate_trend, rate_evidence
 from .units import precipitation_rate_to_monthly_total
@@ -42,4 +43,5 @@ __all__ = [
     "precipitation_rate_to_monthly_total",
     "rate_evidence",
     "select_surprise",
+    "usable_series",
 ]
