@@ -13,9 +13,9 @@ from .discovery import (
     SessionHistory,
     build_narrative,
     find_candidate_discoveries,
-    find_mirrors,
     select_surprise,
 )
+from .mirror import find_mirrors
 from .store import JsonResultStore, ResultStore
 from .trend import FALSE_DISCOVERY_RATE, estimate_trend, rate_evidence
 from .version import ENGINE_VERSION
