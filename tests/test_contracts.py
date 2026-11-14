@@ -220,6 +220,14 @@ def test_every_series_a_stub_discovery_charts_is_in_the_store(stub_dir):
             )
 
 
+def test_stub_trends_use_the_engines_false_discovery_rate(stub_dir):
+    import engine
+
+    for path in discovery_paths(stub_dir):
+        for contrast in load(path)["contrasts"]:
+            for trend in contrast["trends"]:
+                assert trend["multiple_comparisons"]["q"] == engine.FALSE_DISCOVERY_RATE
+                
 def test_a_stored_discovery_round_trips_through_the_contract_objects(stub_dir):
     """from_dict and as_dict must be exact inverses over JSON, or the API would
     quietly reshape a payload on its way back out."""

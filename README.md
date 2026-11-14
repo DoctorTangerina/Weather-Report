@@ -53,8 +53,10 @@ fixtures still do.
 - **`discovery.schema.json`** — a Region pair with its contrasts, Mirrors, score and
   narrative. `contrasts[].trends` is ordered to match `region_ids`. The investigation
   steps are positional, so Predict, Check and Reason cannot come out of order.
-- **`catalog.schema.json`** — the fixed Region and Variable catalogs, with the
-  plain-language definitions and the labeled possible causes.
+- **`catalog.schema.json`** — the fixed Region and Variable catalogs.
+- **`variable.schema.json`** — one Variable with its plain-language definition,
+  units, NASA source and labeled possible causes. Kept separate so the definition
+  can be reused outside the catalog; the catalog references it.
 - **`responses.schema.json`** — every HTTP body: a resource under `data` plus a
   `notice` that stays null until the service serves something other than a fresh
   result.
@@ -84,6 +86,11 @@ built from, so no statistics are implied. It covers all three Evidence labels, a
 opposite-sign contrast, a multi-Variable contrast, a Mirror and a series with missing
 months. Ticket #12 replaces it with the seed set computed from real data.
 
+`data/stub/catalog.json` is the exception: it is maintained by hand and the
+generator reads it. It holds 24 placeholder Regions and the four Variables, but
+series and discoveries exist only for four Regions and two Variables. The real
+catalog content is written by the team in its own ticket.
+
 The fixtures are built through `engine.contracts`, so the committed JSON cannot drift
 from the Python contract objects.
 
@@ -95,7 +102,6 @@ their ticket number. The seams are in place:
 | Seam | Ticket |
 | --- | --- |
 | `engine.trend.estimate_trend` | #4 trend estimation |
-| `engine.trend.rate_evidence` | #5 evidence labels, corrected across the whole family |
 | `engine.discovery.find_candidate_discoveries` | #7 contrasts |
 | `engine.discovery.find_mirrors` | #8 Mirrors |
 | `engine.discovery.build_narrative` | #10 explanations and investigation content (built; ticket #7 calls it with each Discovery's Contrasts, period and Evidence label) |
