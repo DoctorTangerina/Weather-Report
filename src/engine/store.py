@@ -21,7 +21,9 @@ SeriesKey = tuple[str, str, str, str, str]
 
 
 class ResultStore(Protocol):
-    def series(self, region_id: str, variable_id: str, period: Period) -> dict[str, Any] | None: ...
+    def series(
+        self, region_id: str, variable_id: str, period: Period
+    ) -> dict[str, Any] | None: ...
 
     def discoveries(self) -> list[dict[str, Any]]: ...
 
@@ -36,7 +38,9 @@ class JsonResultStore:
         self._discoveries: list[dict[str, Any]] = []
         self._load()
 
-    def series(self, region_id: str, variable_id: str, period: Period) -> dict[str, Any] | None:
+    def series(
+        self, region_id: str, variable_id: str, period: Period
+    ) -> dict[str, Any] | None:
         key = (region_id, variable_id, period.start, period.end, self._engine_version)
         return self._series.get(key)
 
@@ -44,7 +48,9 @@ class JsonResultStore:
         return list(self._discoveries)
 
     def discovery(self, discovery_id: str) -> dict[str, Any] | None:
-        return next((d for d in self._discoveries if d["discovery_id"] == discovery_id), None)
+        return next(
+            (d for d in self._discoveries if d["discovery_id"] == discovery_id), None
+        )
 
     def _load(self) -> None:
         for path in sorted(self._root.glob("series/*.json")):

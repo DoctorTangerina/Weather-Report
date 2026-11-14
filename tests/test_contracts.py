@@ -112,7 +112,10 @@ def test_store_serves_the_stub_set_keyed_by_region_variable_and_period(stub_dir)
     period = Period(start="2000-01", end="2024-12")
 
     assert store.series("amazon-basin", "temperature", period) is not None
-    assert store.series("amazon-basin", "temperature", Period("2010-01", "2024-12")) is None
+    assert (
+        store.series("amazon-basin", "temperature", Period("2010-01", "2024-12"))
+        is None
+    )
     assert store.series("not-a-region", "temperature", period) is None
     assert [d["discovery_id"] for d in store.discoveries()][0] == "amazon-basin--sahel"
     assert store.discovery("amazon-basin--sahel") is not None
@@ -159,7 +162,9 @@ def test_schema_rejects_investigation_steps_out_of_order(stub_dir, validator_for
         validator_for("discovery.schema.json").validate(payload)
 
 
-def test_schema_rejects_a_possible_cause_not_labeled_as_context(stub_dir, validator_for):
+def test_schema_rejects_a_possible_cause_not_labeled_as_context(
+    stub_dir, validator_for
+):
     def relabel(discovery: dict) -> None:
         reason = discovery["narrative"]["investigation"]["steps"][2]
         reason["possible_causes"][0]["kind"] = "result"
@@ -171,7 +176,9 @@ def test_schema_rejects_a_possible_cause_not_labeled_as_context(stub_dir, valida
 
 def test_schema_rejects_an_invalid_evidence_label(stub_dir, validator_for):
     payload = mutated(
-        stub_dir, "amazon-basin--sahel.json", lambda d: d.update(evidence_label="p < 0.05")
+        stub_dir,
+        "amazon-basin--sahel.json",
+        lambda d: d.update(evidence_label="p < 0.05"),
     )
     with pytest.raises(ValidationError):
         validator_for("discovery.schema.json").validate(payload)
@@ -196,7 +203,9 @@ def test_stub_discoveries_only_reference_catalog_entries(stub_dir):
             for ref in discovery["narrative"]["investigation"]["steps"][1]["series"]
         ]
         for region_id, variable_id in refs:
-            assert applies_to(catalog, region_id, variable_id), f"{path.name}: {region_id}/{variable_id}"
+            assert applies_to(catalog, region_id, variable_id), (
+                f"{path.name}: {region_id}/{variable_id}"
+            )
 
 
 def test_every_series_a_stub_discovery_charts_is_in_the_store(stub_dir):
@@ -206,4 +215,6 @@ def test_every_series_a_stub_discovery_charts_is_in_the_store(stub_dir):
         period = Period(**discovery["period"])
         check = discovery["narrative"]["investigation"]["steps"][1]
         for ref in check["series"]:
-            assert store.series(ref["region_id"], ref["variable_id"], period) is not None
+            assert (
+                store.series(ref["region_id"], ref["variable_id"], period) is not None
+            )
