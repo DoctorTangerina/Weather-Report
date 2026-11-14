@@ -17,7 +17,8 @@ students about trends and statistical evidence. See `CONTEXT.md` for the vocabul
 | `frontend/` | React: the three screens |
 | `data/catalog.json` | The Region and Variable catalog, with confirmed NASA sources |
 | `data/stub/` | Synthetic stub set so everything runs before the real pipeline lands |
-| `scripts/` | `generate_stub_data.py` regenerates `data/stub/` |
+| `data/seed/` | The seed set: results computed from real NASA data, committed so the demo needs no network |
+| `scripts/` | `generate_stub_data.py` regenerates `data/stub/`; `build_seed_set.py` regenerates `data/seed/` |
 | `tests/` | Seam 1 (engine interface) and seam 2 (HTTP contract) |
 
 ## Running it
@@ -37,6 +38,21 @@ cd frontend && npm install && npm run dev         # UI on :5173, /api proxied to
 `WEATHER_REPORT_DATA_DIR` points the API at a different result set; it defaults to
 `data/stub/`. The catalog does not move with it: `WEATHER_REPORT_CATALOG` overrides
 `data/catalog.json` if needed.
+
+## The seed set
+
+```sh
+python scripts/build_seed_set.py                  # from the acquired NASA files
+python scripts/build_seed_set.py --series-dir DIR # from Series files already built
+```
+
+The command builds the monthly Series for every catalog Region and Variable the
+acquired data can provide (see `data/data_gathering/README.md` for acquiring it),
+runs the engine over them (Trends rated as one family, Mirrors, Candidate
+Discoveries) and writes `data/seed/series/` and `data/seed/discoveries/`. Commit
+the result. It refuses to overwrite the seed set when no Candidate carries one of
+the three Evidence labels (`--allow-missing-labels` overrides). Rerun it whenever
+the engine or the data changes.
 
 ## The contracts
 
