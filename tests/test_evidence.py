@@ -256,3 +256,12 @@ def test_rated_trends_of_every_label_follow_the_trend_schema(validator_for):
         payload = as_dict(trend)
         payload["confidence_interval_95"] = list(payload["confidence_interval_95"])
         validator_for("trend.schema.json").validate(payload)
+
+
+def test_the_false_discovery_rate_is_one_value_for_the_whole_engine():
+    assert engine.FALSE_DISCOVERY_RATE == 0.05
+
+    family = [estimate_trend(synthetic_series(0.5, seed=0))]
+    (by_default,) = rate_evidence(family)
+
+    assert by_default.multiple_comparisons.q == engine.FALSE_DISCOVERY_RATE

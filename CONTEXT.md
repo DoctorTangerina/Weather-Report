@@ -25,12 +25,24 @@ The direction and rate of change of one Variable over one Region across a period
 _Avoid_: Slope, change, tendency
 
 **Evidence label**:
-The plain-language rating of how strongly the data support a Trend or Discovery: Strong evidence, Some evidence, or Not enough evidence yet. Shown to students.
+The plain-language rating of how strongly the data support a Trend or Discovery: Strong evidence, Some evidence, or Not enough evidence yet. Shown to students. A Discovery carries the weakest label among the Trends it lists.
 _Avoid_: Confidence level, grade, p-value badge
 
 **Mirror**:
 Two Region–Variable series, possibly of different Variables in different Regions, that move together or in opposite directions month to month beyond what chance explains.
 _Avoid_: Correlation pair, teleconnection
+
+**Contrast**:
+One Variable on which the two Regions of a Discovery differ: their Trends run in opposite directions (an _opposite-sign_ Contrast), or run the same way at rates the data can tell apart (a _magnitude-gap_ Contrast). A Discovery with Contrasts on more than one Variable is multi-Variable.
+_Avoid_: Difference, divergence
+
+**Lead Contrast**:
+The Contrast of a Discovery that scores highest. It alone drives the question and the investigation steps; the Discovery's other Contrasts are supporting evidence.
+_Avoid_: Main contrast, headline Variable
+
+**Surprising pair**:
+Two Regions that lie close together yet have a Contrast, so that neighbours which should behave alike do not.
+_Avoid_: Odd couple, anomaly
 
 **Discovery**:
 A pair of Regions whose Trends or Mirrors, on one or more Variables, contrast in a way the engine scores as notable.

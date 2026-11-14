@@ -45,9 +45,10 @@ METHOD_CITATION = (
 
 MONTHS_PER_DECADE = 120.0
 SIGNIFICANCE = 0.05
-# The family-wide correction belongs to `rate_evidence`; until it runs, a lone
-# Trend carries this placeholder and is never called significant.
-PLACEHOLDER_Q = 0.05
+# The false-discovery rate for the whole engine (ADR 0003). It matches the 95%
+# intervals students see. The family-wide correction belongs to `rate_evidence`;
+# until it runs, a lone Trend carries this rate and is never called significant.
+FALSE_DISCOVERY_RATE = 0.05
 MIN_MONTHS = 36
 
 
@@ -185,7 +186,7 @@ def estimate_trend(series: Series) -> Trend:
         evidence_label=NOT_ENOUGH_EVIDENCE,
         methods=methods,
         multiple_comparisons=MultipleComparisons(
-            q=PLACEHOLDER_Q,
+            q=FALSE_DISCOVERY_RATE,
             family_size=1,
             adjusted_p_value=float(fit.pvalue),
             significant=False,
@@ -235,7 +236,9 @@ def _label(trend: Trend, p_value: float, survives_correction: bool) -> EvidenceL
     return STRONG_EVIDENCE
 
 
-def rate_evidence(trends: Sequence[Trend], q: float) -> list[Trend]:
+def rate_evidence(
+    trends: Sequence[Trend], q: float = FALSE_DISCOVERY_RATE
+) -> list[Trend]:
     """Settle the Evidence label of every Trend in the family (ADR 0002).
 
     `trends` is the whole family of tests the engine runs, because the

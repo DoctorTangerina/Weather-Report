@@ -60,11 +60,11 @@ from engine.contracts import (  # noqa: E402
     direction_of,
 )
 from engine.catalog import load_catalog  # noqa: E402
+from engine.trend import FALSE_DISCOVERY_RATE  # noqa: E402
 from engine.version import ENGINE_VERSION  # noqa: E402
 
 PERIOD = Period(start="2000-01", end="2024-12")
 MONTHS = 300
-FALSE_DISCOVERY_RATE = 0.1
 FAMILY_SIZE = 96
 
 METHOD_CITATION = (
@@ -78,6 +78,7 @@ STUB_SOURCE = Source(
     variable="synthetic",
     url=None,
 )
+
 
 @dataclass(frozen=True)
 class Profile:
