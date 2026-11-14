@@ -10,6 +10,7 @@ from __future__ import annotations
 import random
 from collections.abc import Sequence
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
 
 from .contracts import (
     NOT_ENOUGH_EVIDENCE,
@@ -17,11 +18,13 @@ from .contracts import (
     CheckStep,
     Contrast,
     Discovery,
+    EvidenceLabel,
     EvidenceSource,
     HowDoWeKnow,
     Investigation,
     Mirror,
     Narrative,
+    Period,
     PossibleCause,
     PredictOption,
     PredictStep,
@@ -132,23 +135,29 @@ def _weighted_draw(ranked: Sequence[Discovery], rng: random.Random) -> Discovery
     return rng.choices(population, weights=weights, k=1)[0]
 
 
-def build_narrative(discovery: Discovery, catalog: Catalog) -> Narrative:
+def build_narrative(
+    contrasts: Sequence[Contrast],
+    period: Period,
+    evidence_label: EvidenceLabel,
+    catalog: Catalog,
+) -> Narrative:
     """The question, the Become a Detective steps and "How do we know?".
 
-    Templates over the Discovery's own computed values, with no LLM (ADR 0001):
-    every number in the text is a value carried by one of its Trends or its
-    period, written out exactly as computed so nothing is rounded into a value
-    the engine never produced.
+    Takes the parts of a Discovery the text is built from, so a Discovery can
+    be assembled with its narrative in one step (ticket #7 calls this).
 
-    The first contrast is the headline: it drives the question and the three
-    steps. "How do we know?" names the source of every Trend the Discovery
-    carries, since the evidence view reads their rates from `contrasts`.
+    Templates over those computed values, with no LLM (ADR 0001): every number
+    in the text is a value carried by a Trend or the period, rounded by
+    `_number`.
+
+    The first Contrast is the lead Contrast: it drives the question and the
+    three steps, so the caller orders `contrasts` from most to least notable.
+    "How do we know?" names the source of every Trend, since the evidence view
+    reads their rates from `contrasts`.
     """
-    if not discovery.contrasts:
-        raise ValueError(
-            f"{discovery.discovery_id}: a Discovery needs at least one contrast"
-        )
-    headline = discovery.contrasts[0]
+    if not contrasts:
+        raise ValueError("a Discovery needs at least one Contrast")
+    headline = contrasts[0]
     variable = _catalog_variable(catalog, headline.variable_id)
     first, second = headline.trends
     regions = {
@@ -178,7 +187,8 @@ def build_narrative(discovery: Discovery, catalog: Catalog) -> Narrative:
         comparison=(
             f"{regions[first.region_id].name}: {_rate_text(first)}. "
             f"{regions[second.region_id].name}: {_rate_text(second)}. "
-            f"{regions[faster.region_id].name} is changing faster."
+            f"{regions[faster.region_id].name} is changing faster. "
+            f"{_evidence_text(first, regions)} {_evidence_text(second, regions)}"
         ),
     )
     reason = ReasonStep(
@@ -192,9 +202,9 @@ def build_narrative(discovery: Discovery, catalog: Catalog) -> Narrative:
         question=_question(headline, variable),
         investigation=Investigation(steps=(predict, check, reason)),
         how_do_we_know=HowDoWeKnow(
-            period=discovery.period,
-            sources=_evidence_sources(discovery),
-            statistics_summary=_statistics_summary(discovery, headline),
+            period=period,
+            sources=_evidence_sources(contrasts),
+            statistics_summary=_statistics_summary(period, evidence_label, headline),
             method_citation=first.method_citation,
         ),
     )
@@ -215,8 +225,25 @@ def _catalog_region(catalog: Catalog, region_id: str) -> Region:
 
 
 def _number(value: float) -> str:
-    """A computed value written exactly, so the text holds no rounded number."""
-    return str(value)
+    """A computed value as shown to a student.
+
+    Rounded half up to at most three decimals, in decimal arithmetic rather
+    than binary floating point, with no trailing zeros: 7.0625 is 7.063 and
+    5.500 is 5.5. A value that rounds to zero is 0, never -0. The frontend
+    applies the same rule to the rates it lists (see the Discovery schema).
+    """
+    rounded = Decimal(repr(value)).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+    text = format(rounded, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return "0" if text == "-0" else text
+
+
+def _evidence_text(trend: Trend, regions: dict[str, Region]) -> str:
+    """Names a Trend's Evidence label and says nothing more about it."""
+    return (
+        f"Evidence label for {regions[trend.region_id].name}: {trend.evidence_label}."
+    )
 
 
 def _rate_text(trend: Trend) -> str:
@@ -252,9 +279,9 @@ def _question(headline: Contrast, variable: Variable) -> str:
     )
 
 
-def _evidence_sources(discovery: Discovery) -> tuple[EvidenceSource, ...]:
+def _evidence_sources(contrasts: Sequence[Contrast]) -> tuple[EvidenceSource, ...]:
     sources: dict[tuple[str, str], EvidenceSource] = {}
-    for contrast in discovery.contrasts:
+    for contrast in contrasts:
         for trend in contrast.trends:
             key = (trend.region_id, trend.variable_id)
             sources.setdefault(
@@ -268,9 +295,10 @@ def _evidence_sources(discovery: Discovery) -> tuple[EvidenceSource, ...]:
     return tuple(sources.values())
 
 
-def _statistics_summary(discovery: Discovery, headline: Contrast) -> str:
+def _statistics_summary(
+    period: Period, evidence_label: EvidenceLabel, headline: Contrast
+) -> str:
     comparisons = headline.trends[0].multiple_comparisons
-    period = discovery.period
     return (
         f"Each series covers {period.start} to {period.end}. The seasonal cycle "
         "was removed, then a least-squares fit gave each rate per decade and its "
@@ -279,5 +307,5 @@ def _statistics_summary(discovery: Discovery, headline: Contrast) -> str:
         "that result. The fits were corrected for month-to-month autocorrelation "
         f"and, because {_number(comparisons.family_size)} series were tested, for "
         f"false discoveries at a rate of {_number(comparisons.q)}. Together these "
-        f"give the Evidence label: {discovery.evidence_label}."
+        f"give the Evidence label: {evidence_label}."
     )

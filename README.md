@@ -98,7 +98,7 @@ their ticket number. The seams are in place:
 | `engine.trend.rate_evidence` | #5 evidence labels, corrected across the whole family |
 | `engine.discovery.find_candidate_discoveries` | #7 contrasts |
 | `engine.discovery.find_mirrors` | #8 Mirrors |
-| `engine.discovery.build_narrative` | #10 explanations and investigation content |
+| `engine.discovery.build_narrative` | #10 explanations and investigation content (built; ticket #7 calls it with each Discovery's Contrasts, period and Evidence label) |
 
 ## Surprise Me! selection
 

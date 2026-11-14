@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import replace
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import pytest
@@ -30,6 +31,13 @@ from engine.contracts import (
     Trend,
     as_dict,
 )
+
+
+def narrate(discovery: Discovery, catalog: Catalog) -> Narrative:
+    """Build the narrative from the parts it reads, as ticket #7 will call it."""
+    return build_narrative(
+        discovery.contrasts, discovery.period, discovery.evidence_label, catalog
+    )
 
 
 def load_discovery(stub_dir: Path, name: str) -> Discovery:
@@ -117,7 +125,7 @@ def synthetic(stub_discoveries: list[Discovery]) -> Discovery:
 def test_bs006_the_investigation_opens_by_asking_which_region_changes_faster(
     synthetic, catalog
 ):
-    predict = build_narrative(synthetic, catalog).investigation.steps[0]
+    predict = narrate(synthetic, catalog).investigation.steps[0]
 
     assert predict.kind == "predict"
     assert "changing faster" in predict.question
@@ -134,7 +142,7 @@ def test_bs006_steps_come_in_the_order_predict_check_reason(
     stub_discoveries, synthetic, catalog
 ):
     for discovery in [*stub_discoveries, synthetic]:
-        steps = build_narrative(discovery, catalog).investigation.steps
+        steps = narrate(discovery, catalog).investigation.steps
         assert [step.kind for step in steps] == ["predict", "check", "reason"]
 
 
@@ -142,16 +150,16 @@ def test_bs006_steps_come_in_the_order_predict_check_reason(
 def test_bs006_the_check_charts_both_regions_against_the_computed_trends(
     synthetic, catalog
 ):
-    check = build_narrative(synthetic, catalog).investigation.steps[1]
+    check = narrate(synthetic, catalog).investigation.steps[1]
 
     assert check.kind == "check"
     assert [(ref.region_id, ref.variable_id) for ref in check.series] == [
         ("sahel", "precipitation"),
         ("central-india", "precipitation"),
     ]
-    assert "Sahel: -1.234567 mm/month per decade" in check.comparison
-    assert "(95% interval -2.71828 to 0.3141)" in check.comparison
-    assert "Central India: 7.0625 mm/month per decade" in check.comparison
+    assert "Sahel: -1.235 mm/month per decade" in check.comparison
+    assert "(95% interval -2.718 to 0.314)" in check.comparison
+    assert "Central India: 7.063 mm/month per decade" in check.comparison
     assert "(95% interval 5.5 to 8.625)" in check.comparison
     assert "Central India is changing faster" in check.comparison
 
@@ -160,7 +168,7 @@ def test_bs006_the_check_charts_both_regions_against_the_computed_trends(
 def test_bs006_every_possible_cause_is_labeled_context_from_the_catalog(
     synthetic, catalog
 ):
-    reason = build_narrative(synthetic, catalog).investigation.steps[2]
+    reason = narrate(synthetic, catalog).investigation.steps[2]
 
     assert reason.kind == "reason"
     assert reason.prompt
@@ -175,15 +183,26 @@ DATE = re.compile(r"\b\d{4}-\d{2}\b")
 NUMBER = re.compile(r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?")
 
 
-def computed_values(discovery: Discovery) -> set[float]:
-    """Every number the Discovery's Trends and Mirrors carry."""
-    found: set[float] = set()
+def as_written(value: float) -> str:
+    """How the engine writes a computed value: rounded half up to at most three
+    decimals, with no trailing zeros (the rule in the Discovery schema)."""
+    rounded = Decimal(repr(value)).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+    text = format(rounded, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return "0" if text == "-0" else text
+
+
+def computed_values(discovery: Discovery) -> set[str]:
+    """Every number the Discovery's Trends and Mirrors carry, as the engine
+    writes it."""
+    found: set[str] = set()
 
     def walk(node: object) -> None:
         if isinstance(node, bool):
             return
         if isinstance(node, int | float):
-            found.add(float(node))
+            found.add(as_written(node))
         elif isinstance(node, dict):
             for value in node.values():
                 walk(value)
@@ -210,7 +229,7 @@ def explanation_texts(narrative: Narrative) -> list[str]:
 
 def ungrounded_numbers(text: str, discovery: Discovery) -> list[str]:
     """Numbers in `text` that are not computed values, under the engine's own
-    formatting: values written exactly as computed, months as YYYY-MM.
+    formatting: values rounded by the schema's rule, months as YYYY-MM.
 
     "95%" names the interval the BS-008 evidence view asks for ("its 95%
     interval"); it is the interval's level, not a computed value.
@@ -222,7 +241,7 @@ def ungrounded_numbers(text: str, discovery: Discovery) -> list[str]:
     stray = [month for month in DATE.findall(text) if month not in periods]
     text = DATE.sub(" ", text).replace("95% interval", " ")
     values = computed_values(discovery)
-    return stray + [n for n in NUMBER.findall(text) if float(n) not in values]
+    return stray + [n for n in NUMBER.findall(text) if n not in values]
 
 
 # BS-007: Build an explanation from the computed numbers.
@@ -230,7 +249,7 @@ def test_bs007_every_number_in_the_explanation_is_a_computed_value(
     stub_discoveries, synthetic, catalog
 ):
     for discovery in [*stub_discoveries, synthetic]:
-        narrative = build_narrative(discovery, catalog)
+        narrative = narrate(discovery, catalog)
         for text in explanation_texts(narrative):
             assert ungrounded_numbers(text, discovery) == [], (
                 discovery.discovery_id,
@@ -241,7 +260,7 @@ def test_bs007_every_number_in_the_explanation_is_a_computed_value(
 # BS-007: the synthetic Discovery's own numbers reach the text, so the check
 # above cannot pass on an explanation that states no numbers at all.
 def test_bs007_the_explanation_states_the_discoverys_own_numbers(synthetic, catalog):
-    summary = build_narrative(synthetic, catalog).how_do_we_know.statistics_summary
+    summary = narrate(synthetic, catalog).how_do_we_know.statistics_summary
 
     assert "2003-01 to 2021-12" in summary
     assert "37 series" in summary
@@ -258,7 +277,7 @@ def test_bs007_the_explanation_is_complete_with_no_llm_configured(
     validator = validator_for("discovery.schema.json", "#/$defs/narrative")
 
     for discovery in [*stub_discoveries, synthetic]:
-        narrative = build_narrative(discovery, catalog)
+        narrative = narrate(discovery, catalog)
         validator.validate(json.loads(json.dumps(as_dict(narrative))))
         assert all(text.strip() for text in explanation_texts(narrative))
 
@@ -272,7 +291,7 @@ def test_bs007_the_explanation_is_complete_with_no_llm_configured(
 def test_bs008_the_discovery_payload_carries_how_do_we_know(
     synthetic, catalog, validator_for
 ):
-    discovery = replace(synthetic, narrative=build_narrative(synthetic, catalog))
+    discovery = replace(synthetic, narrative=narrate(synthetic, catalog))
     payload = json.loads(json.dumps(as_dict(discovery)))
     validator_for("discovery.schema.json").validate(payload)
 
@@ -300,7 +319,7 @@ def test_bs008_how_do_we_know_names_a_source_for_every_trend_shown(
     stub_discoveries, catalog
 ):
     for discovery in stub_discoveries:
-        evidence = build_narrative(discovery, catalog).how_do_we_know
+        evidence = narrate(discovery, catalog).how_do_we_know
         shown = {(s.region_id, s.variable_id) for s in evidence.sources}
         carried = {
             (trend.region_id, trend.variable_id)
@@ -325,7 +344,7 @@ def test_bs007_the_question_states_directions_the_trends_support(
 ):
     opposite = discovery_named(stub_discoveries, "amazon-basin--sahel")
 
-    question = build_narrative(opposite, catalog).question
+    question = narrate(opposite, catalog).question
 
     assert question.startswith("Precipitation")
     assert "rising" in question
@@ -343,7 +362,7 @@ def test_bs007_the_question_claims_no_direction_without_enough_evidence(
     labels = {trend.evidence_label for trend in weak.contrasts[0].trends}
     assert "Not enough evidence yet" in labels
 
-    question = build_narrative(weak, catalog).question
+    question = narrate(weak, catalog).question
 
     assert question.startswith("Air temperature")
     assert "rising" not in question
@@ -355,8 +374,75 @@ def test_bs007_the_question_claims_no_direction_without_enough_evidence(
 # summary must not describe them as a pair.
 def test_bs008_the_summary_does_not_call_many_series_both(stub_discoveries, catalog):
     multi = discovery_named(stub_discoveries, "amazon-basin--sahel")
-    evidence = build_narrative(multi, catalog).how_do_we_know
+    evidence = narrate(multi, catalog).how_do_we_know
     assert len(evidence.sources) > 2
 
     assert "Both series" not in evidence.statistics_summary
     assert "2000-01 to 2024-12" in evidence.statistics_summary
+
+
+# --- Numbers follow the rounding rule -------------------------------------------
+
+
+# BS-007 (ticket #10 decision): values are rounded half up to at most three
+# decimals, in decimal arithmetic, with no trailing zeros.
+def test_bs007_numbers_are_rounded_half_up_to_three_decimals(synthetic, catalog):
+    check = narrate(synthetic, catalog).investigation.steps[1].comparison
+
+    # 7.0625 is exact in binary, so half-even rounding would give 7.062.
+    assert "7.063" in check
+    assert "7.0625" not in check
+    # Trailing zeros are dropped: 5.5, not 5.500.
+    assert "(95% interval 5.5 to 8.625)" in check
+    assert "5.500" not in check
+
+
+# BS-007: a value that rounds to zero is written as 0, never as -0.
+def test_bs007_a_value_that_rounds_to_zero_has_no_sign(synthetic, catalog):
+    sahel, india = synthetic.contrasts[0].trends
+    tiny = replace(sahel, rate_per_decade=-0.0004, confidence_interval_95=(-0.5, 0.5))
+    contrast = replace(synthetic.contrasts[0], trends=(tiny, india))
+
+    check = (
+        build_narrative(
+            (contrast,), synthetic.period, synthetic.evidence_label, catalog
+        )
+        .investigation.steps[1]
+        .comparison
+    )
+
+    assert "Sahel: 0 mm/month per decade" in check
+    assert "-0" not in check.replace("-0.5", "")
+
+
+# --- Evidence labels in the Check step ------------------------------------------
+
+
+# BS-006: Compare the guess with the data. Ticket #10 decision: the Check
+# names each Region's Evidence label and says nothing more about it, so a
+# Trend without evidence is never presented as an established difference.
+def test_bs006_the_check_names_each_regions_evidence_label(synthetic, catalog):
+    sahel, india = synthetic.contrasts[0].trends
+    weak = replace(sahel, evidence_label="Not enough evidence yet")
+    contrast = replace(synthetic.contrasts[0], trends=(weak, india))
+
+    check = build_narrative(
+        (contrast,), synthetic.period, "Some evidence", catalog
+    ).investigation.steps[1]
+
+    assert "Evidence label for Sahel: Not enough evidence yet." in check.comparison
+    assert "Evidence label for Central India: Strong evidence." in check.comparison
+
+
+# BS-006: the answer still follows the computed rates (larger absolute rate),
+# even when that Region's Trend lacks evidence; only the Check qualifies it.
+def test_bs006_the_answer_follows_the_rates_even_without_evidence(synthetic, catalog):
+    sahel, india = synthetic.contrasts[0].trends
+    weak = replace(india, evidence_label="Not enough evidence yet")
+    contrast = replace(synthetic.contrasts[0], trends=(sahel, weak))
+
+    predict = build_narrative(
+        (contrast,), synthetic.period, "Some evidence", catalog
+    ).investigation.steps[0]
+
+    assert predict.answer_option_id == "central-india"
