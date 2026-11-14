@@ -43,7 +43,9 @@ def ok(data: Any, notice: dict[str, str] | None = None) -> dict[str, Any]:
 
 
 def error(status: int, code: str, message: str) -> JSONResponse:
-    return JSONResponse(status_code=status, content={"error": {"code": code, "message": message}})
+    return JSONResponse(
+        status_code=status, content={"error": {"code": code, "message": message}}
+    )
 
 
 @app.get("/api/health")
@@ -59,10 +61,14 @@ def get_catalog() -> dict[str, Any]:
 def reject_outside_catalog(region_id: str, variable_id: str) -> JSONResponse | None:
     """BS-009: the catalogs are the only thing a client may ask for."""
     if catalog.region(region_id) is None:
-        return error(422, "region_not_in_catalog", f"{region_id} is not in the Region catalog.")
+        return error(
+            422, "region_not_in_catalog", f"{region_id} is not in the Region catalog."
+        )
     if catalog.variable(variable_id) is None:
         return error(
-            422, "variable_not_in_catalog", f"{variable_id} is not in the Variable catalog."
+            422,
+            "variable_not_in_catalog",
+            f"{variable_id} is not in the Variable catalog.",
         )
     if not applies_to(catalog, region_id, variable_id):
         return error(
@@ -104,7 +110,9 @@ def list_discoveries() -> dict[str, Any]:
 def get_discovery(discovery_id: str) -> Any:
     payload = store.discovery(discovery_id)
     if payload is None:
-        return error(404, "result_not_available", f"No Discovery with id {discovery_id}.")
+        return error(
+            404, "result_not_available", f"No Discovery with id {discovery_id}."
+        )
     return ok(payload)
 
 
