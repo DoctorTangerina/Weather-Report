@@ -180,6 +180,11 @@ button.secondary {
   color: var(--accent);
 }
 
+button.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
 button.link {
   border: 0;
   background: none;
@@ -302,6 +307,9 @@ button.link {
   border-top: 1px solid #dfe3dd;
   padding-top: 1rem;
 }
+
+.evidence summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.evidence summary:focus-visible { outline: 3px solid #47b5d7; outline-offset: 4px; }
 
 .region-map { margin: 1.25rem 0; }
 .discovery-globe { display: grid; height: clamp(18rem, 55vw, 28rem); background: #070e1d; border-radius: 0.6rem; overflow: hidden; color: #f1f6fc; }

@@ -1,6 +1,5 @@
 ﻿import { useEffect, useRef, useState } from 'react'
 import { getCatalog, surpriseMe } from './api.js'
-import InvestigationScreen from './screens/InvestigationScreen.jsx'
 import MainScreen from './screens/MainScreen.jsx'
 
 export default function App() {
@@ -40,6 +39,7 @@ export default function App() {
     surpriseMe(session)
       .then(({ data: next, notice: nextNotice }) => {
         setDiscovery(next)
+        setView('home')
         remember(next)
         setNotice(nextNotice ?? null)
       })
@@ -51,27 +51,19 @@ export default function App() {
   }
 
   return (
-    <main className={view === 'home' ? 'app-home' : 'detail-screen'}>
-      {view === 'home' && (
+    <main className="app-home">
         <MainScreen
           discovery={discovery}
           catalog={catalog}
           onInvestigate={discovery ? () => setView('investigation') : undefined}
+          investigating={view === 'investigation'}
+          onBack={() => setView('home')}
           onSurprise={onSurprise}
           loading={loading}
           busy={busy}
           error={error}
           discoveryNotice={notice}
         />
-      )}
-      {view === 'investigation' && discovery && (
-        <InvestigationScreen
-          key={discovery.discovery_id}
-          discovery={discovery}
-          catalog={catalog}
-          onBack={() => setView('home')}
-        />
-      )}
     </main>
   )
 }

@@ -1,50 +1,15 @@
 import { useState } from 'react'
 import Chart from '../components/Chart.jsx'
-import useSeries from '../useSeries.js'
+import Evidence from '../components/Evidence.jsx'
 
 function regionName(catalog, regionId) {
   return catalog.regions.find((region) => region.region_id === regionId)?.name ?? regionId
 }
 
-function HowDoWeKnow({ discovery, catalog }) {
-  const evidence = discovery.narrative.how_do_we_know
-  return (
-    <aside className="evidence">
-      <h3>How do we know?</h3>
-      <p>
-        Period analyzed: {evidence.period.start} to {evidence.period.end}.
-      </p>
-      <ul>
-        {discovery.contrasts.flatMap((contrast) =>
-          contrast.trends.map((trend) => (
-            <li key={`${trend.region_id}-${trend.variable_id}`}>
-              <strong>{regionName(catalog, trend.region_id)}</strong> — {trend.rate_per_decade}{' '}
-              {trend.units_per_decade} (95% interval {trend.confidence_interval_95[0]} to{' '}
-              {trend.confidence_interval_95[1]}). {trend.evidence_label}.
-            </li>
-          )),
-        )}
-      </ul>
-      <ul>
-        {evidence.sources.map((entry) => (
-          <li key={`${entry.region_id}-${entry.variable_id}`}>
-            Source: {entry.source.provider} — {entry.source.dataset} ({entry.source.variable})
-          </li>
-        ))}
-      </ul>
-      <p>{evidence.statistics_summary}</p>
-      <p className="muted">Method: {evidence.method_citation}</p>
-    </aside>
-  )
-}
-
-export default function InvestigationScreen({ discovery, catalog, onBack }) {
-  const [stepIndex, setStepIndex] = useState(0)
+export default function InvestigationScreen({ discovery, catalog, onBack, stepIndex, onStepChange, loading, series, error, timestamp }) {
   const [guess, setGuess] = useState(null)
-  const [showEvidence, setShowEvidence] = useState(false)
 
   const [predict, check, reason] = discovery.narrative.investigation.steps
-  const { loading, series, error } = useSeries(check.series)
 
   return (
     <section>
@@ -52,10 +17,10 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
         ← Back
       </button>
 
-      <h1>Become a Detective</h1>
+      <h2>Become a Detective</h2>
       <ol className="steps">
         {['Predict', 'Check', 'Reason'].map((name, index) => (
-          <li key={name} className={index === stepIndex ? 'current' : undefined}>
+          <li key={name} className={index === stepIndex ? 'current' : undefined} aria-current={index === stepIndex ? 'step' : undefined}>
             {name}
           </li>
         ))}
@@ -68,14 +33,15 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
             {predict.options.map((option) => (
               <button
                 key={option.option_id}
-                className={guess === option.option_id ? undefined : 'secondary'}
+                className={guess === option.option_id ? 'primary' : 'secondary'}
+                aria-pressed={guess === option.option_id}
                 onClick={() => setGuess(option.option_id)}
               >
                 {option.label}
               </button>
             ))}
           </div>
-          <button disabled={!guess} onClick={() => setStepIndex(1)}>
+          <button className="primary" disabled={!guess} onClick={() => onStepChange(1)}>
             Check the data
           </button>
         </div>
@@ -91,23 +57,26 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
           </p>
           <p>{check.comparison}</p>
 
-          {error && <p className="error">{error.message}</p>}
-          {loading && <p className="muted">Loading the series…</p>}
+          {error && <p className="error" role="alert">{error.message}</p>}
+          {loading && <p className="muted" role="status">Loading the series…</p>}
           {series.map((item) => (
             <Chart
               key={`${item.region_id}-${item.variable_id}`}
               series={item}
+              timestamp={timestamp}
               label={regionName(catalog, item.region_id)}
             />
           ))}
+          {!loading && !error && <p className="muted">Each chart has its own vertical scale. Use the rates above to compare how fast the Regions are changing.</p>}
 
-          <button onClick={() => setStepIndex(2)}>Why might this happen?</button>
+          <button onClick={() => onStepChange(2)}>Why might this happen?</button>
         </div>
       )}
 
       {stepIndex === 2 && (
         <div>
           <h2>{reason.prompt}</h2>
+          <p>These possible causes are context from scientists. The data show changes, but do not establish what caused them.</p>
           <ul className="causes">
             {reason.possible_causes.map((cause) => (
               <li key={cause.text}>
@@ -115,12 +84,9 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
               </li>
             ))}
           </ul>
-          <button className="secondary" onClick={() => setShowEvidence((shown) => !shown)}>
-            {showEvidence ? 'Hide' : 'How do we know?'}
-          </button>
-          {showEvidence && <HowDoWeKnow discovery={discovery} catalog={catalog} />}
         </div>
       )}
+      {stepIndex > 0 && <Evidence discovery={discovery} catalog={catalog} />}
     </section>
   )
 }
