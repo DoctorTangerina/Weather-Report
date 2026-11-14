@@ -102,7 +102,6 @@ their ticket number. The seams are in place:
 | Seam | Ticket |
 | --- | --- |
 | `engine.trend.estimate_trend` | #4 trend estimation |
-| `engine.trend.rate_evidence` | #5 evidence labels, corrected across the whole family |
 | `engine.discovery.find_candidate_discoveries` | #7 contrasts |
 | `engine.discovery.find_mirrors` | #8 Mirrors |
 | `engine.discovery.select_surprise` | #9 Surprise Me! selection |
