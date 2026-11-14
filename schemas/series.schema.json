@@ -23,7 +23,7 @@
   "additionalProperties": false,
   "$defs": {
     "quality": {
-      "description": "Result of the quality gate (BS-003).",
+      "description": "Result of the quality gate (BS-003). A series the gate excluded is still returned, flagged here, but its values are all null so nothing can use them.",
       "type": "object",
       "properties": {
         "included": {

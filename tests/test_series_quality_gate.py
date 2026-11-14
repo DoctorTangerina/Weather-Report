@@ -109,3 +109,20 @@ def test_a_series_the_gate_excluded_is_never_part_of_a_mirror():
     second = driven_series("sahel", "precipitation", driver, weight=1.0, seed=3)
     assert len(find_mirrors([first, second])) == 1
     assert find_mirrors([first, excluded(second, TOO_MANY_MISSING)]) == []
+
+
+@pytest.mark.parametrize(
+    "quality",
+    [
+        # exactly 20% of the months missing, exactly 50% of the cells valid land
+        SeriesQuality(included=True, missing_fraction=0.2, valid_land_fraction=None),
+        SeriesQuality(included=True, missing_fraction=0.0, valid_land_fraction=0.5),
+    ],
+)
+def test_a_series_exactly_at_a_threshold_is_not_excluded_from_any_candidate(
+    catalog, quality
+):
+    amazon, sahel = opposite_trends("soil-moisture")
+    at_threshold = dataclasses.replace(sahel, quality=quality)
+    found = candidates_from([amazon, at_threshold], catalog)
+    assert [d.discovery_id for d in found] == ["amazon-basin--sahel"]
