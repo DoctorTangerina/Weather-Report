@@ -14,13 +14,17 @@ A Trend returned by `estimate_trend` alone carries the conservative label
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import replace
 
 import numpy as np
 from scipy import stats
 
 from .contracts import (
     NOT_ENOUGH_EVIDENCE,
+    SOME_EVIDENCE,
+    STRONG_EVIDENCE,
     Autocorrelation,
+    EvidenceLabel,
     Fit,
     LeastSquaresFit,
     MannKendallTest,
@@ -193,6 +197,72 @@ def estimate_trend(series: Series) -> Trend:
     )
 
 
+def _methods_agree(trend: Trend) -> bool:
+    """Whether every cross-check reports the direction of the primary fit."""
+    methods = trend.methods
+    reported = (
+        methods.annual_anomaly.slope_per_decade,
+        methods.robust.slope_per_decade,
+        methods.theil_sen.slope_per_decade,
+        methods.mann_kendall.tau,
+    )
+    return all(direction_of(value) == trend.direction for value in reported)
+
+
+def _primary_p_value(trend: Trend) -> float:
+    """p-value of the primary fit under the autocorrelation correction.
+
+    Recovered from the interval and effective sample size `estimate_trend`
+    reports, so a Trend is never called significant when its own 95% interval
+    includes zero.
+    """
+    low, high = trend.confidence_interval_95
+    dof = trend.autocorrelation.effective_sample_size - 2
+    standard_error = (high - low) / 2 / float(stats.t.ppf(0.975, dof))
+    statistic = abs(trend.rate_per_decade) / standard_error
+    return float(2 * stats.t.sf(statistic, dof))
+
+
+def _label(trend: Trend, p_value: float, survives_correction: bool) -> EvidenceLabel:
+    if not p_value < SIGNIFICANCE:
+        return NOT_ENOUGH_EVIDENCE
+    if (
+        not survives_correction
+        or not _methods_agree(trend)
+        or not trend.methods.outlier_check.survives
+    ):
+        return SOME_EVIDENCE
+    return STRONG_EVIDENCE
+
+
 def rate_evidence(trends: Sequence[Trend], q: float) -> list[Trend]:
-    """Ticket #5. Returns the same Trends with their Evidence labels settled."""
-    raise NotImplementedError("evidence labels: ticket #5")
+    """Settle the Evidence label of every Trend in the family (ADR 0002).
+
+    `trends` is the whole family of tests the engine runs, because the
+    Benjamini-Hochberg correction at false-discovery rate `q` only means
+    something across all of them. A Trend is:
+
+    - "Not enough evidence yet" when its primary fit is not significant at the
+      95% level, after the autocorrelation correction;
+    - "Some evidence" when it is significant but fails the family-wide
+      correction, a cross-check disagrees with its direction, or it does not
+      survive removing its most extreme month;
+    - "Strong evidence" when none of those holds.
+
+    Returns new Trends in the same order, with the correction recorded.
+    """
+    p_values = [_primary_p_value(trend) for trend in trends]
+    adjusted = stats.false_discovery_control(p_values, method="bh")
+    return [
+        replace(
+            trend,
+            evidence_label=_label(trend, p_value, bool(adjusted_p <= q)),
+            multiple_comparisons=MultipleComparisons(
+                q=q,
+                family_size=len(trends),
+                adjusted_p_value=float(adjusted_p),
+                significant=bool(adjusted_p <= q),
+            ),
+        )
+        for trend, p_value, adjusted_p in zip(trends, p_values, adjusted, strict=True)
+    ]
