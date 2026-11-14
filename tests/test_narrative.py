@@ -6,7 +6,8 @@ what was computed, with no LLM) and BS-008 (the "How do we know?" payload).
 Discoveries come from the committed stub set, and from a synthetic Discovery
 whose numbers (period, rates, intervals, family size, q) deliberately differ
 from the stub's, so a number hard-coded in a template cannot pass by luck.
-Ticket #7, which builds Discoveries, is not implemented yet.
+The last test runs the whole path: Candidate Discoveries from ticket #7 carry
+the narrative this module specifies.
 """
 
 from __future__ import annotations
@@ -18,8 +19,9 @@ from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import pytest
+from synthetic import rated_trends
 
-from engine import build_narrative, load_catalog
+from engine import build_narrative, find_candidate_discoveries, load_catalog
 from engine.contracts import (
     Catalog,
     Contrast,
@@ -446,3 +448,20 @@ def test_bs006_the_answer_follows_the_rates_even_without_evidence(synthetic, cat
     ).investigation.steps[0]
 
     assert predict.answer_option_id == "central-india"
+
+
+# Integration of #7 and #10: a Candidate Discovery's narrative is the one this
+# module specifies, built from its own Contrasts, period and Evidence label, so
+# #7 cannot assemble a Discovery with a different narrative than the one #10 owns.
+def test_candidate_discoveries_carry_the_narrative_built_from_their_own_parts(catalog):
+    trends = rated_trends(
+        {("amazon-basin", "temperature"): 0.6, ("sahel", "temperature"): -0.6}
+    )
+
+    (candidate,) = find_candidate_discoveries(trends, catalog)
+
+    assert candidate.narrative == build_narrative(
+        candidate.contrasts, candidate.period, candidate.evidence_label, catalog
+    )
+    check = candidate.narrative.investigation.steps[1]
+    assert "Evidence label for Amazon Basin: Strong evidence." in check.comparison

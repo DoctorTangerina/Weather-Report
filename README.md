@@ -72,6 +72,7 @@ fixtures still do.
 | `GET /api/health` | status and engine version |
 | `GET /api/catalog` | `catalogResponse` |
 | `GET /api/series?region_id=&variable_id=&period_start=&period_end=` | `seriesResponse` |
+| `GET /api/comparison?region_a=&region_b=&variable_id=&period_start=&period_end=` | `comparisonResponse`: two computed Trends and their monthly series, in requested Region order |
 | `GET /api/discoveries` | `discoveryListResponse`, highest score first |
 | `GET /api/discoveries/{discovery_id}` | `discoveryResponse` |
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |
@@ -79,6 +80,15 @@ fixtures still do.
 A Region or Variable outside the catalog is rejected with `422` and an
 `errorResponse`. A request with no stored result gets `404 result_not_available`
 until ticket #13 adds the live fetch.
+
+The welcome screen lets students compare two catalog Regions using a Variable
+offered for both. The comparison endpoint analyzes their stored series with the
+engine's Trend methods and rates the two Trends together as the family for
+multiple-comparison correction. A pair does not need to be a stored Discovery.
+The default period is 2000-01 through 2024-12. Missing series or insufficient
+observations return `404 result_not_available`; the UI clears the old analysis
+and displays the error. The bundled synthetic data covers only four Regions
+and two Variables, so other catalog choices may be unavailable until #12/#13.
 
 ## The stub set
 

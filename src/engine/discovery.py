@@ -10,10 +10,10 @@ from __future__ import annotations
 import dataclasses
 import math
 import random
-from decimal import ROUND_HALF_UP, Decimal
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
 from itertools import combinations
 
 from .contracts import (
@@ -35,6 +35,7 @@ from .contracts import (
     PredictOption,
     PredictStep,
     ReasonStep,
+    Region,
     ScoreComponents,
     SeriesRef,
     Trend,
@@ -69,7 +70,6 @@ MIRROR_SCORE = 5.0
 # top-ranked while still varying between sessions, and because the draw is
 # weighted by score, raising it costs little quality.
 TOP_N = 5
-
 
 
 @dataclass(frozen=True)
@@ -475,75 +475,7 @@ def _evidence_sources(contrasts: Sequence[Contrast]) -> tuple[EvidenceSource, ..
             )
     return tuple(sources.values())
 
-def build_narrative(
-    contrasts: Sequence[Contrast],
-    period: Period,
-    evidence_label: EvidenceLabel,
-    catalog: Catalog,
-) -> Narrative:
-    """The question, the Become a Detective steps and "How do we know?".
 
-    The first Contrast is the lead: it drives the question and the three steps,
-    so callers order `contrasts` from most to least notable by score.
-
-    Ticket #10 owns the wording and its tests. This is the least that gives a
-    Candidate Discovery the narrative its contract requires: templates with no
-    numbers in them, so nothing here can be a number the engine did not compute.
-    """
-    lead = contrasts[0]
-    variable = catalog.variable(lead.variable_id)
-    if variable is None:
-        raise ValueError(f"Variable {lead.variable_id!r} is not in the catalog")
-    first, second = lead.trends
-    names = []
-    for trend in lead.trends:
-        region = catalog.region(trend.region_id)
-        if region is None:
-            raise ValueError(f"Region {trend.region_id!r} is not in the catalog")
-        names.append(region.name)
-    subject = variable.name.lower()
-    faster = (
-        first if abs(first.rate_per_decade) >= abs(second.rate_per_decade) else second
-    )
-    return Narrative(
-        question=f"Why does {subject} change so differently in these two places?",
-        investigation=Investigation(
-            steps=(
-                PredictStep(
-                    question=f"Where do you think {subject} is changing faster?",
-                    options=tuple(
-                        PredictOption(trend.region_id, name)
-                        for trend, name in zip(lead.trends, names, strict=True)
-                    ),
-                    answer_option_id=faster.region_id,
-                ),
-                CheckStep(
-                    series=(
-                        SeriesRef(first.region_id, first.variable_id),
-                        SeriesRef(second.region_id, second.variable_id),
-                    ),
-                    comparison=f"Compare {subject} in {names[0]} and {names[1]}.",
-                ),
-                ReasonStep(
-                    prompt=f"What could make {subject} change this way?",
-                    possible_causes=tuple(
-                        PossibleCause(cause.text) for cause in variable.possible_causes
-                    ),
-                ),
-            )
-        ),
-        how_do_we_know=HowDoWeKnow(
-            period=period,
-            sources=tuple(
-                EvidenceSource(t.region_id, t.variable_id, t.source)
-                for contrast in contrasts
-                for t in contrast.trends
-            ),
-            statistics_summary=f"Each Trend was rated: {evidence_label}.",
-            method_citation=first.method_citation,
-        ),
-    )
-      
 def _statistics_summary(
     period: Period, evidence_label: EvidenceLabel, headline: Contrast
 ) -> str:
