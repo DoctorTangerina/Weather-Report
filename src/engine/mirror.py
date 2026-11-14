@@ -15,6 +15,7 @@ import numpy as np
 from scipy import stats
 
 from .contracts import Mirror, Series, SeriesRef
+from .quality import usable_series
 from .trend import (
     FALSE_DISCOVERY_RATE,
     MIN_MONTHS,
@@ -41,8 +42,10 @@ def find_mirrors(
     about two Regions. A pair is compared on the months both series observed, and
     only when that is at least `MIN_MONTHS`; a series that never varies has no
     correlation to test. The family for the Benjamini-Hochberg correction is every
-    pair compared. Each Mirror lists its series in Region order.
+    pair compared. Each Mirror lists its series in Region order. A series the
+    quality gate excluded takes no part (BS-003).
     """
+    series = usable_series(series)
     residuals = {_key(one): _residuals(one) for one in series}
     tested = []
     for a, b in combinations(sorted(series, key=_key), 2):

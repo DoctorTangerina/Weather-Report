@@ -1,0 +1,6 @@
+{
+  "temperature": {"keyword": "temperature"},
+  "precipitation": {"keyword": "precipitation"},
+  "soil-moisture": {"keyword": "soil moisture"},
+  "vegetation-index": {"keyword": "vegetation index"}
+}
