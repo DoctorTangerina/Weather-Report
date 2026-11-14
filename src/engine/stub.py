@@ -28,7 +28,10 @@ def select_first_eligible(
             continue
         if candidate["discovery_id"] in history.shown_discovery_ids:
             continue
-        if any(region_id in history.shown_region_ids for region_id in candidate["region_ids"]):
+        if any(
+            region_id in history.shown_region_ids
+            for region_id in candidate["region_ids"]
+        ):
             continue
         return candidate
     return None

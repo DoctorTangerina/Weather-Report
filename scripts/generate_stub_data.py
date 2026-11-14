@@ -127,7 +127,9 @@ VARIABLES = (
         possible_causes=(
             PossibleCause(text="More greenhouse gases in the atmosphere hold in heat."),
             PossibleCause(text="Less vegetation means less cooling from evaporation."),
-            PossibleCause(text="Changes in cloud cover alter how much sunlight reaches the ground."),
+            PossibleCause(
+                text="Changes in cloud cover alter how much sunlight reaches the ground."
+            ),
         ),
     ),
     Variable(
@@ -138,7 +140,9 @@ VARIABLES = (
         source=UNRESOLVED_SOURCE,
         land_only=False,
         possible_causes=(
-            PossibleCause(text="Shifting wind belts move storm tracks away from a region."),
+            PossibleCause(
+                text="Shifting wind belts move storm tracks away from a region."
+            ),
             PossibleCause(text="A warmer atmosphere can carry more water vapour."),
             PossibleCause(text="Changes in ocean temperature alter where rain forms."),
         ),
@@ -209,8 +213,20 @@ SPECS = (
     SeriesSpec("sahel", "temperature", "K", 301.4, 5.8, 0.42, 0.52, 12, STRONG),
     SeriesSpec("central-india", "temperature", "K", 298.2, 6.1, 0.19, 0.61, 13, SOME),
     SeriesSpec("greenland-coast", "temperature", "K", 272.6, 9.3, 0.05, 1.21, 14, NONE),
-    SeriesSpec("amazon-basin", "precipitation", "mm/month", 212.0, 68.0, -2.10, 21.0, 21, STRONG),
-    SeriesSpec("sahel", "precipitation", "mm/month", 54.0, 49.0, 3.40, 12.0, 22, STRONG),
+    SeriesSpec(
+        "amazon-basin",
+        "precipitation",
+        "mm/month",
+        212.0,
+        68.0,
+        -2.10,
+        21.0,
+        21,
+        STRONG,
+    ),
+    SeriesSpec(
+        "sahel", "precipitation", "mm/month", 54.0, 49.0, 3.40, 12.0, 22, STRONG
+    ),
     SeriesSpec(
         "central-india",
         "precipitation",
@@ -223,7 +239,9 @@ SPECS = (
         SOME,
         missing_indices=(37, 38, 39, 150, 151, 266),
     ),
-    SeriesSpec("greenland-coast", "precipitation", "mm/month", 71.0, 14.0, 0.20, 9.0, 24, NONE),
+    SeriesSpec(
+        "greenland-coast", "precipitation", "mm/month", 71.0, 14.0, 0.20, 9.0, 24, NONE
+    ),
 )
 
 
@@ -236,7 +254,9 @@ def build_series(spec: SeriesSpec) -> Series:
             continue
         seasonal = spec.seasonal_amplitude * math.sin(2 * math.pi * (index % 12) / 12)
         drift = spec.rate_per_decade * index / 120
-        values.append(round(spec.baseline + seasonal + drift + rng.gauss(0, spec.noise), 3))
+        values.append(
+            round(spec.baseline + seasonal + drift + rng.gauss(0, spec.noise), 3)
+        )
 
     missing = sum(1 for value in values if value is None)
     return Series(
@@ -268,7 +288,10 @@ def build_trend(spec: SeriesSpec) -> Trend:
         period=PERIOD,
         rate_per_decade=rate,
         units_per_decade=f"{spec.units} per decade",
-        confidence_interval_95=(round(rate - half_width, 4), round(rate + half_width, 4)),
+        confidence_interval_95=(
+            round(rate - half_width, 4),
+            round(rate + half_width, 4),
+        ),
         direction=direction_of(rate),
         evidence_label=profile.evidence_label,
         methods=TrendMethods(
@@ -323,7 +346,9 @@ def build_narrative(
 ) -> Narrative:
     first, second = headline.trends
     variable = variables[headline.variable_id]
-    faster = first if abs(first.rate_per_decade) >= abs(second.rate_per_decade) else second
+    faster = (
+        first if abs(first.rate_per_decade) >= abs(second.rate_per_decade) else second
+    )
     options = tuple(
         PredictOption(option_id=trend.region_id, label=regions[trend.region_id].name)
         for trend in headline.trends
@@ -386,17 +411,26 @@ def build_discoveries(
     temperature_gap = Contrast(
         variable_id="temperature",
         kind="magnitude_gap",
-        trends=(trends[("amazon-basin", "temperature")], trends[("sahel", "temperature")]),
+        trends=(
+            trends[("amazon-basin", "temperature")],
+            trends[("sahel", "temperature")],
+        ),
     )
     precipitation_flip = Contrast(
         variable_id="precipitation",
         kind="opposite_sign",
-        trends=(trends[("amazon-basin", "precipitation")], trends[("sahel", "precipitation")]),
+        trends=(
+            trends[("amazon-basin", "precipitation")],
+            trends[("sahel", "precipitation")],
+        ),
     )
     rainfall_gap = Contrast(
         variable_id="precipitation",
         kind="magnitude_gap",
-        trends=(trends[("central-india", "precipitation")], trends[("sahel", "precipitation")]),
+        trends=(
+            trends[("central-india", "precipitation")],
+            trends[("sahel", "precipitation")],
+        ),
     )
     weak_gap = Contrast(
         variable_id="temperature",
@@ -516,11 +550,16 @@ def main() -> None:
     trends: dict[tuple[str, str], Trend] = {}
     for spec in SPECS:
         series = build_series(spec)
-        write(out / "series" / f"{spec.region_id}__{spec.variable_id}.json", as_dict(series))
+        write(
+            out / "series" / f"{spec.region_id}__{spec.variable_id}.json",
+            as_dict(series),
+        )
         trends[(spec.region_id, spec.variable_id)] = build_trend(spec)
 
     for discovery in build_discoveries(trends, regions, variables):
-        write(out / "discoveries" / f"{discovery.discovery_id}.json", as_dict(discovery))
+        write(
+            out / "discoveries" / f"{discovery.discovery_id}.json", as_dict(discovery)
+        )
 
 
 if __name__ == "__main__":

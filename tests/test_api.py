@@ -33,7 +33,9 @@ def test_catalog_response_matches_the_contract(client, validator_for):
 
 
 def test_a_stored_series_is_returned(client, validator_for):
-    response = client.get("/api/series", params={"region_id": "sahel", "variable_id": "temperature"})
+    response = client.get(
+        "/api/series", params={"region_id": "sahel", "variable_id": "temperature"}
+    )
     assert response.status_code == 200
     validator_for(RESPONSES, "#/$defs/seriesResponse").validate(response.json())
     assert response.json()["data"]["region_id"] == "sahel"
@@ -42,7 +44,8 @@ def test_a_stored_series_is_returned(client, validator_for):
 
 def test_a_region_outside_the_catalog_is_rejected(client, validator_for):
     response = client.get(
-        "/api/series", params={"region_id": "my-back-garden", "variable_id": "temperature"}
+        "/api/series",
+        params={"region_id": "my-back-garden", "variable_id": "temperature"},
     )
     assert response.status_code == 422
     validator_for(RESPONSES, "#/$defs/errorResponse").validate(response.json())

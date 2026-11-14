@@ -8,3 +8,7 @@ node_modules/
 dist/
 
 .env
+.coverage
+htmlcov/
+.ruff_cache/
+.vite/
