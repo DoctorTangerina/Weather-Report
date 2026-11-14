@@ -19,10 +19,16 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from engine import ENGINE_VERSION, JsonResultStore, Period, applies_to, load_catalog
-from engine.contracts import as_dict
+from engine import (
+    ENGINE_VERSION,
+    JsonResultStore,
+    Period,
+    applies_to,
+    load_catalog,
+    select_surprise,
+)
+from engine.contracts import Discovery, as_dict
 from engine.discovery import SessionHistory
-from engine.stub import select_first_eligible
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "stub"
 DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(DEFAULT_DATA_DIR)))
@@ -122,11 +128,12 @@ def surprise(request: SurpriseRequest) -> Any:
         shown_discovery_ids=tuple(request.shown_discovery_ids),
         shown_region_ids=tuple(request.shown_region_ids),
     )
-    payload = select_first_eligible(store.discoveries(), history)
-    if payload is None:
+    candidates = [Discovery.from_dict(payload) for payload in store.discoveries()]
+    chosen = select_surprise(candidates, history)
+    if chosen is None:
         return error(
             404,
             "no_discovery_left_in_session",
-            "Every Region in the catalog has already been shown in this session.",
+            "Every Discovery worth headlining has already been shown in this session.",
         )
-    return ok(payload)
+    return ok(as_dict(chosen))

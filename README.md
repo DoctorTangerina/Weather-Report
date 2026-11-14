@@ -98,8 +98,23 @@ their ticket number. The seams are in place:
 | `engine.trend.rate_evidence` | #5 evidence labels, corrected across the whole family |
 | `engine.discovery.find_candidate_discoveries` | #7 contrasts |
 | `engine.discovery.find_mirrors` | #8 Mirrors |
-| `engine.discovery.select_surprise` | #9 Surprise Me! selection |
 | `engine.discovery.build_narrative` | #10 explanations and investigation content |
 
-`engine/stub.py` holds the stand-ins that keep the skeleton runnable; delete each one
-as its ticket lands.
+## Surprise Me! selection
+
+`engine.discovery.select_surprise` draws the next headline Discovery from the top
+`TOP_N` eligible Candidates, weighted by score. It never repeats a Discovery within a
+session and never headlines a Candidate labeled "Not enough evidence yet".
+
+Two numbers the spec left open are answered here, and both are easy to change:
+
+- **`TOP_N = 5`.** Enough to vary between sessions while keeping the headline genuinely
+  top-ranked. Because the draw is weighted, raising it costs little quality.
+- **A session that runs out of fresh Regions relaxes the Region rule** rather than
+  returning nothing. BS-005 words its two rules with different force — a Discovery is
+  *never* repeated, a Region is *avoided* — so only a session that has seen every
+  eligible Discovery gets nothing back, and the API answers `404
+  no_discovery_left_in_session`.
+
+Candidates are filtered for eligibility before they are ranked, so a long session works
+its way down the list instead of running dry the moment it has seen a fixed top N.

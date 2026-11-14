@@ -95,7 +95,9 @@ def test_surprise_me_never_headlines_a_weak_discovery(client, validator_for):
     assert response.json()["data"]["headline_eligible"] is True
 
 
-def test_surprise_me_runs_out_rather_than_repeating_a_region(client):
+def test_surprise_me_keeps_answering_when_only_a_shared_region_is_left(client):
+    """Both headline-eligible stub Candidates involve the Sahel, so the Region
+    rule has to give way rather than dead-end the session."""
     first = client.post("/api/discoveries/surprise", json={}).json()["data"]
     second = client.post(
         "/api/discoveries/surprise",
@@ -104,5 +106,26 @@ def test_surprise_me_runs_out_rather_than_repeating_a_region(client):
             "shown_region_ids": first["region_ids"],
         },
     )
-    assert second.status_code == 404
-    assert second.json()["error"]["code"] == "no_discovery_left_in_session"
+    assert second.status_code == 200
+    assert second.json()["data"]["discovery_id"] != first["discovery_id"]
+
+
+def test_surprise_me_returns_nothing_once_every_eligible_discovery_is_shown(client):
+    shown = [
+        discovery["discovery_id"]
+        for discovery in client.get("/api/discoveries").json()["data"]
+        if discovery["headline_eligible"]
+    ]
+    response = client.post(
+        "/api/discoveries/surprise", json={"shown_discovery_ids": shown}
+    )
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "no_discovery_left_in_session"
+
+
+def test_surprise_me_never_serves_the_weak_discovery_however_often_it_is_asked(client):
+    served = {
+        client.post("/api/discoveries/surprise", json={}).json()["data"]["discovery_id"]
+        for _ in range(40)
+    }
+    assert served == {"amazon-basin--sahel", "central-india--sahel"}
