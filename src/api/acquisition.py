@@ -1,10 +1,11 @@
-"""Integration boundary for #6; no client-provided credentials or file paths.
+"""Cancellable bridge to #6's download and monthly Series pipeline."""
 
-The preserved #6 branch only selects previously downloaded files. Until a real
-live provider is re-landed and adapted to the monthly Series contract, the
-default reports unavailability so the API can serve the shipped examples.
-"""
-
+import asyncio
+import json
+import os
+import sys
+import tempfile
+from pathlib import Path
 from typing import Any
 
 from engine.contracts import Period, Region, Variable
@@ -17,11 +18,44 @@ class AcquisitionUnavailable(Exception):
 async def acquire_series(
     region: Region, variable: Variable, period: Period, *, token: str
 ) -> dict[str, Any]:
-    """Return a computed monthly Series payload, or raise AcquisitionUnavailable.
-
-    Implementations must be asynchronous, release resources on cancellation and
-    enforce transport timeouts. The API enforces an overall request time limit.
-    They receive the Earthdata token only from the server environment and must
-    translate expected upstream and quality-gate failures to the typed exception.
-    """
-    raise AcquisitionUnavailable("Live acquisition from #6 is not integrated")
+    root = Path(__file__).resolve().parents[2]
+    env = {
+        **os.environ,
+        "EARTHDATA_TOKEN": token,
+        "PYTHONPATH": os.pathsep.join((str(root), str(root / "src"))),
+    }
+    with tempfile.TemporaryDirectory(prefix="weather-acquisition-") as workspace:
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "api.acquisition_worker",
+            cwd=root,
+            env=env,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        request = {
+            "region_id": region.region_id,
+            "variable_id": variable.variable_id,
+            "period": {"start": period.start, "end": period.end},
+            "bbox": [
+                region.bbox.west,
+                region.bbox.south,
+                region.bbox.east,
+                region.bbox.north,
+            ],
+            "dataset": variable.source.dataset,
+            "workspace": workspace,
+        }
+        try:
+            output, _ = await process.communicate(json.dumps(request).encode())
+        finally:
+            if process.returncode is None:
+                process.kill()
+                await process.wait()
+        if process.returncode == 2:
+            raise AcquisitionUnavailable("Acquisition or source data unavailable")
+        if process.returncode != 0:
+            raise RuntimeError("Acquisition worker failed unexpectedly")
+        return json.loads(output)

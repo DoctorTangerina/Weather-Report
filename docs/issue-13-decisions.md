@@ -102,6 +102,7 @@ substitution guard. InvestigationScreen keeps the same guard for direct entry.
 The hook retains the `series` and `notice` fields expected by the integrated UI
 alongside per-response provenance.
 
-The default acquisition boundary deliberately reports unavailability until #6
-provides real live acquisition adapted to the monthly Series contract. The
-preserved #6 `get_time_series` reads acquired files and does not initiate downloads.
+After #6 closed, its monthly catalog Series pipeline and downloader were integrated
+through a cancellable worker. HTTP integration is verified with synthetic NetCDF
+files; a real authenticated NASA run still requires an Earthdata token in this
+environment. No real-data proof is inferred from #6 being closed.

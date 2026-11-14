@@ -161,16 +161,29 @@ and pass their quality record. Without an example the API returns `503`
 (`live_data_unavailable`). Fallbacks are never cached under the requested key.
 Cache writes are atomic; a failed write still returns successfully acquired data.
 
-**Live integration remains blocked by #6.** `api.acquisition.acquire_series` is
-an async server boundary returning an exact monthly Series payload. The default
-raises `AcquisitionUnavailable` so shipped examples work without credentials or
-NASA access. Replace that boundary when real acquisition is re-landed; translate
-expected authentication, upstream and quality failures to that exception, honor
-cancellation/transport timeouts, and keep credentials out of logs. Programming
-errors propagate. Tests substitute this external acquisition boundary and prove
-HTTP orchestration and persistence, not real NASA acquisition.
+The acquisition bridge uses the #6 pipeline; see the integration update below.
 
 The #38 globe UI is integrated through `data-engineering`. DiscoveryPanel uses
 the returned identity, period and provenance; substituted examples update the
 globe highlights and cannot enter the original investigation. The #16 comparison
 endpoint and Region/Variable pickers remain available.
+
+### Acquisition integration update
+
+The #6 pipeline is now connected through `api.acquisition_worker`. The worker
+first attempts `get_catalog_series` on configured acquired files. If the source
+is unavailable, it downloads the explicitly configured collection with #6's
+`acquire`, then computes the monthly Series. Temporary downloads are isolated per
+request; cancellation kills and reaps the worker before removing its workspace.
+Only the computed Series is persisted in the result cache. Land-only products
+still require the trusted mask configured by #6; vegetation remains #41.
+
+`WEATHER_REPORT_ACQUISITION_CONFIG` selects the server-controlled gathering JSON
+(default `data/data_gathering/config.json`). Run the API from this repository with
+its `data/` package available. The exported `EARTHDATA_TOKEN` is passed only in
+the child environment. Worker diagnostics are suppressed to avoid leaking token
+or download URLs. Missing sources/authentication errors trigger fallback;
+unexpected worker failures propagate as server errors.
+
+Integration tests use synthetic NetCDF files with the actual #6 reader and
+quality gate. They do not constitute a real authenticated NASA download.
