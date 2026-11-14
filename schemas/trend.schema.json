@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://weather-report.local/schemas/trend.schema.json",
+  "title": "Trend",
+  "description": "Direction and rate of change of one Variable over one Region across a period, with its uncertainty and Evidence label (BS-001, BS-002). The method follows ADR 0002.",
+  "type": "object",
+  "properties": {
+    "region_id": { "$ref": "common.schema.json#/$defs/regionId" },
+    "variable_id": { "$ref": "common.schema.json#/$defs/variableId" },
+    "period": { "$ref": "common.schema.json#/$defs/period" },
+    "rate_per_decade": {
+      "description": "Rate from the primary least-squares fit on the deseasonalized series.",
+      "type": "number"
+    },
+    "units_per_decade": {
+      "description": "Units of rate_per_decade and of confidence_interval_95, e.g. \"K/decade\".",
+      "type": "string"
+    },
+    "confidence_interval_95": {
+      "description": "[lower, upper] for rate_per_decade, from the primary fit after the autocorrelation correction.",
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "direction": { "$ref": "common.schema.json#/$defs/direction" },
+    "evidence_label": { "$ref": "common.schema.json#/$defs/evidenceLabel" },
+    "methods": { "$ref": "#/$defs/methods" },
+    "multiple_comparisons": { "$ref": "#/$defs/multipleComparisons" },
+    "autocorrelation": { "$ref": "#/$defs/autocorrelation" },
+    "source": { "$ref": "common.schema.json#/$defs/source" },
+    "method_citation": {
+      "description": "The paper whose method was followed, cited on \"How do we know?\" (BS-008).",
+      "type": "string"
+    },
+    "engine_version": { "$ref": "common.schema.json#/$defs/engineVersion" }
+  },
+  "required": [
+    "region_id",
+    "variable_id",
+    "period",
+    "rate_per_decade",
+    "units_per_decade",
+    "confidence_interval_95",
+    "direction",
+    "evidence_label",
+    "methods",
+    "multiple_comparisons",
+    "autocorrelation",
+    "source",
+    "method_citation",
+    "engine_version"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "methods": {
+      "description": "Every fit the engine ran. The primary fit decides the reported rate; the others decide the Evidence label by agreeing or disagreeing with it (ADR 0002).",
+      "type": "object",
+      "properties": {
+        "least_squares": {
+          "description": "Primary: least-squares fit on the deseasonalized monthly series, with an F-test.",
+          "type": "object",
+          "properties": {
+            "slope_per_decade": { "type": "number" },
+            "p_value": { "$ref": "common.schema.json#/$defs/pValue" },
+            "r_squared": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "required": ["slope_per_decade", "p_value", "r_squared"],
+          "additionalProperties": false
+        },
+        "annual_anomaly": {
+          "description": "Least-squares fit on annual anomalies.",
+          "$ref": "#/$defs/fit"
+        },
+        "robust": {
+          "description": "Robust regression, used together with the outlier check.",
+          "$ref": "#/$defs/fit"
+        },
+        "theil_sen": {
+          "description": "Non-parametric slope, a cross-check only.",
+          "type": "object",
+          "properties": {
+            "slope_per_decade": { "type": "number" }
+          },
+          "required": ["slope_per_decade"],
+          "additionalProperties": false
+        },
+        "mann_kendall": {
+          "description": "Non-parametric significance test, a cross-check only.",
+          "type": "object",
+          "properties": {
+            "tau": { "type": "number", "minimum": -1, "maximum": 1 },
+            "p_value": { "$ref": "common.schema.json#/$defs/pValue" }
+          },
+          "required": ["tau", "p_value"],
+          "additionalProperties": false
+        },
+        "outlier_check": {
+          "description": "The primary fit rerun without the most extreme month.",
+          "type": "object",
+          "properties": {
+            "survives": {
+              "description": "True when the rerun fit is still significant.",
+              "type": "boolean"
+            },
+            "removed_month": { "$ref": "common.schema.json#/$defs/month" },
+            "slope_per_decade": { "type": "number" },
+            "p_value": { "$ref": "common.schema.json#/$defs/pValue" }
+          },
+          "required": ["survives", "removed_month", "slope_per_decade", "p_value"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["least_squares", "annual_anomaly", "robust", "theil_sen", "mann_kendall", "outlier_check"],
+      "additionalProperties": false
+    },
+    "fit": {
+      "type": "object",
+      "properties": {
+        "slope_per_decade": { "type": "number" },
+        "p_value": { "$ref": "common.schema.json#/$defs/pValue" }
+      },
+      "required": ["slope_per_decade", "p_value"],
+      "additionalProperties": false
+    },
+    "multipleComparisons": {
+      "description": "Benjamini-Hochberg correction across the whole family of tests the engine ran, not this Trend alone (ADR 0002).",
+      "type": "object",
+      "properties": {
+        "method": { "type": "string", "const": "benjamini-hochberg" },
+        "q": {
+          "description": "False-discovery rate the correction was run at.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "family_size": {
+          "description": "Number of tests in the family the correction covered.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "adjusted_p_value": { "$ref": "common.schema.json#/$defs/pValue" },
+        "significant": {
+          "description": "Whether the primary fit is significant after correction. A Trend significant only before correction is capped at \"Some evidence\".",
+          "type": "boolean"
+        }
+      },
+      "required": ["method", "q", "family_size", "adjusted_p_value", "significant"],
+      "additionalProperties": false
+    },
+    "autocorrelation": {
+      "description": "Correction for serial correlation in monthly data, which widens confidence_interval_95 (ADR 0002).",
+      "type": "object",
+      "properties": {
+        "lag1": { "type": "number", "minimum": -1, "maximum": 1 },
+        "effective_sample_size": { "type": "number", "exclusiveMinimum": 0 }
+      },
+      "required": ["lag1", "effective_sample_size"],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://weather-report.local/schemas/responses.schema.json",
+  "title": "HTTP responses",
+  "description": "What the API returns (BS-009). Every success body is a resource under \"data\" plus a \"notice\", which is null unless the service served something other than a fresh result.",
+  "$defs": {
+    "catalogResponse": {
+      "type": "object",
+      "properties": {
+        "data": { "$ref": "catalog.schema.json" },
+        "notice": { "$ref": "common.schema.json#/$defs/notice" }
+      },
+      "required": ["data", "notice"],
+      "additionalProperties": false
+    },
+    "seriesResponse": {
+      "type": "object",
+      "properties": {
+        "data": { "$ref": "series.schema.json" },
+        "notice": { "$ref": "common.schema.json#/$defs/notice" }
+      },
+      "required": ["data", "notice"],
+      "additionalProperties": false
+    },
+    "discoveryResponse": {
+      "type": "object",
+      "properties": {
+        "data": { "$ref": "discovery.schema.json" },
+        "notice": { "$ref": "common.schema.json#/$defs/notice" }
+      },
+      "required": ["data", "notice"],
+      "additionalProperties": false
+    },
+    "discoveryListResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": { "$ref": "discovery.schema.json" }
+        },
+        "notice": { "$ref": "common.schema.json#/$defs/notice" }
+      },
+      "required": ["data", "notice"],
+      "additionalProperties": false
+    },
+    "errorResponse": {
+      "description": "Returned with a 4xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region.",
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "region_not_in_catalog",
+                "variable_not_in_catalog",
+                "variable_not_available_for_region",
+                "result_not_available",
+                "no_discovery_left_in_session"
+              ]
+            },
+            "message": { "type": "string", "minLength": 1 }
+          },
+          "required": ["code", "message"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["error"],
+      "additionalProperties": false
+    }
+  }
+}

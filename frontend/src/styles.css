@@ -1,0 +1,173 @@
+:root {
+  --ink: #16202a;
+  --paper: #f6f7f4;
+  --muted: #5d6b79;
+  --accent: #1f6f8b;
+  --warm: #c0582a;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.55 system-ui, sans-serif;
+}
+
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+h1 {
+  font-size: 1.6rem;
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: 1.2rem;
+}
+
+button {
+  font: inherit;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.3rem;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+button.link {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  padding: 0 0 0.75rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--warm);
+}
+
+.notice {
+  border-left: 3px solid var(--warm);
+  padding-left: 0.75rem;
+}
+
+.label {
+  display: inline-block;
+  border: 1px solid var(--muted);
+  border-radius: 1rem;
+  padding: 0.1rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.steps {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+  padding: 0;
+  color: var(--muted);
+}
+
+.steps .current {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.chart {
+  margin: 1.25rem 0;
+}
+
+.chart svg {
+  width: 100%;
+  height: auto;
+  background: #fff;
+  border: 1px solid #dfe3dd;
+}
+
+.chart polyline {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+}
+
+.map {
+  width: 100%;
+  height: auto;
+}
+
+.map-ground {
+  fill: #e7ebe4;
+}
+
+.map-equator {
+  stroke: #cdd4ca;
+  stroke-dasharray: 4 4;
+}
+
+.map-region {
+  fill: rgba(192, 88, 42, 0.35);
+  stroke: var(--warm);
+}
+
+.map text {
+  font-size: 9px;
+  fill: var(--ink);
+}
+
+.causes {
+  list-style: none;
+  padding: 0;
+}
+
+.causes li {
+  margin-bottom: 0.7rem;
+}
+
+.badge {
+  display: inline-block;
+  background: #e7ebe4;
+  color: var(--muted);
+  border-radius: 0.2rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.match {
+  color: var(--accent);
+}
+
+.mismatch {
+  color: var(--warm);
+}
+
+.evidence {
+  margin-top: 1.25rem;
+  border-top: 1px solid #dfe3dd;
+  padding-top: 1rem;
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://weather-report.local/schemas/common.schema.json",
+  "title": "Shared contract definitions",
+  "description": "Vocabulary shared by the series, Trend, Discovery and catalog contracts. Terms are defined in CONTEXT.md.",
+  "$defs": {
+    "regionId": {
+      "description": "Identifier of a Region. The Region catalog is the authority on which ids exist.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "variableId": {
+      "description": "Identifier of a Variable. The Variable catalog is the authority on which ids exist.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "month": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+    },
+    "period": {
+      "description": "Month range, inclusive at both ends.",
+      "type": "object",
+      "properties": {
+        "start": { "$ref": "#/$defs/month" },
+        "end": { "$ref": "#/$defs/month" }
+      },
+      "required": ["start", "end"],
+      "additionalProperties": false
+    },
+    "evidenceLabel": {
+      "description": "Plain-language rating shown to students.",
+      "type": "string",
+      "enum": ["Strong evidence", "Some evidence", "Not enough evidence yet"]
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["rising", "falling", "flat"]
+    },
+    "pValue": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "engineVersion": {
+      "description": "Version of the engine that produced the result. Stored results are keyed by it.",
+      "type": "string"
+    },
+    "source": {
+      "description": "Where the data came from. Shown to students under \"How do we know?\".",
+      "type": "object",
+      "properties": {
+        "provider": {
+          "description": "Archive or service, e.g. GES DISC or AppEEARS.",
+          "type": "string"
+        },
+        "dataset": {
+          "description": "Product short name, e.g. GLDAS_NOAH025_M.",
+          "type": "string"
+        },
+        "variable": {
+          "description": "Variable name within the product, e.g. Tair_f_inst.",
+          "type": "string"
+        },
+        "url": {
+          "type": ["string", "null"],
+          "format": "uri"
+        }
+      },
+      "required": ["provider", "dataset", "variable", "url"],
+      "additionalProperties": false
+    },
+    "seriesRef": {
+      "description": "Points at one Region-Variable series without carrying its values.",
+      "type": "object",
+      "properties": {
+        "region_id": { "$ref": "#/$defs/regionId" },
+        "variable_id": { "$ref": "#/$defs/variableId" }
+      },
+      "required": ["region_id", "variable_id"],
+      "additionalProperties": false
+    },
+    "notice": {
+      "description": "Set when the service served something other than a fresh result, e.g. the seed set after a failed live fetch (BS-009).",
+      "type": ["object", "null"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["live_data_unavailable"]
+        },
+        "message": { "type": "string" }
+      },
+      "required": ["code", "message"],
+      "additionalProperties": false
+    }
+  }
+}
