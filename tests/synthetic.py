@@ -48,7 +48,7 @@ def series_for(
 
 
 def rated_trends(
-    slopes: dict[tuple[str, str], float], *, filler: int = 6
+    slopes: dict[tuple[str, str], float], *, filler: int = 6, noise: float = 0.4
 ) -> list[Trend]:
     """One rated Trend per (region, variable), among `filler` flat comparisons.
 
@@ -56,7 +56,7 @@ def rated_trends(
     correction for many comparisons is real; they are not returned.
     """
     trends = [
-        estimate_trend(series_for(region, variable, slope, seed=index))
+        estimate_trend(series_for(region, variable, slope, seed=index, noise=noise))
         for index, ((region, variable), slope) in enumerate(slopes.items())
     ]
     flat = [

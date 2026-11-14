@@ -57,7 +57,7 @@
             }
           },
           "multiple_comparisons": {
-            "q": 0.1,
+            "q": 0.05,
             "family_size": 96,
             "adjusted_p_value": 0.004,
             "significant": true,
@@ -120,7 +120,7 @@
             }
           },
           "multiple_comparisons": {
-            "q": 0.1,
+            "q": 0.05,
             "family_size": 96,
             "adjusted_p_value": 0.004,
             "significant": true,
@@ -189,7 +189,7 @@
             }
           },
           "multiple_comparisons": {
-            "q": 0.1,
+            "q": 0.05,
             "family_size": 96,
             "adjusted_p_value": 0.004,
             "significant": true,
@@ -252,7 +252,7 @@
             }
           },
           "multiple_comparisons": {
-            "q": 0.1,
+            "q": 0.05,
             "family_size": 96,
             "adjusted_p_value": 0.004,
             "significant": true,
@@ -386,7 +386,7 @@
           }
         }
       ],
-      "statistics_summary": "Both series cover 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave the rate and its 95% interval. The fit was corrected for serial correlation and for testing 96 series at a false-discovery rate of 0.1.",
+      "statistics_summary": "Both series cover 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave the rate and its 95% interval. The fit was corrected for serial correlation and for testing 96 series at a false-discovery rate of 0.05.",
       "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
     }
   },

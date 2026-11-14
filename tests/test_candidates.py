@@ -261,3 +261,75 @@ def test_candidates_follow_the_discovery_schema(catalog, validator_for):
     for candidate in candidates:
         payload = json.loads(json.dumps(as_dict(candidate)))
         validator_for("discovery.schema.json").validate(payload)
+
+
+def test_rates_that_differ_but_whose_intervals_overlap_are_not_a_contrast(catalog):
+    trends = rated_trends(
+        {("amazon-basin", "temperature"): 0.3, ("sahel", "temperature"): 0.65},
+        noise=2.0,
+    )
+    slow, fast = sorted(trends, key=lambda t: t.rate_per_decade)
+    # Given the same direction, the faster rate more than twice the slower, the
+    # slower Trend significant, and yet the 95% intervals overlap.
+    assert slow.direction == fast.direction == "rising"
+    assert fast.rate_per_decade > 2 * slow.rate_per_decade
+    assert slow.evidence_label != "Not enough evidence yet"
+    assert slow.confidence_interval_95[1] > fast.confidence_interval_95[0]
+
+    assert find_candidate_discoveries(trends, catalog) == []
+
+
+def test_a_nearby_pair_with_a_contrast_is_a_surprising_pair(catalog):
+    slopes = {"temperature": (0.6, -0.6)}
+
+    def candidate(first: str, second: str):
+        return only_candidate(
+            catalog,
+            {
+                (first, "temperature"): slopes["temperature"][0],
+                (second, "temperature"): slopes["temperature"][1],
+            },
+        )
+
+    nearby = candidate("sahara", "sahel")  # about 1,200 km apart
+    far = candidate("amazon-basin", "sahel")
+    just_outside = candidate("congo-basin", "sahara")  # about 3,000 km apart
+
+    assert nearby.score_components.surprising_pair > 0
+    assert far.score_components.surprising_pair == 0
+    assert just_outside.score_components.surprising_pair == 0
+    assert nearby.score > far.score
+
+
+def test_a_surprising_pair_ranks_with_multi_variable_below_opposite_signs(catalog):
+    surprising = only_candidate(
+        catalog,
+        {("sahara", "temperature"): 0.3, ("sahel", "temperature"): 0.9},
+    )
+    far_opposite = only_candidate(
+        catalog,
+        {("amazon-basin", "temperature"): 0.6, ("sahel", "temperature"): -0.6},
+    )
+    far_gap = only_candidate(
+        catalog,
+        {("amazon-basin", "temperature"): 0.3, ("sahel", "temperature"): 0.9},
+    )
+
+    assert far_opposite.score > surprising.score > far_gap.score
+    # ...and it earns the same as a multi-Variable contrast.
+    assert (
+        surprising.score_components.surprising_pair
+        == far_gap_multi(catalog).score_components.multi_variable
+    )
+
+
+def far_gap_multi(catalog):
+    return only_candidate(
+        catalog,
+        {
+            ("amazon-basin", "temperature"): 0.3,
+            ("sahel", "temperature"): 0.9,
+            ("amazon-basin", "precipitation"): 0.4,
+            ("sahel", "precipitation"): 1.2,
+        },
+    )

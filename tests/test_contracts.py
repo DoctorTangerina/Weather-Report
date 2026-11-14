@@ -218,3 +218,12 @@ def test_every_series_a_stub_discovery_charts_is_in_the_store(stub_dir):
             assert (
                 store.series(ref["region_id"], ref["variable_id"], period) is not None
             )
+
+
+def test_stub_trends_use_the_engines_false_discovery_rate(stub_dir):
+    import engine
+
+    for path in discovery_paths(stub_dir):
+        for contrast in load(path)["contrasts"]:
+            for trend in contrast["trends"]:
+                assert trend["multiple_comparisons"]["q"] == engine.FALSE_DISCOVERY_RATE
