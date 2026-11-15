@@ -79,7 +79,11 @@ function labelElement({ region, color }) {
   return element
 }
 
-export default function RegionGlobe({ highlights = [] }) {
+export default function RegionGlobe({ highlights: requestedHighlights = [] }) {
+  // Equivalent highlights can arrive in new arrays as series requests settle.
+  // Keep polygons, labels and the camera flight stable across those renders.
+  const highlightKey = JSON.stringify(requestedHighlights)
+  const highlights = useMemo(() => JSON.parse(highlightKey), [highlightKey])
   const globeRef = useRef(null)
   const containerRef = useRef(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
@@ -88,7 +92,10 @@ export default function RegionGlobe({ highlights = [] }) {
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect
-      setDimensions({ width: Math.floor(width), height: Math.floor(height) })
+      const next = { width: Math.floor(width), height: Math.floor(height) }
+      setDimensions((current) =>
+        current.width === next.width && current.height === next.height ? current : next,
+      )
     })
     observer.observe(containerRef.current)
     return () => observer.disconnect()
