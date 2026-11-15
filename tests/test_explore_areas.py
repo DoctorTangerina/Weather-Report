@@ -116,6 +116,35 @@ def test_joined_rectangles_count_a_shared_cell_once(api, validator_for):
     assert series["values"] == pytest.approx([4 / 3, 4 / 3])
 
 
+def test_a_cell_shared_by_two_overlapping_rectangles_counts_once(api, validator_for):
+    # BS-009 (#81): three equal-area cells, the middle one in both rectangles.
+    # The 165°E cell is outside the area; it holds 100 so selecting it shows.
+    client, sources = api
+    sources["current"] = grid([100.0, 0.0, 6.0, 0.0])
+    # The first holds 175°E and 175°W; the second 175°W and 165°W.
+    series = values(client, [(170, -5, -170, 5), (-178, -5, -160, 5)], validator_for)
+    assert series["values"] == pytest.approx([2.0, 2.0])
+
+
+def test_joined_rectangles_meeting_at_the_antimeridian_select_both_sides(
+    api, validator_for
+):
+    # #81: an area joined across 180° takes the cells on each side, and no others.
+    client, sources = api
+    sources["current"] = grid([1.0, 2.0, 4.0, 100.0])
+    series = values(client, [(160, -5, 180, 5), (-180, -5, -170, 5)], validator_for)
+    assert series["values"] == pytest.approx([7 / 3, 7 / 3])
+
+
+def test_a_joined_area_crossing_the_antimeridian_selects_both_sides(api, validator_for):
+    # #81: one rectangle crossing 180°, joined to one west of 180° along 170°W.
+    # Only the first holds the 175°W cell, so it must reach past 180° to get it.
+    client, sources = api
+    sources["current"] = grid([1.0, 2.0, 4.0, 8.0])
+    series = values(client, [(170, -5, -170, 5), (-170, -5, -160, 5)], validator_for)
+    assert series["values"] == pytest.approx([14 / 3, 14 / 3])
+
+
 def two_rows():
     """Equal-area cells at (5°S, 0°)=1, (5°S, 10°E)=2, (5°N, 0°)=3, (5°N, 10°E)=100."""
     return AreaSource(
@@ -197,6 +226,19 @@ def test_a_selected_area_never_becomes_a_region_or_a_discovery(api, validator_fo
     finished(client, ask(client, [(170, -5, -170, 5)]), validator_for)
     for path, body in before.items():
         assert client.get(path).json() == body, path
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Daily Time steps arrive with #80; until then the API answers 501.",
+)
+def test_daily_area_series_do_not_change_the_discoveries(api, validator_for):
+    # BS-013 (#81): Series for a Selected area at a daily Time step.
+    client, _ = api
+    before = client.get("/api/discoveries").json()
+    response = ask(client, [(170, -5, -170, 5)], time_step="daily")
+    finished(client, response, validator_for)
+    assert client.get("/api/discoveries").json() == before
 
 
 def test_the_options_name_the_variables_an_area_can_have(api, validator_for):
