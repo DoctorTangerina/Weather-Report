@@ -68,6 +68,12 @@ _Avoid_: Finding, insight, result
 A Discovery the engine has found and scored but not yet selected for presentation to a user.
 _Avoid_: Proposal, lead
 
+**Selected area**:
+A rectangular geographic area chosen by a user on the map for a Manual investigation. It is distinct from a named Region in the fixed Region catalog.
+
+**Correlation map**:
+A pairwise correlation matrix for a user-selected list of Source series or Derived series, which may represent different Variables and Selected areas.
+
 ## Experiences
 
 **Surprise Me!**:
