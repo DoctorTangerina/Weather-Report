@@ -262,9 +262,10 @@ def acquire(
         from download import download, load_token
 
     token = load_token()
-    relative = lambda item: Path(
-        os.path.relpath(item.resolve(), destination.resolve())
-    ).as_posix()
+
+    def relative(item):
+        return Path(os.path.relpath(item.resolve(), destination.resolve())).as_posix()
+
     records = []
     for dataset in results:
         granules = cmr_entries(

@@ -8,7 +8,7 @@ import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/Pa
 import SelectedAreaPanel from '../components/SelectedAreaPanel.jsx'
 import Timeline from '../components/Timeline.jsx'
 import { AREA_COLOR, REGION_COLORS } from '../palette.js'
-import { describeArea } from '../selectedArea.js'
+import { describeArea, joinRectangle } from '../selectedArea.js'
 import useAvailableSeries from '../useAvailableSeries.js'
 import useComparison from '../useComparison.js'
 import useExploreView from '../useExploreView.js'
@@ -46,7 +46,10 @@ export default function MainScreen({
   const [investigationStep, setInvestigationStep] = useState(0)
   // At most one Selected area, kept only in memory: a reload clears it (#79).
   const [selectedArea, setSelectedArea] = useState(null)
-  const [drawingArea, setDrawingArea] = useState(false)
+  // 'new' replaces the Selected area, 'add' joins a rectangle to it (#81).
+  const [drawingArea, setDrawingArea] = useState(null)
+  // Why the last rectangle drawn, typed or resized was not taken.
+  const [areaProblem, setAreaProblem] = useState(null)
   const previousHighlights = useRef(NONE)
 
   const exploring = phase === 'welcome' && Boolean(catalog)
@@ -164,13 +167,27 @@ export default function MainScreen({
     ? exploreView.loading ? NONE : exploreSeries
     : seriesLoading || (investigating && investigationStep !== 1) ? NONE : series
 
+  // A new rectangle starts a new Selected area, or joins the one there is if it
+  // touches or overlaps it. A refused one leaves the area as it was.
+  const placeRectangle = (rectangle, mode) => {
+    const { area, error } =
+      mode === 'add' && selectedArea ? joinRectangle(selectedArea, rectangle) : { area: [rectangle] }
+    if (area) setSelectedArea(area)
+    setAreaProblem(error ?? null)
+  }
+  const startDrawing = (mode) => {
+    setAreaProblem(null)
+    setDrawingArea(mode)
+  }
+
   const areaPanel = (
     <SelectedAreaPanel
       area={selectedArea}
       drawing={drawingArea}
-      onDraw={() => setDrawingArea(true)}
-      onStopDrawing={() => setDrawingArea(false)}
-      onArea={(rectangle) => setSelectedArea([rectangle])}
+      problem={areaProblem}
+      onDraw={startDrawing}
+      onStopDrawing={() => setDrawingArea(null)}
+      onArea={placeRectangle}
       onExplore={exploredArea ? undefined : () => onExplore(null)}
     />
   )
@@ -197,17 +214,27 @@ export default function MainScreen({
           onRegionClick={pickable ? onExplore : undefined}
           selectedArea={pickable ? selectedArea : null}
           onAreaClick={pickable ? () => onExplore(null) : undefined}
-          drawing={pickable && drawingArea}
+          drawing={pickable ? drawingArea : null}
           onDrawn={(rectangle) => {
-            setSelectedArea([rectangle])
-            setDrawingArea(false)
+            placeRectangle(rectangle, drawingArea)
+            setDrawingArea(null)
           }}
-          onDrawCancel={() => setDrawingArea(false)}
+          onDrawCancel={() => setDrawingArea(null)}
+          onAreaChange={
+            pickable
+              ? (area, problem) => {
+                  setSelectedArea(area)
+                  setAreaProblem(problem ?? null)
+                }
+              : undefined
+          }
         />
         <p className="globe-hint">
           {pickable && drawingArea
             ? 'Drag from one corner to the opposite corner · Escape to stop'
-            : `${pickable ? 'Click a Region to explore it · ' : ''}Drag to turn · Scroll or pinch to zoom`}
+            : `${pickable ? 'Click a Region to explore it · ' : ''}${
+                pickable && selectedArea ? 'Drag a handle to resize · ' : ''
+              }Drag to turn · Scroll or pinch to zoom`}
         </p>
       </section>
 

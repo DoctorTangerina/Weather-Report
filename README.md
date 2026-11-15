@@ -112,6 +112,7 @@ fixtures still do.
 | `GET /api/explore/series?region_id=&variable_id=…&aggregation=&time_step=&period_start=&period_end=` | `exploreSeriesResponse` (200) or `exploreJobResponse` (202): Explore My World, one Series per Variable (1–5, `variable_id` repeated) for a catalog Region, or for a Selected area given as `rectangle=west,south,east,north` (repeatable) instead of `region_id`, over 2000-01 to the latest month, at a `time_step` of `3-hourly` (at most 1 year), `daily` (at most 10 years) or `monthly`. A Variable without data at the Time step is refused with 422 `variable_not_available_at_time_step` |
 | `GET /api/explore/jobs/{id}` | `exploreJobResponse`: status, progress, result or failure |
 | `GET /api/explore/options` | `exploreOptionsResponse`: latest requestable month, the Variables a Selected area can have, and each Time step's Variables and period cap |
+| `POST /api/explore/process` | body `processingRequest`, answer `processingResponse`: applies a Processing recipe to Source or Derived series. Stateless; see below |
 | `GET /api/discoveries` | `discoveryListResponse`, highest score first |
 | `GET /api/discoveries/{discovery_id}` | `discoveryResponse` |
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |
@@ -228,6 +229,20 @@ unexpected worker failures propagate as server errors.
 
 Integration tests use synthetic NetCDF files with the actual #6 reader and
 quality gate. They do not constitute a real authenticated NASA download.
+
+## Processing recipes
+
+`POST /api/explore/process` (#83) applies an ordered Processing recipe with the
+data-layer processing of #46 (`data/data_processing/README.md` lists the
+operations). Each named input is either a Source series exactly as
+`/api/explore/series` returned it, sent as `{"time_step", "aggregation",
+"series"}` with that view's settings, or a Derived series from an earlier answer,
+sent back as `{"derived": ...}`. The answer holds every Derived series with its
+recipe, its inputs' provenance and its warnings. Nothing is stored: replaying a
+recipe means sending the same request again. A step the data layer does not
+provide is refused with 422 `processing_refused`, whose `details.reason` is the
+data layer's code; a body that does not match `processingRequest` gets 422
+`invalid_processing_request`.
 
 ## Explore My World background Series
 

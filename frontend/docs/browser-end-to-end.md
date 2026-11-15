@@ -24,7 +24,7 @@ readiness, runs the browser tests, and stops the servers it started:
 npm run test:integration
 ```
 
-`npm run test:areas` runs the Selected-area suite (`integration-areas/`, #79) the
+`npm run test:areas` runs the Selected-area suite (`integration-areas/`, #79 and #81) the
 same way, with `tests/explore_area_app.py` serving synthetic global grids in
 place of NASA.
 
