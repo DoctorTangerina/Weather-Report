@@ -1,6 +1,6 @@
 # Manual data processing
 
-Public Python methods for issue #46's arithmetic slice (#47). Everything in this
+Public Python methods for issue #46's arithmetic (#47) and scaling (#50). Everything in this
 package is independent of the API and automatic engine. It performs no downloads
 or file reads, needs no Earthdata token, and adds no third-party dependencies.
 
@@ -58,6 +58,48 @@ returning partially executed outputs. `None` values stay missing and propagate
 through calculations, including zero-weight terms; nothing is filled with zero.
 Source metadata and prior processing history are retained in provenance snapshots;
 Derived series may be passed into later requests just like acquired inputs.
+
+## Scaling
+
+Scaling uses the same `operations` list and can consume Source series or earlier
+outputs. It uses every valid value in its immediate input, preserves `None` and
+timestamps, and returns dimensionless units (`"1"`). Inputs and their quality
+metadata remain unchanged.
+
+```python
+response = process_series(
+    {
+        "series": request["series"],
+        "operations": [
+            {"id": "normalized", "operation": "minmax", "input": "A"},
+            {"id": "standardized", "operation": "zscore", "input": "B", "ddof": 0},
+            {"id": "combined", "expression": "normalized + standardized"},
+        ],
+    }
+)
+```
+
+- `minmax` scales valid values to [0, 1] by default. Supply `range` to choose
+  different bounds:
+
+  ```python
+  {"id": "scaled", "operation": "minmax", "input": "A", "range": [-1, 1]}
+  ```
+
+  For input `[2, None, 4, 6]`, this produces `[-1, None, 0, 1]`. Bounds must be
+  two finite numbers with lower strictly less than upper. Invalid bounds raise
+  `invalid_scaling_range`. The chosen range is recorded in scaling metadata and
+  instructions for replay. Output units remain dimensionless. `range` is only
+  supported for Min–Max, not Z-score.
+- `zscore` centres valid values and divides by their standard deviation. The
+  convention was left open in the specification, so the caller must explicitly
+  choose `ddof: 0` (population) or `ddof: 1` (sample). Missing or invalid `ddof`
+  raises `invalid_scaling_parameters`; it is recorded for replay.
+- Constant valid values raise `constant_input` with an explanation rather than
+  returning invented zeros. All-missing input raises `no_valid_values`.
+- Scaling results have `expression: None` and a `scaling` object identifying the
+  method and, for Z-score, `ddof`. Inputs, provenance and ordered instructions are
+  recorded in the same way as arithmetic results.
 
 ## Input requirements
 
@@ -129,5 +171,4 @@ From the repository root with the project's local environment:
 ```
 
 Tests exercise the public method and preview with deterministic fixtures. No API,
-engine, correlation, scaling, resampling or missing-value repair is implemented
-by this arithmetic slice.
+engine, correlation, resampling or missing-value repair is implemented here.

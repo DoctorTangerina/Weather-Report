@@ -9,19 +9,9 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from itertools import pairwise
 
+from .errors import ProcessingError
+from .scaling import scale_values
 from .units import compound, conversion
-
-
-class ProcessingError(ValueError):
-    """A caller-visible failure; details can be serialized by the owning API."""
-
-    def __init__(self, code: str, message: str, **details):
-        super().__init__(message)
-        self.code = code
-        self.details = details
-
-    def as_dict(self) -> dict:
-        return {"code": self.code, "message": str(self), "details": self.details}
 
 
 def _number(value) -> bool:
@@ -262,23 +252,69 @@ def process_series(request: Mapping) -> dict:
     for index, step in enumerate(steps):
         if (
             not isinstance(step, Mapping)
-            or set(step) - {"id", "expression", "acknowledge_unit_difference"}
             or not _name(step.get("id"))
             or step["id"] in available
-            or not isinstance(step.get("acknowledge_unit_difference", False), bool)
         ):
             raise ProcessingError(
                 "invalid_operation",
                 "Use a new output id and supported parameters.",
                 operation=index,
             )
-        expression = step.get("expression")
-        tree = _parse(expression)
-        names = preview_expression(expression)["inputs"]
-        if not names:
+        method = step.get("operation", "arithmetic")
+        if method not in ("arithmetic", "minmax", "zscore"):
             raise ProcessingError(
-                "invalid_expression", "Reference at least one series."
+                "invalid_operation", "Unsupported operation.", operation=index
             )
+        allowed = (
+            {"id", "operation", "expression", "acknowledge_unit_difference"}
+            if method == "arithmetic"
+            else {"id", "operation", "input", "ddof"}
+        )
+        if method == "minmax":
+            allowed.add("range")
+        if set(step) - allowed:
+            raise ProcessingError(
+                "invalid_operation",
+                "Unsupported operation parameters.",
+                operation=index,
+            )
+        expression = None
+        if method == "arithmetic":
+            if not isinstance(step.get("acknowledge_unit_difference", False), bool):
+                raise ProcessingError(
+                    "invalid_operation",
+                    "Acknowledgement must be boolean.",
+                    operation=index,
+                )
+            expression = step.get("expression")
+            tree = _parse(expression)
+            names = preview_expression(expression)["inputs"]
+            if not names:
+                raise ProcessingError(
+                    "invalid_expression", "Reference at least one series."
+                )
+        else:
+            if not _name(step.get("input")):
+                raise ProcessingError(
+                    "invalid_operation",
+                    "Scaling requires one named input.",
+                    operation=index,
+                )
+            if method == "minmax" and "ddof" in step:
+                raise ProcessingError(
+                    "invalid_operation",
+                    "ddof applies only to Z-score scaling.",
+                    operation=index,
+                )
+            if method == "zscore" and (
+                type(step.get("ddof")) is not int or step["ddof"] not in (0, 1)
+            ):
+                raise ProcessingError(
+                    "invalid_scaling_parameters",
+                    "Choose ddof=0 (population) or ddof=1 (sample) for Z-score scaling.",
+                    operation=index,
+                )
+            names = [step["input"]]
         missing = [name for name in names if name not in available]
         if missing:
             raise ProcessingError(
@@ -299,15 +335,26 @@ def process_series(request: Mapping) -> dict:
                 inputs=names,
             )
         step_warnings = []
-        result = _evaluate(
-            tree.body,
-            used,
-            len(first["timestamps"]),
-            first["timestamps"],
-            step.get("acknowledge_unit_difference", False),
-            step_warnings,
-        )
-        normalized_step = dict(step)
+        if method == "arithmetic":
+            result = _evaluate(
+                tree.body,
+                used,
+                len(first["timestamps"]),
+                first["timestamps"],
+                step.get("acknowledge_unit_difference", False),
+                step_warnings,
+            )
+        else:
+            result = _Value(
+                scale_values(
+                    first["values"],
+                    method,
+                    step.get("ddof"),
+                    step.get("range", (0.0, 1.0)),
+                ),
+                "1",
+            )
+        normalized_step = copy.deepcopy(dict(step))
         recipe.append(normalized_step)
         # Metadata snapshots preserve source quality and previous processing history.
         provenance = {
@@ -330,6 +377,12 @@ def process_series(request: Mapping) -> dict:
             "recipe": {"operations": copy.deepcopy(recipe)},
             "warnings": step_warnings,
         }
+        if method != "arithmetic":
+            output["scaling"] = {"method": method}
+            if method == "minmax" and "range" in step:
+                output["scaling"]["range"] = list(step["range"])
+            if method == "zscore":
+                output["scaling"]["ddof"] = step["ddof"]
         available[step["id"]] = output
         outputs[step["id"]] = output
         warnings.extend({"operation": step["id"], **w} for w in step_warnings)
