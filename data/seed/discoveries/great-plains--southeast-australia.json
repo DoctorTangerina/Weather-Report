@@ -1,0 +1,397 @@
+{
+  "discovery_id": "great-plains--southeast-australia",
+  "region_ids": [
+    "great-plains",
+    "southeast-australia"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "soil-moisture",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "great-plains",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.7160201888184506,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -1.6243041493012027,
+            0.19226377166430142
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.7160201888184506,
+              "p_value": 0.0008219203482083513,
+              "r_squared": 0.03691806055164116
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.7171596885402337,
+              "p_value": 0.12491241232817753
+            },
+            "robust": {
+              "slope_per_decade": -0.6909046140163001,
+              "p_value": 0.00048163492916513176
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.6832755717466024
+            },
+            "mann_kendall": {
+              "tau": -0.1203567447045708,
+              "p_value": 0.0018783772305718145
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2001-02",
+              "slope_per_decade": -0.6407613442801395,
+              "p_value": 0.002220334334345443
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.1984588751795747,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.6430819490458736,
+            "effective_sample_size": 65.16742232389315
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southeast-australia",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.25975178040036984,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -0.855543337873445,
+            1.3750468986741846
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.25975178040036984,
+              "p_value": 0.25357768918140083,
+              "r_squared": 0.004371867624083287
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.26016515852310157,
+              "p_value": 0.6675970076308405
+            },
+            "robust": {
+              "slope_per_decade": 0.1749950958656767,
+              "p_value": 0.3975236353262723
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.17044957619511214
+            },
+            "mann_kendall": {
+              "tau": 0.028896321070234116,
+              "p_value": 0.4554302671380731
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2022-10",
+              "slope_per_decade": 0.19625669052051536,
+              "p_value": 0.38127104562092273
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.7469451043794052,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.7130155462304124,
+            "effective_sample_size": 50.2595182631786
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "precipitation",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "great-plains",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.9611734039735902,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -3.4328826263802705,
+            5.355229434327451
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.9611734039735902,
+              "p_value": 0.6411510116368306,
+              "r_squared": 0.000729950764554893
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.9627030491477774,
+              "p_value": 0.7309180109417465
+            },
+            "robust": {
+              "slope_per_decade": -0.42967345973472854,
+              "p_value": 0.8013543500610472
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.1610037515337312
+            },
+            "mann_kendall": {
+              "tau": -0.004147157190635452,
+              "p_value": 0.9146928563969077
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2015-05",
+              "slope_per_decade": 0.7235059481443022,
+              "p_value": 0.7144346278010969
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.7638115900603604,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.07962237348333275,
+            "effective_sample_size": 255.7498758238385
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southeast-australia",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 2.5726244370892863,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -2.7323689079777576,
+            7.87761778215633
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 2.5726244370892863,
+              "p_value": 0.22639519936066616,
+              "r_squared": 0.004906791565054521
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 2.5767186021366775,
+              "p_value": 0.45996514034027847
+            },
+            "robust": {
+              "slope_per_decade": 0.838068191195842,
+              "p_value": 0.648536565328422
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.7717036543268609
+            },
+            "mann_kendall": {
+              "tau": 0.014849498327759197,
+              "p_value": 0.7013024555251604
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2022-10",
+              "slope_per_decade": 1.6330231908534036,
+              "p_value": 0.42134500350928283
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.45524051660938564,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.23234506816468803,
+            "effective_sample_size": 186.87661881389315
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 121.42037222731977,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 1.4203722273197716,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Soil moisture seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think soil moisture is changing faster?",
+          "options": [
+            {
+              "option_id": "great-plains",
+              "label": "Great Plains"
+            },
+            {
+              "option_id": "southeast-australia",
+              "label": "Southeast Australia"
+            }
+          ],
+          "answer_option_id": "great-plains",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "great-plains",
+              "variable_id": "soil-moisture"
+            },
+            {
+              "region_id": "southeast-australia",
+              "variable_id": "soil-moisture"
+            }
+          ],
+          "comparison": "Great Plains: -0.716 mm/decade (95% interval -1.624 to 0.192). Southeast Australia: 0.26 mm/decade (95% interval -0.856 to 1.375). Great Plains is changing faster. Evidence label for Great Plains: Not enough evidence yet. Evidence label for Southeast Australia: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make soil moisture change this way?",
+          "possible_causes": [
+            {
+              "text": "Less rain means less water soaks into the soil.",
+              "kind": "context"
+            },
+            {
+              "text": "Hotter air pulls more water out of the soil through evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Farming and irrigation change how much water the soil holds.",
+              "kind": "context"
+            },
+            {
+              "text": "Melting snow and ice add water to the soil in spring.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "great-plains",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "southeast-australia",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "great-plains",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "southeast-australia",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

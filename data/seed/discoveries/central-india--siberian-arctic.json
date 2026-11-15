@@ -1,0 +1,397 @@
+{
+  "discovery_id": "central-india--siberian-arctic",
+  "region_ids": [
+    "central-india",
+    "siberian-arctic"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "soil-moisture",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "central-india",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.26459099617749865,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -0.23862383424920003,
+            0.7678058266041974
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.26459099617749865,
+              "p_value": 0.10875688602394944,
+              "r_squared": 0.008608734166627444
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.2650120755985004,
+              "p_value": 0.2957429450690626
+            },
+            "robust": {
+              "slope_per_decade": 0.23646306571575024,
+              "p_value": 0.12249299632680198
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.2123009020885595
+            },
+            "mann_kendall": {
+              "tau": 0.046510590858416946,
+              "p_value": 0.22960785270805006
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2002-07",
+              "slope_per_decade": 0.22703681546396634,
+              "p_value": 0.1647414478350372
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.4260377875885316,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.40986212307788705,
+            "effective_sample_size": 125.57352962297671
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.15182306281720512,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -1.336000322721039,
+            1.032354197086629
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.15182306281720512,
+              "p_value": 0.48260237388634014,
+              "r_squared": 0.0016556903180407253
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.1520646793812907,
+              "p_value": 0.7640261490530973
+            },
+            "robust": {
+              "slope_per_decade": -0.25163613959696723,
+              "p_value": 0.20928961622431394
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.23412494888251292
+            },
+            "mann_kendall": {
+              "tau": -0.037458193979933115,
+              "p_value": 0.3332711532127042
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2013-06",
+              "slope_per_decade": -0.1466954513060444,
+              "p_value": 0.4912081071381687
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.8198178376655916,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.7603858737601473,
+            "effective_sample_size": 40.834364183127974
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "central-india",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.1438831932710085,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.36330254715305865,
+            0.07553616061104163
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.1438831932710085,
+              "p_value": 0.04701281413523671,
+              "r_squared": 0.013172695545300156
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.14411217404733723,
+              "p_value": 0.1364897686092859
+            },
+            "robust": {
+              "slope_per_decade": -0.1115716492010327,
+              "p_value": 0.06841265764773137
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.12055383420464097
+            },
+            "mann_kendall": {
+              "tau": -0.07304347826086957,
+              "p_value": 0.05919870730920707
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2001-06",
+              "slope_per_decade": -0.16330543133404582,
+              "p_value": 0.022926761508732657
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.3036728558318588,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.4050728642003257,
+            "effective_sample_size": 127.0241176008194
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.7473858091593341,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            0.23167565342196872,
+            1.2630959648966993
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.7473858091593341,
+              "p_value": 0.0013192000649806174,
+              "r_squared": 0.03407937488635952
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.7485752252329343,
+              "p_value": 0.013692510052941816
+            },
+            "robust": {
+              "slope_per_decade": 0.7102054683748705,
+              "p_value": 0.0003877704105674845
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.7205680931324259
+            },
+            "mann_kendall": {
+              "tau": 0.12931995540691194,
+              "p_value": 0.0008367666111171322
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2007-02",
+              "slope_per_decade": 0.7166529879500452,
+              "p_value": 0.001786715510118543
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.013873543655745403,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.12644790155842656,
+            "effective_sample_size": 232.6478030363477
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 120.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Soil moisture seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think soil moisture is changing faster?",
+          "options": [
+            {
+              "option_id": "central-india",
+              "label": "Central India"
+            },
+            {
+              "option_id": "siberian-arctic",
+              "label": "Siberian Arctic"
+            }
+          ],
+          "answer_option_id": "central-india",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "central-india",
+              "variable_id": "soil-moisture"
+            },
+            {
+              "region_id": "siberian-arctic",
+              "variable_id": "soil-moisture"
+            }
+          ],
+          "comparison": "Central India: 0.265 mm/decade (95% interval -0.239 to 0.768). Siberian Arctic: -0.152 mm/decade (95% interval -1.336 to 1.032). Central India is changing faster. Evidence label for Central India: Not enough evidence yet. Evidence label for Siberian Arctic: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make soil moisture change this way?",
+          "possible_causes": [
+            {
+              "text": "Less rain means less water soaks into the soil.",
+              "kind": "context"
+            },
+            {
+              "text": "Hotter air pulls more water out of the soil through evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Farming and irrigation change how much water the soil holds.",
+              "kind": "context"
+            },
+            {
+              "text": "Melting snow and ice add water to the soil in spring.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "central-india",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "central-india",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

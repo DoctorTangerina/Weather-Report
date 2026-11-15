@@ -17,6 +17,7 @@ from .discovery import (
 )
 from .mirror import find_mirrors
 from .quality import usable_series
+from .seed import SeedSet, compute_seed_set, missing_evidence_labels, write_seed_set
 from .store import JsonResultStore, ResultStore
 from .trend import FALSE_DISCOVERY_RATE, estimate_trend, rate_evidence
 from .units import precipitation_rate_to_monthly_total
@@ -30,18 +31,22 @@ __all__ = [
     "JsonResultStore",
     "Period",
     "ResultStore",
+    "SeedSet",
     "Series",
     "SessionHistory",
     "Trend",
     "applies_to",
     "build_narrative",
     "catalog_from_dict",
+    "compute_seed_set",
     "estimate_trend",
     "find_candidate_discoveries",
     "find_mirrors",
     "load_catalog",
+    "missing_evidence_labels",
     "precipitation_rate_to_monthly_total",
     "rate_evidence",
     "select_surprise",
     "usable_series",
+    "write_seed_set",
 ]
