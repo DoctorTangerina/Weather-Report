@@ -131,3 +131,45 @@ def test_surprise_me_never_serves_the_weak_discovery_however_often_it_is_asked(c
         for _ in range(40)
     }
     assert served == {"amazon-basin--sahel", "central-india--sahel"}
+
+
+def test_the_service_lists_the_series_it_holds(client, validator_for):
+    response = client.get("/api/series/available")
+    assert response.status_code == 200
+    validator_for(RESPONSES, "#/$defs/availableSeriesResponse").validate(
+        response.json()
+    )
+    pairs = {(s["region_id"], s["variable_id"]) for s in response.json()["data"]}
+    assert ("amazon-basin", "temperature") in pairs
+
+
+def test_every_listed_series_can_actually_be_fetched(client):
+    for item in client.get("/api/series/available").json()["data"]:
+        response = client.get(
+            "/api/series",
+            params={
+                "region_id": item["region_id"],
+                "variable_id": item["variable_id"],
+                "period_start": item["period"]["start"],
+                "period_end": item["period"]["end"],
+            },
+        )
+        assert response.status_code == 200, item
+
+
+def test_a_pair_missing_from_the_list_cannot_be_compared(client):
+    pairs = {
+        (s["region_id"], s["variable_id"])
+        for s in client.get("/api/series/available").json()["data"]
+    }
+    assert ("congo-basin", "temperature") not in pairs
+    response = client.get(
+        "/api/comparison",
+        params={
+            "region_a": "amazon-basin",
+            "region_b": "congo-basin",
+            "variable_id": "temperature",
+        },
+    )
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "result_not_available"

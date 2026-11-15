@@ -22,6 +22,8 @@ export const getDiscoveries = () => request('/api/discoveries')
 export const getComparison = (regionA, regionB, variableId) =>
   request(`/api/comparison?${new URLSearchParams({ region_a: regionA, region_b: regionB, variable_id: variableId })}`)
 
+export const getAvailableSeries = () => request('/api/series/available')
+
 export const getSeries = (regionId, variableId, period) => {
   const params = new URLSearchParams({ region_id: regionId, variable_id: variableId })
   if (period) {
