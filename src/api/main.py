@@ -23,6 +23,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from data.data_gathering.config import settings
 from engine import (
     ENGINE_VERSION,
     JsonResultStore,
@@ -58,7 +59,7 @@ live_store = JsonResultStore(
     ENGINE_VERSION,
 )
 LIVE_TIMEOUT_SECONDS = float(
-    os.environ.get("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS", "15")
+    os.environ.get("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS", "120")
 )
 if not math.isfinite(LIVE_TIMEOUT_SECONDS) or LIVE_TIMEOUT_SECONDS <= 0:
     raise ValueError("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS must be positive and finite")
@@ -154,7 +155,7 @@ async def get_series(
     if payload is not None and usable(payload, catalog):
         return {**ok(payload), "provenance": "preloaded"}
     try:
-        token = os.environ.get("EARTHDATA_TOKEN")
+        token = settings().get("EARTHDATA_TOKEN")
         if not token:
             raise AcquisitionUnavailable("Server token unavailable")
         acquired = await asyncio.wait_for(
