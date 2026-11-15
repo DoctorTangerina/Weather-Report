@@ -397,5 +397,23 @@ button.experience-quiet:hover { box-shadow: 0 6px 18px #16202a14; }
 .variable-definition { margin: 0.75rem 0 0.25rem; font-size: 0.88rem; }
 .chart-note { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.8rem; }
 
+/* Explore My World (#75): one Region, up to five Variables, one period */
+.explore-entry { margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid #dbe3e9; }
+.explore-entry h3 { margin: 0 0 0.25rem; font-size: 1rem; }
+.explore h2 { margin-bottom: 0.25rem; }
+.explore-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin: 1rem 0 0; padding: 0; border: 0; min-width: 0; }
+.explore-choices legend { width: 100%; margin-bottom: 0.4rem; padding: 0; font-size: 0.85rem; font-weight: 600; }
+.explore-choices .chart-note { width: 100%; }
+.explore-variable { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.92rem; cursor: pointer; }
+.explore-variable input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); }
+.explore-month { display: inline-flex; align-items: center; gap: 0.5rem; }
+.explore-period label { font-size: 0.85rem; }
+.explore-period input { min-width: 0; padding: 0.45rem; border: 1px solid #aab8c4; border-radius: 0.3rem; background: white; color: var(--ink); font: inherit; }
+.explore-period input:focus-visible, .explore-variable input:focus-visible { outline: 3px solid #47b5d7; outline-offset: 2px; }
+.explore .notice { margin: 0.75rem 0 0; }
+.explore-charts { margin-top: 0.5rem; }
+/* With no 12-month mean drawn over it, the monthly line is the chart. */
+.explore .chart-monthly { stroke-width: 1.6; opacity: 1; stroke-linejoin: round; }
+
 /* #15: the Evidence label caveat after a prediction (#10, Q7) */
 .feedback-caveat { display: block; margin-top: 0.35rem; color: var(--muted); font-size: 0.9rem; }

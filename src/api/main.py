@@ -16,10 +16,13 @@ import logging
 import math
 import os
 import re
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
+from functools import partial
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -39,6 +42,15 @@ from engine.contracts import Discovery, as_dict
 from engine.discovery import SessionHistory
 
 from .acquisition import AcquisitionUnavailable, acquire_series
+from .explore import (
+    AGGREGATIONS,
+    FIRST_MONTH,
+    AcquisitionNeeded,
+    Refusal,
+    explore_series,
+)
+from .grid_source import GridAcquisitionSource
+from .jobs import SeriesJobs
 from .results import example_response, select_example, usable
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -50,7 +62,18 @@ CATALOG_PATH = Path(
     os.environ.get("WEATHER_REPORT_CATALOG", str(ROOT / "data" / "catalog.json"))
 )
 
-app = FastAPI(title="Weather Report", version=ENGINE_VERSION)
+explore_jobs = SeriesJobs()
+_aggregation_caches: dict[Path, JsonResultStore] = {}
+_aggregation_seeds: dict[Path, JsonResultStore] = {}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await explore_jobs.close()
+
+
+app = FastAPI(title="Weather Report", version=ENGINE_VERSION, lifespan=lifespan)
 
 catalog = load_catalog(CATALOG_PATH)
 store = JsonResultStore(DATA_DIR, ENGINE_VERSION)
@@ -122,12 +145,23 @@ def list_available_series() -> dict[str, Any]:
     return ok(store.available_series())
 
 
+def get_acquisition_source() -> GridAcquisitionSource | None:
+    """Override this dependency to supply grids without NASA or server credentials.
+
+    None selects on-demand NASA subsetting inside the cancellable worker.
+    """
+    return None
+
+
 @app.get("/api/series")
 async def get_series(
     region_id: str,
     variable_id: str,
     period_start: str = "2000-01",
     period_end: str = "2024-12",
+    acquisition_source: Annotated[
+        GridAcquisitionSource | None, Depends(get_acquisition_source)
+    ] = None,
 ) -> Any:
     rejection = reject_outside_catalog(region_id, variable_id)
     if rejection is not None:
@@ -156,14 +190,18 @@ async def get_series(
         return {**ok(payload), "provenance": "preloaded"}
     try:
         token = settings().get("EARTHDATA_TOKEN")
-        if not token:
+        if not token and acquisition_source is None:
             raise AcquisitionUnavailable("Server token unavailable")
+        source_options = (
+            {"source": acquisition_source} if acquisition_source is not None else {}
+        )
         acquired = await asyncio.wait_for(
             acquire_series(
                 region,
                 variable,
                 period,
-                token=token,
+                token=token or "",
+                **source_options,
             ),
             timeout=LIVE_TIMEOUT_SECONDS,
         )
@@ -190,6 +228,110 @@ async def get_series(
     return error(
         503, "live_data_unavailable", "No live data or usable examples available."
     )
+
+
+@app.get("/api/explore/series")
+async def get_explore_series(
+    region_id: str,
+    variable_id: Annotated[list[str] | None, Query()] = None,
+    aggregation: str = "mean",
+    time_step: str = "monthly",
+    period_start: str = FIRST_MONTH,
+    period_end: str | None = None,
+    acquisition_source: Annotated[
+        GridAcquisitionSource | None, Depends(get_acquisition_source)
+    ] = None,
+) -> Any:
+    """Explore My World: one Region's Series for one to five Variables."""
+    build = partial(
+        explore_series,
+        catalog,
+        store,
+        region_id,
+        variable_id or [],
+        aggregation,
+        time_step,
+        period_start,
+        period_end,
+        cache=explore_cache(aggregation),
+        seed=explore_seed(aggregation),
+        latest=explore_latest_month(),
+    )
+    try:
+        data, provenance = build()
+    except AcquisitionNeeded as needed:
+        job = explore_jobs.start(
+            needed.view,
+            catalog,
+            explore_cache(aggregation),
+            acquisition_source,
+            LIVE_TIMEOUT_SECONDS,
+            finish=lambda: build()[0],
+        )
+        return JSONResponse(status_code=202, content=ok({"job": dict(job)}))
+    except Refusal as refusal:
+        return error(refusal.status, refusal.code, refusal.message)
+    return {**ok(data), "provenance": provenance}
+
+
+def explore_seed(aggregation: str) -> JsonResultStore | None:
+    """The seed set's Series built with `aggregation`.
+
+    Means are the seed set the Discoveries come from. Every other Aggregation
+    lives in its own folder under it, which the Discovery engine never reads.
+    """
+    if aggregation == "mean":
+        return store
+    if aggregation not in AGGREGATIONS:
+        return None
+    root = store.root / "aggregations" / aggregation
+    if root not in _aggregation_seeds:
+        _aggregation_seeds[root] = JsonResultStore(root, ENGINE_VERSION)
+    return _aggregation_seeds[root]
+
+
+def explore_cache(aggregation: str) -> JsonResultStore | None:
+    """Where Explore My World keeps the Series pieces it acquired with `aggregation`.
+
+    One folder per Aggregation beside the live results cache, which is keyed
+    without one. A piece keeps its values even when it alone fails the Quality
+    gate, so nothing that serves stored Series directly (`/api/series`) reads it.
+    """
+    if aggregation not in AGGREGATIONS:
+        # An unknown Aggregation is refused before any cache is read.
+        return None
+    root = live_store.root / "explore" / aggregation
+    if root not in _aggregation_caches:
+        _aggregation_caches[root] = JsonResultStore(root, ENGINE_VERSION)
+    return _aggregation_caches[root]
+
+
+def explore_latest_month() -> str:
+    configured = os.environ.get("WEATHER_REPORT_LATEST_MONTH")
+    if configured is not None:
+        if (
+            re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", configured) is None
+            or configured < FIRST_MONTH
+        ):
+            raise ValueError(
+                "WEATHER_REPORT_LATEST_MONTH must be YYYY-MM, from 2000-01."
+            )
+        return configured
+    last = datetime.now(UTC).replace(day=1) - timedelta(days=1)
+    return last.strftime("%Y-%m")
+
+
+@app.get("/api/explore/options")
+def get_explore_options() -> Any:
+    return ok({"latest_month": explore_latest_month()})
+
+
+@app.get("/api/explore/jobs/{job_id}")
+async def get_explore_job(job_id: str) -> Any:
+    job = explore_jobs.jobs.get(job_id)
+    if job is None:
+        return error(404, "job_not_found", "No background job with this reference.")
+    return ok({"job": dict(job)})
 
 
 @app.get("/api/comparison")
