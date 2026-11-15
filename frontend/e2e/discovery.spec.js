@@ -80,6 +80,25 @@ test('a pair without a Discovery stays selected and explains why the investigati
   await expect(page.getByLabel('Second Region', { exact: true })).toHaveValue('sahel')
 })
 
+test('checking an unavailable Discovery keeps the welcome page and charts mounted', async ({ page }) => {
+  await page.route('**/api/discoveries', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    await route.fulfill({ json: { data: [], notice: null } })
+  })
+  await page.goto('/')
+  await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
+  await page.getByLabel('Second Region', { exact: true }).selectOption('sahel')
+  await expect(page.locator('.explorer .chart')).toHaveCount(2)
+  await page.locator('.welcome').evaluate((node) => { window.originalWelcome = node })
+  await page.getByRole('button', { name: /Become a Detective/ }).click()
+  expect(await page.evaluate(() => window.originalWelcome.isConnected)).toBe(true)
+  await expect(page.getByLabel('First Region', { exact: true })).toBeDisabled()
+  await expect(page.locator('.explorer .chart')).toHaveCount(2)
+  await expect(page.getByRole('alert')).toHaveText(/There is no Discovery to investigate/)
+  expect(await page.locator('.welcome').evaluate((node) => node === window.originalWelcome)).toBe(true)
+  await expect(page.getByLabel('First Region', { exact: true })).toBeEnabled()
+})
+
 test('one selected Region asks for a second Region before investigating', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')

@@ -19,11 +19,13 @@ export default function MainScreen({
   highlights,
   notice,
   error,
+  checkingDiscovery,
   seen,
   onSurprise,
   onDetective,
   onInvestigate,
   onBack,
+  onHome,
   onNewSession,
   onRetry,
 }) {
@@ -112,6 +114,9 @@ export default function MainScreen({
   // Notices for a Discovery's series are shown beside each chart (SeriesResults),
   // so only the Explorer's notice goes in the banner.
   const banner = notice ?? (exploring ? seriesNotice : null)
+  const detectiveError = exploring && ['result_not_available', 'incomplete_pair'].includes(error?.code)
+    ? error
+    : null
   const timelineKey =
     discovery && !exploring
       ? `${phase}/${discovery.discovery_id}`
@@ -147,12 +152,25 @@ export default function MainScreen({
         aria-label={investigating ? 'Become a Detective' : undefined}
         aria-busy={phase === 'loading' || phase === 'drawing' || seriesLoading}
       >
+        {catalog && (
+          <button
+            className="home-button"
+            aria-label="Home"
+            title="Home — choose Regions"
+            disabled={phase === 'drawing' || exploring}
+            onClick={onHome}
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9" />
+            </svg>
+          </button>
+        )}
         {banner && (
           <p className="notice" role="status">
             {banner.message}
           </p>
         )}
-        {error && (
+        {error && !detectiveError && (
           <p className="error" role="alert">
             {error.message}
           </p>
@@ -169,10 +187,13 @@ export default function MainScreen({
           <>
             <Welcome
               catalog={catalog}
+              detectiveError={detectiveError}
+              checkingDiscovery={checkingDiscovery}
               onSurprise={onSurprise}
               onDetective={() => onDetective([region, secondRegion].filter(Boolean).map((item) => item.region_id))}
             />
             <Explorer
+              disabled={checkingDiscovery}
               catalog={catalog}
               region={region}
               secondRegion={secondRegion}

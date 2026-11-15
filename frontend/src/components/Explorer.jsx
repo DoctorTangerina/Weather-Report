@@ -18,6 +18,7 @@ export default function Explorer({
   timestamp,
   highlights,
   trends,
+  disabled = false,
 }) {
 
   // Not every Region has a stored series for every Variable. Mark the missing
@@ -35,6 +36,7 @@ export default function Explorer({
         <label htmlFor="explore-region">First Region</label>
         <select
           id="explore-region"
+          disabled={disabled}
           value={region?.region_id ?? ''}
           onChange={(event) => onRegion(event.target.value)}
         >
@@ -48,6 +50,7 @@ export default function Explorer({
         <label htmlFor="explore-second-region">Second Region</label>
         <select
           id="explore-second-region"
+          disabled={disabled}
           value={secondRegion?.region_id ?? ''}
           onChange={(event) => onSecondRegion(event.target.value)}
         >
@@ -60,7 +63,7 @@ export default function Explorer({
         <select
           id="explore-variable"
           value={variable?.variable_id ?? ''}
-          disabled={variables.length === 0}
+          disabled={disabled || variables.length === 0}
           onChange={(event) => onVariable(event.target.value)}
         >
           {variables.map((item) => (
