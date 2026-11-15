@@ -12,6 +12,7 @@ from typing import cast
 
 from ..time_steps import series_time_step, time_step_label
 from .comparison import pearson
+from .detrending import detrend_values
 from .errors import ProcessingError
 from .missing_values import manage_missing
 from .resampling import resample_series
@@ -291,6 +292,7 @@ def process_series(request: Mapping) -> dict:
             "missing",
             "filter",
             "pearson",
+            "detrend",
         ):
             raise ProcessingError(
                 "invalid_operation", "Unsupported operation.", operation=index
@@ -302,6 +304,8 @@ def process_series(request: Mapping) -> dict:
         )
         if method == "pearson":
             allowed = {"id", "operation", "inputs"}
+        if method == "detrend":
+            allowed = {"id", "operation", "input", "preserve_mean"}
         if method == "resample":
             allowed = {
                 "id",
@@ -340,6 +344,12 @@ def process_series(request: Mapping) -> dict:
             raise ProcessingError(
                 "invalid_operation",
                 "Unsupported operation parameters.",
+                operation=index,
+            )
+        if method == "detrend" and not isinstance(step.get("preserve_mean"), bool):
+            raise ProcessingError(
+                "invalid_detrending_parameters",
+                "Choose preserve_mean=true or false explicitly for linear detrending.",
                 operation=index,
             )
         expression = None
@@ -464,6 +474,13 @@ def process_series(request: Mapping) -> dict:
                 step.get("acknowledge_unit_difference", False),
                 step_warnings,
             )
+        elif method == "detrend":
+            result = _Value(
+                detrend_values(
+                    first["values"], timelines[names[0]], step.get("preserve_mean")
+                ),
+                first["units"],
+            )
         elif method == "missing":
             managed = manage_missing(
                 first,
@@ -572,6 +589,12 @@ def process_series(request: Mapping) -> dict:
                 output["scaling"]["range"] = list(step["range"])
             if method == "zscore":
                 output["scaling"]["ddof"] = step["ddof"]
+        if method == "detrend":
+            output["detrending"] = {
+                "method": "ols",
+                "time_basis": "elapsed_utc_seconds",
+                "preserve_mean": step["preserve_mean"],
+            }
         available[step["id"]] = output
         outputs[step["id"]] = output
         warnings.extend({"operation": step["id"], **w} for w in step_warnings)
