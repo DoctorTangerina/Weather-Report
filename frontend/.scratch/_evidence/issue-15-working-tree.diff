@@ -1,0 +1,289 @@
+﻿diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+index b5b0bba..63a4d92 100644
+--- a/frontend/src/App.jsx
++++ b/frontend/src/App.jsx
+@@ -1,6 +1,5 @@
+ ﻿import { useEffect, useRef, useState } from 'react'
+ import { getCatalog, surpriseMe } from './api.js'
+-import InvestigationScreen from './screens/InvestigationScreen.jsx'
+ import MainScreen from './screens/MainScreen.jsx'
+ 
+ export default function App() {
+@@ -40,6 +39,7 @@ export default function App() {
+     surpriseMe(session)
+       .then(({ data: next, notice: nextNotice }) => {
+         setDiscovery(next)
++        setView('home')
+         remember(next)
+         setNotice(nextNotice ?? null)
+       })
+@@ -51,27 +51,19 @@ export default function App() {
+   }
+ 
+   return (
+-    <main className={view === 'home' ? 'app-home' : 'detail-screen'}>
+-      {view === 'home' && (
++    <main className="app-home">
+         <MainScreen
+           discovery={discovery}
+           catalog={catalog}
+           onInvestigate={discovery ? () => setView('investigation') : undefined}
++          investigating={view === 'investigation'}
++          onBack={() => setView('home')}
+           onSurprise={onSurprise}
+           loading={loading}
+           busy={busy}
+           error={error}
+           discoveryNotice={notice}
+         />
+-      )}
+-      {view === 'investigation' && discovery && (
+-        <InvestigationScreen
+-          key={discovery.discovery_id}
+-          discovery={discovery}
+-          catalog={catalog}
+-          onBack={() => setView('home')}
+-        />
+-      )}
+     </main>
+   )
+ }
+diff --git a/frontend/src/screens/InvestigationScreen.jsx b/frontend/src/screens/InvestigationScreen.jsx
+index 88d25ad..dde69a5 100644
+--- a/frontend/src/screens/InvestigationScreen.jsx
++++ b/frontend/src/screens/InvestigationScreen.jsx
+@@ -1,50 +1,15 @@
+ import { useState } from 'react'
+ import Chart from '../components/Chart.jsx'
+-import useSeries from '../useSeries.js'
++import Evidence from '../components/Evidence.jsx'
+ 
+ function regionName(catalog, regionId) {
+   return catalog.regions.find((region) => region.region_id === regionId)?.name ?? regionId
+ }
+ 
+-function HowDoWeKnow({ discovery, catalog }) {
+-  const evidence = discovery.narrative.how_do_we_know
+-  return (
+-    <aside className="evidence">
+-      <h3>How do we know?</h3>
+-      <p>
+-        Period analyzed: {evidence.period.start} to {evidence.period.end}.
+-      </p>
+-      <ul>
+-        {discovery.contrasts.flatMap((contrast) =>
+-          contrast.trends.map((trend) => (
+-            <li key={`${trend.region_id}-${trend.variable_id}`}>
+-              <strong>{regionName(catalog, trend.region_id)}</strong> — {trend.rate_per_decade}{' '}
+-              {trend.units_per_decade} (95% interval {trend.confidence_interval_95[0]} to{' '}
+-              {trend.confidence_interval_95[1]}). {trend.evidence_label}.
+-            </li>
+-          )),
+-        )}
+-      </ul>
+-      <ul>
+-        {evidence.sources.map((entry) => (
+-          <li key={`${entry.region_id}-${entry.variable_id}`}>
+-            Source: {entry.source.provider} — {entry.source.dataset} ({entry.source.variable})
+-          </li>
+-        ))}
+-      </ul>
+-      <p>{evidence.statistics_summary}</p>
+-      <p className="muted">Method: {evidence.method_citation}</p>
+-    </aside>
+-  )
+-}
+-
+-export default function InvestigationScreen({ discovery, catalog, onBack }) {
+-  const [stepIndex, setStepIndex] = useState(0)
++export default function InvestigationScreen({ discovery, catalog, onBack, stepIndex, onStepChange, loading, series, error, timestamp }) {
+   const [guess, setGuess] = useState(null)
+-  const [showEvidence, setShowEvidence] = useState(false)
+ 
+   const [predict, check, reason] = discovery.narrative.investigation.steps
+-  const { loading, series, error } = useSeries(check.series)
+ 
+   return (
+     <section>
+@@ -52,10 +17,10 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
+         ← Back
+       </button>
+ 
+-      <h1>Become a Detective</h1>
++      <h2>Become a Detective</h2>
+       <ol className="steps">
+         {['Predict', 'Check', 'Reason'].map((name, index) => (
+-          <li key={name} className={index === stepIndex ? 'current' : undefined}>
++          <li key={name} className={index === stepIndex ? 'current' : undefined} aria-current={index === stepIndex ? 'step' : undefined}>
+             {name}
+           </li>
+         ))}
+@@ -68,14 +33,15 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
+             {predict.options.map((option) => (
+               <button
+                 key={option.option_id}
+-                className={guess === option.option_id ? undefined : 'secondary'}
++                className={guess === option.option_id ? 'primary' : 'secondary'}
++                aria-pressed={guess === option.option_id}
+                 onClick={() => setGuess(option.option_id)}
+               >
+                 {option.label}
+               </button>
+             ))}
+           </div>
+-          <button disabled={!guess} onClick={() => setStepIndex(1)}>
++          <button className="primary" disabled={!guess} onClick={() => onStepChange(1)}>
+             Check the data
+           </button>
+         </div>
+@@ -91,23 +57,26 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
+           </p>
+           <p>{check.comparison}</p>
+ 
+-          {error && <p className="error">{error.message}</p>}
+-          {loading && <p className="muted">Loading the series…</p>}
++          {error && <p className="error" role="alert">{error.message}</p>}
++          {loading && <p className="muted" role="status">Loading the series…</p>}
+           {series.map((item) => (
+             <Chart
+               key={`${item.region_id}-${item.variable_id}`}
+               series={item}
++              timestamp={timestamp}
+               label={regionName(catalog, item.region_id)}
+             />
+           ))}
++          {!loading && !error && <p className="muted">Each chart has its own vertical scale. Use the rates above to compare how fast the Regions are changing.</p>}
+ 
+-          <button onClick={() => setStepIndex(2)}>Why might this happen?</button>
++          <button onClick={() => onStepChange(2)}>Why might this happen?</button>
+         </div>
+       )}
+ 
+       {stepIndex === 2 && (
+         <div>
+           <h2>{reason.prompt}</h2>
++          <p>These possible causes are context from scientists. The data show changes, but do not establish what caused them.</p>
+           <ul className="causes">
+             {reason.possible_causes.map((cause) => (
+               <li key={cause.text}>
+@@ -115,12 +84,9 @@ export default function InvestigationScreen({ discovery, catalog, onBack }) {
+               </li>
+             ))}
+           </ul>
+-          <button className="secondary" onClick={() => setShowEvidence((shown) => !shown)}>
+-            {showEvidence ? 'Hide' : 'How do we know?'}
+-          </button>
+-          {showEvidence && <HowDoWeKnow discovery={discovery} catalog={catalog} />}
+         </div>
+       )}
++      {stepIndex > 0 && <Evidence discovery={discovery} catalog={catalog} />}
+     </section>
+   )
+ }
+diff --git a/frontend/src/screens/MainScreen.jsx b/frontend/src/screens/MainScreen.jsx
+index f08f949..459b09c 100644
+--- a/frontend/src/screens/MainScreen.jsx
++++ b/frontend/src/screens/MainScreen.jsx
+@@ -1,10 +1,13 @@
+ import { useMemo, useState } from 'react'
+ import Timeline from '../components/Timeline.jsx'
+ import Chart from '../components/Chart.jsx'
++import Evidence from '../components/Evidence.jsx'
+ import useSeries from '../useSeries.js'
+ import RegionGlobe from '../components/Globe.jsx'
++import InvestigationScreen from './InvestigationScreen.jsx'
+ 
+-export default function MainScreen({ discovery, catalog, onInvestigate, onSurprise, loading, busy, error, discoveryNotice }) {
++export default function MainScreen({ discovery, catalog, onInvestigate, investigating, onBack, onSurprise, loading, busy, error, discoveryNotice }) {
++  const [investigationStep, setInvestigationStep] = useState(0)
+   const [timestamp, setTimestamp] = useState(null)
+   const [regionId, setRegionId] = useState('')
+   const [variableId, setVariableId] = useState('')
+@@ -14,7 +17,7 @@ export default function MainScreen({ discovery, catalog, onInvestigate, onSurpri
+     ? catalog?.variables.find((item) => item.variable_id === discovery.contrasts[0].variable_id)
+     : variables.find((item) => item.variable_id === variableId) ?? variables[0]
+   const regions = useMemo(() => discovery?.region_ids.map((id) => catalog.regions.find((item) => item.region_id === id)) ?? [], [discovery, catalog])
+-  const refs = discovery
++  const refs = investigating ? discovery.narrative.investigation.steps[1].series : discovery
+     ? discovery.contrasts[0].trends.map(({ region_id, variable_id }) => ({ region_id, variable_id }))
+     : region && variable ? [{ region_id: region.region_id, variable_id: variable.variable_id }] : []
+   const { loading: seriesLoading, series, notice, error: seriesError } = useSeries(refs)
+@@ -25,7 +28,7 @@ export default function MainScreen({ discovery, catalog, onInvestigate, onSurpri
+       <header className="main-header">
+         <h1 className="sr-only">Earth System Trend Detective</h1>
+         <div className="top-actions" aria-label="Explore discoveries">
+-          <button onClick={onInvestigate} disabled={!onInvestigate || busy}>Become a Detective</button>
++          <button onClick={() => { setInvestigationStep(0); onInvestigate() }} disabled={!onInvestigate || busy || investigating}>Become a Detective</button>
+           <button className="secondary" onClick={onSurprise} disabled={!ready || busy || error?.code === 'no_discovery_left_in_session'}>
+             {busy ? 'Looking for a Discovery…' : 'Surprise Me!'}
+           </button>
+@@ -35,7 +38,21 @@ export default function MainScreen({ discovery, catalog, onInvestigate, onSurpri
+         <RegionGlobe regions={regions} />
+         <p className="globe-hint">Drag to explore · Scroll or pinch to zoom</p>
+       </section>
+-      <aside className="sidebar" tabIndex={0} aria-labelledby="explore-heading" aria-busy={loading || seriesLoading || busy}>
++      <aside className="sidebar" tabIndex={0} aria-label={investigating ? 'Become a Detective' : undefined} aria-labelledby={investigating ? undefined : 'explore-heading'} aria-busy={loading || seriesLoading || busy}>
++        {investigating ? (
++          <InvestigationScreen
++            key={discovery.discovery_id}
++            discovery={discovery}
++            catalog={catalog}
++            onBack={onBack}
++            stepIndex={investigationStep}
++            onStepChange={setInvestigationStep}
++            loading={seriesLoading}
++            series={seriesLoading ? [] : series}
++            error={seriesError}
++            timestamp={timestamp}
++          />
++        ) : <>
+         <p className="eyebrow">{discovery ? 'Your Discovery' : 'Explore Earth'}</p>
+         <h2 id="explore-heading">{discovery ? discovery.narrative.question : 'Explore a Region'}</h2>
+         {discovery ? (
+@@ -68,16 +85,18 @@ export default function MainScreen({ discovery, catalog, onInvestigate, onSurpri
+               <Chart key={`${item.region_id}-${item.variable_id}`} series={item} timestamp={timestamp} label={catalog.regions.find((entry) => entry.region_id === item.region_id)?.name ?? item.region_id} />
+             ))}
+             {discovery && !seriesLoading && <p className="muted">Each chart has its own vertical scale. Compare the direction of the Trends.</p>}
++            {discovery && <Evidence discovery={discovery} catalog={catalog} />}
+           </>
+         )}
+-        {(error || seriesError) && <p className="error" role="alert">{(error || seriesError).message}</p>}
++        </>}
++        {(error || (!investigating && seriesError)) && <p className="error" role="alert">{(error || seriesError).message}</p>}
+         {notice && <p className="notice" role="status">{notice.message}</p>}
+         {discoveryNotice && <p className="notice" role="status">{discoveryNotice.message}</p>}
+         {!loading && !ready && <p className="muted">Check that the API is running, then reload to try again.</p>}
+       </aside>
+       <Timeline
+         key={discovery?.discovery_id ?? `${region?.region_id}/${variable?.variable_id}`}
+-        series={seriesLoading ? [] : series}
++        series={seriesLoading || (investigating && investigationStep !== 1) ? [] : series}
+         loading={loading || seriesLoading}
+         onTimestampChange={setTimestamp}
+       />
+diff --git a/frontend/src/styles.css b/frontend/src/styles.css
+index f903218..cb017c6 100644
+--- a/frontend/src/styles.css
++++ b/frontend/src/styles.css
+@@ -180,6 +180,11 @@ button.secondary {
+   color: var(--accent);
+ }
+ 
++button.primary {
++  background: var(--accent);
++  color: #fff;
++}
++
+ button.link {
+   border: 0;
+   background: none;
+@@ -303,6 +308,9 @@ button.link {
+   padding-top: 1rem;
+ }
+ 
++.evidence summary { cursor: pointer; color: var(--accent); font-weight: 600; }
++.evidence summary:focus-visible { outline: 3px solid #47b5d7; outline-offset: 4px; }
++
+ .region-map { margin: 1.25rem 0; }
+ .discovery-globe { display: grid; height: clamp(18rem, 55vw, 28rem); background: #070e1d; border-radius: 0.6rem; overflow: hidden; color: #f1f6fc; }
+ .region-map figcaption > p { font-size: 0.85rem; }
