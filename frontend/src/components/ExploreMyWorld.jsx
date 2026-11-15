@@ -1,10 +1,12 @@
 import { AGGREGATIONS, describeAggregation } from '../aggregations.js'
+import { TIME_STEPS } from '../timeSteps.js'
 import { FIRST_MONTH, MAX_VARIABLES } from '../useExploreView.js'
 import Chart from './Chart.jsx'
 
 const exclusion = (code, noun) =>
   ({
     too_many_missing_months: 'more than one month in five has no value',
+    too_many_missing_time_steps: 'more than one Time step in five has no value',
     insufficient_land_fraction: `less than half of the ${noun} is valid land`,
   })[code] ?? code
 
@@ -78,10 +80,31 @@ export default function ExploreMyWorld({
         })}
         {view.unavailable.length > 0 && (
           <p className="chart-note">
-            No data yet for {view.unavailable.map((item) => item.name.toLowerCase()).join(', ')}.
+            {view.timeStep === 'monthly' ? 'No data yet' : `No ${view.timeStep} data`} for{' '}
+            {view.unavailable.map((item) => item.name.toLowerCase()).join(', ')}.
           </p>
         )}
+        {view.removed && <p className="notice" role="status">{view.removed}</p>}
       </fieldset>
+
+      <div className="catalog-controls">
+        <label htmlFor="explore-time-step">Time step</label>
+        <select
+          id="explore-time-step"
+          value={view.timeStep}
+          onChange={(event) => view.setTimeStep(event.target.value)}
+        >
+          {TIME_STEPS.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="chart-note">
+        {view.utcNote}
+        {view.limits && ` ${view.limits}`}
+      </p>
 
       <fieldset className="explore-choices explore-period">
         <legend>Period</legend>
@@ -127,13 +150,13 @@ export default function ExploreMyWorld({
           ))}
         </select>
       </div>
-      <p className="chart-note">{describeAggregation(view.aggregation)}</p>
+      <p className="chart-note">{describeAggregation(view.aggregation, view.timeStep)}</p>
 
       {view.chosen.length === 0 && <p role="status">Choose at least one Variable.</p>}
       {view.error && (
         <p className="notice" role="status">
           {view.error.code === 'acquisition_failed'
-            ? view.error.message
+            ? `${view.error.message} Not obtained: ${view.chosen.map(name).join(', ')}.`
             : view.error.code === 'result_not_available'
             ? `There is no stored data yet for ${title} over this period.`
             : `The Series could not be loaded: ${view.error.message}`}
@@ -155,7 +178,8 @@ export default function ExploreMyWorld({
                 key={series.variable_id}
                 series={series}
                 label={name(series.variable_id)}
-                timestamp={timestamp}
+                timestamp={view.timeStep === 'monthly' ? timestamp : null}
+                timeStep={view.timeStep}
                 color={color}
                 smoothed={false}
               />

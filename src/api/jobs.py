@@ -1,8 +1,9 @@
 """Process-local jobs; acquired Series pieces live in a persistent results cache.
 
 A job acquires only the months the seed set does not hold (`view["acquire"]`),
-keeps each piece in the cache (a Selected area's in its own), then builds the
-view's result with `finish`.
+at the view's Time step, keeps each piece in the cache for that Aggregation and
+Time step (a Selected area's in its own), then builds the view's result with
+`finish`.
 """
 
 from __future__ import annotations
@@ -107,6 +108,7 @@ class SeriesJobs:
                             # gated again; a Selected area's is served whole.
                             keep_values=area is None,
                             rectangles=None if area is None else area["rectangles"],
+                            time_step=view["time_step"],
                         )
                         if (
                             payload.get(identity) != view[identity]

@@ -10,7 +10,8 @@
     "test": "node --test \"src/**/*.test.js\"",
     "test:e2e": "playwright test",
     "test:integration": "playwright test --config playwright.integration.config.js",
-    "test:areas": "playwright test --config playwright.areas.config.js"
+    "test:areas": "playwright test --config playwright.areas.config.js",
+    "test:time-steps": "playwright test --config playwright.time-steps.config.js"
   },
   "dependencies": {
     "react": "^18.3.1",

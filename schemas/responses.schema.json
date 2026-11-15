@@ -106,7 +106,7 @@
       "additionalProperties": false
     },
     "exploreSeriesResponse": {
-      "description": "Explore My World (#75, #79): the Series of one catalog Region or one Selected area for one to five Variables, built with one Aggregation and one Time step over one period. Each Series covers exactly the requested period, and its quality is the Quality gate's verdict on that period. Every value combines the area's grid cells, then a month's native time steps, by `aggregation` (#78): area-weighted for all but minimum and maximum; standard deviation is the population one.",
+      "description": "Explore My World (#75, #79): the Series of one catalog Region or one Selected area for one to five Variables, built with one Aggregation and one Time step over one period. Each Series covers exactly the requested period, and its quality is the Quality gate's verdict on that period. Every value combines the area's grid cells, then the native time steps inside one Time step, by `aggregation` (#78): area-weighted for all but minimum and maximum; standard deviation is the population one. Each Series holds one value per Time step from the first day of period.start (#80): a month, a UTC day or a UTC 3-hour interval. Precipitation is the total that fell during each Time step (mm/month, mm/day or mm/3h).",
       "type": "object",
       "properties": {
         "data": {
@@ -165,11 +165,33 @@
               "type": "array",
               "items": { "$ref": "common.schema.json#/$defs/variableId" },
               "uniqueItems": true
+            },
+            "time_steps": {
+              "description": "Each Time step (#80), in order from finest, with the Variables that have data at it and the longest period a request may span (null when only the 2000-01 to latest-month range applies).",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "time_step": { "type": "string", "enum": ["3-hourly", "daily", "monthly"] },
+                  "variable_ids": {
+                    "type": "array",
+                    "items": { "$ref": "common.schema.json#/$defs/variableId" },
+                    "uniqueItems": true
+                  },
+                  "max_months": { "type": ["integer", "null"], "minimum": 1 },
+                  "limit": { "type": ["string", "null"], "minLength": 1 }
+                },
+                "required": ["time_step", "variable_ids", "max_months", "limit"],
+                "additionalProperties": false
+              },
+              "minItems": 3,
+              "maxItems": 3
             }
           },
           "required": [
             "latest_month",
-            "area_variable_ids"
+            "area_variable_ids",
+            "time_steps"
           ],
           "additionalProperties": false
         },
@@ -343,7 +365,7 @@
       ]
     },
     "errorResponse": {
-      "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region. Explore My World refuses a malformed view with 422 (invalid_variable_count, duplicate_variable, invalid_aggregation, invalid_time_step, invalid_period, period_out_of_range, period_too_long) and answers 501 not_available_yet for Aggregations or Time steps not yet implemented; unknown job references return 404 job_not_found.",
+      "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region. Explore My World refuses a malformed view with 422 (invalid_variable_count, duplicate_variable, invalid_aggregation, invalid_time_step, invalid_period, period_out_of_range, period_too_long, invalid_area, variable_not_available_for_area, variable_not_available_at_time_step); unknown job references return 404 job_not_found.",
       "type": "object",
       "properties": {
         "error": {
@@ -365,9 +387,9 @@
                 "invalid_time_step",
                 "period_out_of_range",
                 "period_too_long",
-                "not_available_yet",
                 "invalid_area",
                 "variable_not_available_for_area",
+                "variable_not_available_at_time_step",
                 "job_not_found"
               ]
             },

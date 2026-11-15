@@ -36,10 +36,12 @@ async def acquire_series(
     aggregation: str = "mean",
     keep_values: bool = False,
     rectangles: list[list[float]] | None = None,
+    time_step: str = "monthly",
 ) -> dict[str, Any]:
     """A catalog Region's Series, or with `region` None a Selected area's.
 
-    keep_values keeps an excluded Series' values.
+    keep_values keeps an excluded Series' values. `time_step` asks the source
+    for native sub-monthly grids and reduces them to that Time step.
     """
     root = Path(__file__).resolve().parents[2]
     env = {
@@ -66,7 +68,7 @@ async def acquire_series(
             "variable_id": variable.variable_id,
             "period": {"start": period.start, "end": period.end},
             "dataset": variable.source.dataset,
-            "time_step": "monthly",
+            "time_step": time_step,
             "aggregation": aggregation,
             "keep_values": keep_values,
             "workspace": workspace,

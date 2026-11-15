@@ -18,7 +18,13 @@ export const AGGREGATIONS = [
 
 export const DEFAULT_AGGREGATION = 'mean'
 
-export function describeAggregation(id) {
+// Below a month, the area's values are combined first, then the Time step's (#80).
+export function describeAggregation(id, timeStep = 'monthly') {
   const item = AGGREGATIONS.find((entry) => entry.id === id) ?? AGGREGATIONS[0]
+  if (timeStep === 'daily' || timeStep === '3-hourly') {
+    const span = timeStep === 'daily' ? 'day' : '3 hours'
+    const label = timeStep === 'daily' ? 'Daily' : '3-hourly'
+    return `${label} values. Each is ${item.note} at each native time step, then combined over the ${span} by the same rule.`
+  }
   return `Monthly values. Each is ${item.note}.`
 }

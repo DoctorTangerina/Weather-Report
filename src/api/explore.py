@@ -7,8 +7,8 @@ means beside the Discoveries, the other Aggregations in their own folders.
 Months the seed set does not hold, such as those after it ends, are acquired by
 #77's background jobs, and only those months: the Series joins the seeded months
 to them. A Selected area is always built by a background job, with the
-requested Aggregation. Sub-monthly Time steps remain owned by their follow-up
-ticket.
+requested Aggregation. The seed set is monthly, so a 3-hourly or daily Series
+(#80) is always built by a background job too, from native NASA time steps.
 """
 
 from __future__ import annotations
@@ -34,6 +34,8 @@ LIMITS = {"3-hourly": (12, "1 year"), "daily": (120, "10 years")}
 _MONTH = re.compile(r"[0-9]{4}-(0[1-9]|1[0-2])")
 # A Selected area can only have Variables NASA can subset on demand (ADR 0004).
 AREA_VARIABLES = tuple(PRODUCTS)
+# Sub-monthly Time steps need a native sub-monthly NASA product (spec #72).
+SUB_MONTHLY_VARIABLES = tuple(PRODUCTS)
 
 
 class AcquisitionNeeded(Exception):
@@ -167,6 +169,23 @@ def _validate_variables(
             )
 
 
+def _validate_time_step_variables(
+    catalog: Catalog, time_step: str, variable_ids: list[str]
+) -> None:
+    """Only Variables with data at the Time step may be asked for (spec #72, Q33)."""
+    if time_step == "monthly":
+        return
+    for variable_id in variable_ids:
+        if variable_id not in SUB_MONTHLY_VARIABLES:
+            variable = catalog.variable(variable_id)
+            name = variable.name if variable is not None else variable_id
+            raise Refusal(
+                422,
+                "variable_not_available_at_time_step",
+                f"{name} has no {time_step} data.",
+            )
+
+
 def _validate_view(
     aggregation: str, time_step: str, start: str, end: str, latest: str
 ) -> None:
@@ -219,12 +238,18 @@ def _gated(
     start: str,
     end: str,
     land_fraction: float | None,
+    time_step: str = "monthly",
 ) -> dict[str, Any]:
-    """`base` as the Series of `values` over [start, end], judged by the gate."""
+    """`base` as the Series of `values` over [start, end], judged by the gate.
+
+    The gate counts missing Time steps; a monthly Series keeps the reason the
+    seed set uses (missing months), which is the same limit.
+    """
     quality = assess_quality(
         values,
         land_only=land_fraction is not None,
         valid_land_fraction=land_fraction,
+        time_step=None if time_step == "monthly" else time_step,
     )
     return {
         **base,
@@ -249,19 +274,24 @@ def _cut(payload: dict[str, Any], start: str, end: str) -> dict[str, Any]:
 
 
 def _stitch(
-    head: dict[str, Any] | None, piece: dict[str, Any], start: str, end: str
+    head: dict[str, Any] | None,
+    piece: dict[str, Any],
+    start: str,
+    end: str,
+    time_step: str = "monthly",
 ) -> dict[str, Any]:
     """Seeded months from `start`, then the acquired `piece` up to `end`.
 
     The piece keeps its values even if it alone would fail the gate, so the
-    Quality gate judges the whole period at once.
+    Quality gate judges the whole period at once. Only monthly Series have a
+    seeded head.
     """
     values = list(piece["values"])
     if head is not None:
         values = _values(head, start, head["period"]["end"]) + values
     base = head or piece
     land_fraction = base["quality"]["valid_land_fraction"]
-    return _gated(base, values, start, end, land_fraction)
+    return _gated(base, values, start, end, land_fraction, time_step)
 
 
 def _seed_head(
@@ -301,26 +331,21 @@ def explore_series(
 
     A view is a catalog Region (`region_id`) or a Selected area (`rectangles`).
     `store` is the seed set of means, which also sets the default end month.
-    `seed` holds seeded Series built with this `aggregation` (for the mean it
-    defaults to `store`). `cache` holds acquired Series pieces built with it,
-    with their values kept even when a piece alone fails the gate. Each Series
+    `seed` holds seeded monthly Series built with this `aggregation` (for the
+    mean it defaults to `store`); no seed answers a sub-monthly `time_step`.
+    `cache` holds acquired Series pieces built with this `aggregation` and
+    `time_step`, with their values kept even when a piece alone fails the gate. Each Series
     takes its first months from the seed set and the rest from a piece. When a
     piece is missing, AcquisitionNeeded names only the months to acquire.
     Provenance is "cache" when any piece was used, otherwise "preloaded".
     A Selected area's Series come whole from `area_cache`, built with this
-    `aggregation`, so their provenance is always "cache".
+    `aggregation` and `time_step`, so their provenance is always "cache".
     """
     latest = latest or latest_month(store)
     end = latest_month(store) if end is None else end
     area = _validate_geometry(catalog, region_id, rectangles or [], variable_ids)
     _validate_view(aggregation, time_step, start, end, latest)
-    if time_step != "monthly":
-        raise Refusal(
-            501,
-            "not_available_yet",
-            "Only monthly Series are available so far. Finer Time steps need "
-            "data fetched from NASA, which is not built yet.",
-        )
+    _validate_time_step_variables(catalog, time_step, variable_ids)
     geometry = (
         {"region_id": region_id} if area is None else {"area": {"rectangles": area}}
     )
@@ -345,7 +370,9 @@ def explore_series(
                 {**view, "variable_ids": variable_ids, "acquire": acquire}
             )
         return {**view, "series": [stored[v] for v in variable_ids]}, "cache"
-    if seed is None and aggregation == "mean":
+    if time_step != "monthly":
+        seed = None
+    elif seed is None and aggregation == "mean":
         seed = store
     parts = {}
     acquire = {}
@@ -368,7 +395,9 @@ def explore_series(
             {**view, "variable_ids": variable_ids, "acquire": acquire}
         )
     series = [
-        _cut(head, start, end) if piece is None else _stitch(head, piece, start, end)
+        _cut(head, start, end)
+        if piece is None
+        else _stitch(head, piece, start, end, time_step)
         for head, piece in (parts[variable_id] for variable_id in variable_ids)
     ]
     used_cache = any(piece is not None for _, piece in parts.values())

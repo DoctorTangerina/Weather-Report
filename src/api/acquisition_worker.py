@@ -27,6 +27,7 @@ def run(request: dict) -> dict:
             config_path=config,
             aggregation=request.get("aggregation", "mean"),
             withhold_excluded=not request.get("keep_values", False),
+            time_step=request.get("time_step", "monthly"),
         )
     args = (request["region_id"], request["variable_id"], request["period"])
     return get_catalog_series(
@@ -35,6 +36,7 @@ def run(request: dict) -> dict:
         config_path=config,
         aggregation=request.get("aggregation", "mean"),
         withhold_excluded=not request.get("keep_values", False),
+        time_step=request.get("time_step", "monthly"),
     )
 
 
