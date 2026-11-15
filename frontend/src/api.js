@@ -33,6 +33,20 @@ export const getSeries = (regionId, variableId, period) => {
   return request(`/api/series?${params}`)
 }
 
+// Explore My World (#75): one Region's Series for each chosen Variable. Only
+// monthly means can be answered so far, so those are the settings sent.
+export const getExploreSeries = (regionId, variableIds, period) => {
+  const params = new URLSearchParams({
+    region_id: regionId,
+    aggregation: 'mean',
+    time_step: 'monthly',
+    period_start: period.start,
+    period_end: period.end,
+  })
+  for (const variableId of variableIds) params.append('variable_id', variableId)
+  return request(`/api/explore/series?${params}`)
+}
+
 export const surpriseMe = (session) =>
   request('/api/discoveries/surprise', {
     method: 'POST',

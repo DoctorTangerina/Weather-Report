@@ -15,6 +15,15 @@ def test_twenty_percent_missing_boundary(missing, included):
     assert ("too_many_missing_months" in quality.exclusions) is (not included)
 
 
+# #49 amendment: the gate counts missing Time steps, whatever the Time step is.
+@pytest.mark.parametrize("missing,included", [(6, True), (7, False)])
+def test_daily_series_counts_missing_days_against_the_same_threshold(missing, included):
+    june = [None] * missing + [1.0] * (30 - missing)
+    quality = assess_quality(june, land_only=False)
+    assert quality.included is included
+    assert quality.missing_fraction == missing / 30
+
+
 @pytest.mark.parametrize(
     "fraction,included", [(0, False), (0.49, False), (0.5, True), (1, True)]
 )

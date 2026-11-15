@@ -30,7 +30,7 @@ class GlobeBoundary extends Component {
 // Wound clockwise. three-globe triangulates on the sphere with d3-geo, which
 // takes the opposite winding to RFC 7946: a counter-clockwise ring is read as
 // the whole Earth *except* the box, which tints the globe and swaps the colours.
-function boxPolygon({ region, color }) {
+function boxPolygon({ region, color }, catalog = false) {
   const { west, east, south, north } = region.bbox
   const ring = []
   for (let lat = south; lat < north; lat += 1) ring.push([west, lat])
@@ -40,7 +40,7 @@ function boxPolygon({ region, color }) {
   ring.push([west, south])
   return {
     type: 'Feature',
-    properties: { color },
+    properties: { color, catalog, regionId: region.region_id, name: region.name },
     geometry: { type: 'Polygon', coordinates: [ring] },
   }
 }
@@ -79,22 +79,47 @@ function labelElement({ region, color }) {
   return element
 }
 
-export default function RegionGlobe({ highlights = [] }) {
+// Catalog Regions are drawn faintly, under any highlight, when `onRegionClick` is
+// given: clicking one opens it in Explore My World (#75).
+const CATALOG_COLOR = '#cfe3ee'
+const NO_REGIONS = []
+
+export default function RegionGlobe({
+  highlights: requestedHighlights = [],
+  regions = NO_REGIONS,
+  onRegionClick,
+}) {
+  // Equivalent highlights can arrive in new arrays as series requests settle.
+  // Keep polygons, labels and the camera flight stable across those renders.
+  const highlightKey = JSON.stringify(requestedHighlights)
+  const highlights = useMemo(() => JSON.parse(highlightKey), [highlightKey])
   const globeRef = useRef(null)
   const containerRef = useRef(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const [ready, setReady] = useState(false)
+  const [hovered, setHovered] = useState(null)
 
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect
-      setDimensions({ width: Math.floor(width), height: Math.floor(height) })
+      const next = { width: Math.floor(width), height: Math.floor(height) }
+      setDimensions((current) =>
+        current.width === next.width && current.height === next.height ? current : next,
+      )
     })
     observer.observe(containerRef.current)
     return () => observer.disconnect()
   }, [])
 
-  const polygons = useMemo(() => highlights.map(boxPolygon), [highlights])
+  const polygons = useMemo(() => {
+    const highlighted = new Set(highlights.map(({ region }) => region.region_id))
+    return [
+      ...regions
+        .filter((region) => !highlighted.has(region.region_id))
+        .map((region) => boxPolygon({ region, color: CATALOG_COLOR }, true)),
+      ...highlights.map((highlight) => boxPolygon(highlight)),
+    ]
+  }, [highlights, regions])
   const labels = useMemo(
     () =>
       highlights.map((highlight) => ({
@@ -137,6 +162,15 @@ export default function RegionGlobe({ highlights = [] }) {
     aim()
   }, [aim])
 
+  // Hold the globe still under the pointer, so the Region being aimed at stays put.
+  const hover = (feature) => {
+    setHovered(feature?.properties.regionId ?? null)
+    const globe = globeRef.current
+    if (globe) {
+      globe.controls().autoRotate = !feature && highlights.length === 0 && !reducedMotion()
+    }
+  }
+
   return (
     <div ref={containerRef} className="globe-viewport">
       <GlobeBoundary>
@@ -154,10 +188,19 @@ export default function RegionGlobe({ highlights = [] }) {
             animateIn={false}
             onGlobeReady={() => setReady(true)}
             polygonsData={polygons}
-            polygonCapColor={(feature) => withAlpha(feature.properties.color, 0.42)}
-            polygonSideColor={(feature) => withAlpha(feature.properties.color, 0.18)}
-            polygonStrokeColor={(feature) => feature.properties.color}
-            polygonAltitude={0.012}
+            polygonCapColor={({ properties }) =>
+              withAlpha(
+                properties.color,
+                properties.catalog ? (properties.regionId === hovered ? 0.4 : 0.12) : 0.42,
+              )}
+            polygonSideColor={({ properties }) =>
+              withAlpha(properties.color, properties.catalog ? 0.06 : 0.18)}
+            polygonStrokeColor={({ properties }) =>
+              properties.catalog ? withAlpha(properties.color, 0.6) : properties.color}
+            polygonAltitude={({ properties }) => (properties.catalog ? 0.006 : 0.012)}
+            polygonLabel={onRegionClick ? ({ properties }) => properties.name : undefined}
+            onPolygonHover={onRegionClick ? hover : undefined}
+            onPolygonClick={onRegionClick ? ({ properties }) => onRegionClick(properties.regionId) : undefined}
             polygonsTransitionDuration={reducedMotion() ? 0 : 700}
             htmlElementsData={labels}
             htmlElement={labelElement}

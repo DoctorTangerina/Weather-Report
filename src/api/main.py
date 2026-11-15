@@ -19,10 +19,11 @@ import re
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI, Query, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from data.data_gathering.config import settings
 from engine import (
     ENGINE_VERSION,
     JsonResultStore,
@@ -38,6 +39,7 @@ from engine.contracts import Discovery, as_dict
 from engine.discovery import SessionHistory
 
 from .acquisition import AcquisitionUnavailable, acquire_series
+from .explore import FIRST_MONTH, Refusal, explore_series
 from .grid_source import GridAcquisitionSource
 from .results import example_response, select_example, usable
 
@@ -59,7 +61,7 @@ live_store = JsonResultStore(
     ENGINE_VERSION,
 )
 LIVE_TIMEOUT_SECONDS = float(
-    os.environ.get("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS", "15")
+    os.environ.get("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS", "120")
 )
 if not math.isfinite(LIVE_TIMEOUT_SECONDS) or LIVE_TIMEOUT_SECONDS <= 0:
     raise ValueError("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS must be positive and finite")
@@ -205,6 +207,32 @@ async def get_series(
     return error(
         503, "live_data_unavailable", "No live data or usable examples available."
     )
+
+
+@app.get("/api/explore/series")
+def get_explore_series(
+    region_id: str,
+    variable_id: Annotated[list[str] | None, Query()] = None,
+    aggregation: str = "mean",
+    time_step: str = "monthly",
+    period_start: str = FIRST_MONTH,
+    period_end: str | None = None,
+) -> Any:
+    """Explore My World: one Region's Series for one to five Variables."""
+    try:
+        data = explore_series(
+            catalog,
+            store,
+            region_id,
+            variable_id or [],
+            aggregation,
+            time_step,
+            period_start,
+            period_end,
+        )
+    except Refusal as refusal:
+        return error(refusal.status, refusal.code, refusal.message)
+    return {**ok(data), "provenance": "preloaded"}
 
 
 @app.get("/api/comparison")

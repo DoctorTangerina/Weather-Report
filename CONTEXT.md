@@ -25,11 +25,11 @@ The values of one Variable over one Region or Selected area across a period, one
 _Avoid_: Time series, data, curve
 
 **Aggregation**:
-The rule that combines the values of an area's grid cells into one value for a Time step: mean (weighted by cell area), median, minimum, maximum, root mean square, standard deviation, or mean absolute value. When the Time step is longer than the data's own, the area's values are combined over space first, then over the Time step by the same rule (a daily maximum is the highest of the area's values that day).
+The rule that combines the values of an area's grid cells into one value for a Time step: mean, median, minimum, maximum, root mean square, standard deviation (of the whole population of cells, not a sample), or mean absolute value. Every rule except minimum and maximum counts each cell in proportion to its area. When the Time step is longer than the data's own, the area's values are combined over space first, then over the Time step by the same rule (a daily maximum is the highest of the area's values that day).
 _Avoid_: Composition, strategy, reducer
 
 **Time step**:
-The interval between consecutive values of a Series, such as 3-hourly, daily or monthly.
+The interval between consecutive values of a Series: 3-hourly, daily or monthly. Days and 3-hour intervals follow UTC. Precipitation is given as the total that fell during each Time step.
 _Avoid_: Granularity, resolution, frequency
 
 **Quality gate**:
@@ -77,7 +77,7 @@ A Discovery the engine has found and scored but not yet selected for presentatio
 _Avoid_: Proposal, lead
 
 **Selected area**:
-A geographic area a user draws on the map in Explore My World: one rectangle, or several rectangles joined into one shape. It may cross the antimeridian. It is distinct from a named Region in the fixed Region catalog and never becomes one.
+A geographic area a user draws on the map in Explore My World: one rectangle, or several touching or overlapping rectangles joined into one shape. It may cross the antimeridian. A user has at most one Selected area at a time, and it lasts only until the page is reloaded. It is distinct from a named Region in the fixed Region catalog and never becomes one.
 _Avoid_: Custom area, box, polygon
 
 **Source series**:
