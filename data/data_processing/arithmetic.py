@@ -11,6 +11,7 @@ from itertools import pairwise
 from typing import cast
 
 from ..time_steps import series_time_step, time_step_label
+from .comparison import pearson
 from .errors import ProcessingError
 from .missing_values import manage_missing
 from .resampling import resample_series
@@ -266,6 +267,7 @@ def process_series(request: Mapping) -> dict:
         raise ProcessingError("invalid_request", "Provide named series and operations.")
     available = copy.deepcopy(dict(sources))
     outputs: dict[str, dict] = {}
+    comparisons: dict[str, dict] = {}
     recipe: list[dict] = []
     warnings: list[dict] = []
     for index, step in enumerate(steps):
@@ -273,6 +275,7 @@ def process_series(request: Mapping) -> dict:
             not isinstance(step, Mapping)
             or not _name(step.get("id"))
             or step["id"] in available
+            or step["id"] in comparisons
         ):
             raise ProcessingError(
                 "invalid_operation",
@@ -287,6 +290,7 @@ def process_series(request: Mapping) -> dict:
             "resample",
             "missing",
             "filter",
+            "pearson",
         ):
             raise ProcessingError(
                 "invalid_operation", "Unsupported operation.", operation=index
@@ -296,6 +300,8 @@ def process_series(request: Mapping) -> dict:
             if method == "arithmetic"
             else {"id", "operation", "input", "ddof"}
         )
+        if method == "pearson":
+            allowed = {"id", "operation", "inputs"}
         if method == "resample":
             allowed = {
                 "id",
@@ -355,6 +361,20 @@ def process_series(request: Mapping) -> dict:
                 raise ProcessingError(
                     "invalid_expression", "Reference at least one series."
                 )
+        elif method == "pearson":
+            names = step.get("inputs")
+            if (
+                not isinstance(names, list)
+                or len(names) != 2
+                or not all(_name(name) for name in names)
+                or names[0] == names[1]
+            ):
+                raise ProcessingError(
+                    "invalid_operation",
+                    "A comparison requires two different named inputs.",
+                    operation=index,
+                )
+            names = list(names)
         else:
             if not _name(step.get("input")):
                 raise ProcessingError(
@@ -400,7 +420,9 @@ def process_series(request: Mapping) -> dict:
             )
         calendar = first.get("calendar", "standard")
         if any(
-            timelines[name] != timelines[names[0]]
+            # A comparison pairs only exactly equal instants, so its inputs may
+            # cover different periods; everything else needs identical timelines.
+            (method != "pearson" and timelines[name] != timelines[names[0]])
             or used[name].get("calendar", "standard") != calendar
             for name in names
         ):
@@ -409,6 +431,27 @@ def process_series(request: Mapping) -> dict:
                 "Explicitly align/resample these inputs first.",
                 inputs=names,
             )
+        # Metadata snapshots preserve source quality and previous processing history.
+        provenance = {
+            name: {
+                key: copy.deepcopy(value)
+                for key, value in series.items()
+                if key not in ("values", "timestamps")
+            }
+            for name, series in used.items()
+        }
+        if method == "pearson":
+            recipe.append(copy.deepcopy(dict(step)))
+            comparisons[step["id"]] = {
+                "id": step["id"],
+                **copy.deepcopy(pearson(names, used, timelines)),
+                "calendar": calendar,
+                "inputs": names,
+                "provenance": provenance,
+                "recipe": {"operations": copy.deepcopy(recipe)},
+                "warnings": [],
+            }
+            continue
         step_warnings: list[dict] = []
         resampled = None
         managed = None
@@ -479,15 +522,6 @@ def process_series(request: Mapping) -> dict:
             )
         normalized_step = copy.deepcopy(dict(step))
         recipe.append(normalized_step)
-        # Metadata snapshots preserve source quality and previous processing history.
-        provenance = {
-            name: {
-                key: copy.deepcopy(value)
-                for key, value in series.items()
-                if key not in ("values", "timestamps")
-            }
-            for name, series in used.items()
-        }
         output = {
             "id": step["id"],
             "timestamps": copy.deepcopy(first["timestamps"]),
@@ -541,4 +575,9 @@ def process_series(request: Mapping) -> dict:
         available[step["id"]] = output
         outputs[step["id"]] = output
         warnings.extend({"operation": step["id"], **w} for w in step_warnings)
-    return {"series": outputs, "recipe": {"operations": recipe}, "warnings": warnings}
+    return {
+        "series": outputs,
+        "comparisons": comparisons,
+        "recipe": {"operations": recipe},
+        "warnings": warnings,
+    }
