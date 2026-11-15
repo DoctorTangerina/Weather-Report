@@ -262,6 +262,48 @@ or changing the source. Removing all observations returns an empty Derived serie
 subsequent numeric operations require nonempty inputs. Failed acquisition quality
 cannot be repaired by filling: excluded sources remain excluded.
 
+## Temporal filters
+
+Use `operation: "filter"` to construct an explicit sample from one input by local
+time of day, weekday, month or a custom date window (#52, delivery phase two):
+
+```python
+{
+    "id": "monday_nights",
+    "operation": "filter",
+    "input": "A",
+    "timezone": "America/Sao_Paulo",  # the input's confirmed IANA zone; required
+    "mode": "include",  # or "exclude"; required
+    "hours": {"start": "18:00", "end": "06:00"},
+    "weekdays": ["monday"],
+}
+```
+
+- Conditions: `hours` (`{start, end}` as `HH:MM`), `weekdays` (lower-case names),
+  `months` (numbers 1–12) and `dates` (`{start, end}` as `YYYY-MM-DD`). At least
+  one is required; several in one step must all match. Chain steps for other
+  combinations, such as two date windows.
+- `include` keeps the observations matching every condition; `exclude` drops them.
+- A time-of-day window includes its start and excludes its end, and runs over
+  midnight when the end precedes the start (`18:00`–`06:00`). A date window
+  includes the whole of both dates.
+- There is no default zone: a Region or Selected area spanning several zones
+  needs the caller's explicit choice. Sub-daily observations are read in that
+  zone, following its daylight-saving rules; a repeated local hour keeps both
+  observed instants. Daily and monthly Time steps are UTC days and months, so
+  their weekday, date and month are read from the UTC label whatever the zone
+  (`temporal_filter.read_in` says which was used).
+- The input must declare its Time step (`unknown_time_step` otherwise), and a
+  filter finer than it is refused with `unsupported_temporal_resolution`: `hours`
+  needs 3-hourly or finer data, `weekdays` and `dates` daily or finer. Only
+  Gregorian calendars are supported.
+- Retained observations keep their input timestamp labels (their UTC identity),
+  values and `filled` flags. Deliberately excluded observations are listed in
+  `temporal_filter.excluded_timestamps`, separately from missing values; they
+  do not count as missing, and the source Quality gate record stays unchanged in
+  provenance. `temporal_filter` also records the mode, zone and conditions, and
+  the step is replayable from the recipe like any other.
+
 ## Pearson comparison
 
 Compare two named series (Source or Derived) with an exploratory Pearson
