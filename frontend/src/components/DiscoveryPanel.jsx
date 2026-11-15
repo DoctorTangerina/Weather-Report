@@ -1,5 +1,5 @@
 import { formatRate } from '../format.js'
-import Chart from './Chart.jsx'
+import SeriesResults from './SeriesResults.jsx'
 import Evidence from './Evidence.jsx'
 
 const LABEL_TONE = {
@@ -42,6 +42,9 @@ export default function DiscoveryPanel({
   catalog,
   highlights,
   series,
+  responses,
+  substituted,
+  seriesError,
   seriesLoading,
   timestamp,
   onInvestigate,
@@ -50,7 +53,20 @@ export default function DiscoveryPanel({
   const [lead, ...others] = discovery.contrasts
   const leadVariable = catalog.variables.find((v) => v.variable_id === lead.variable_id)
   const variableName = (id) => catalog.variables.find((v) => v.variable_id === id)?.name ?? id
-  const colorOf = (regionId) => highlights.find((h) => h.region.region_id === regionId)?.color
+
+  if (substituted) {
+    return (
+      <article className="discovery" aria-labelledby="example-heading">
+        <p className="eyebrow">Preloaded examples</p>
+        <h2 id="example-heading">These examples cannot answer the original investigation.</h2>
+        <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
+        <div className="panel-actions">
+          <button className="primary" disabled>Become a Detective</button>
+          <button className="ghost" onClick={onSurprise}>Surprise me again</button>
+        </div>
+      </article>
+    )
+  }
 
   return (
     <article className="discovery" aria-labelledby="discovery-question">
@@ -78,15 +94,7 @@ export default function DiscoveryPanel({
       <section className="discovery-charts" aria-label="Monthly series">
         {leadVariable && <p className="variable-definition">{leadVariable.definition}</p>}
         {seriesLoading && <div className="skeleton skeleton-chart" aria-hidden="true" />}
-        {series.map((item) => (
-          <Chart
-            key={`${item.region_id}-${item.variable_id}`}
-            series={item}
-            timestamp={timestamp}
-            color={colorOf(item.region_id)}
-            label={catalog.regions.find((r) => r.region_id === item.region_id)?.name ?? item.region_id}
-          />
-        ))}
+        <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
         {!seriesLoading && series.length > 1 && (
           <p className="chart-note">
             Each chart has its own vertical scale. Compare the direction of the Trends.
@@ -97,7 +105,7 @@ export default function DiscoveryPanel({
       <Evidence discovery={discovery} catalog={catalog} />
 
       <div className="panel-actions">
-        <button className="primary" onClick={onInvestigate}>
+        <button className="primary" disabled={seriesLoading || Boolean(seriesError)} onClick={onInvestigate}>
           Become a Detective
         </button>
         <button className="ghost" onClick={onSurprise}>

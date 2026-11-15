@@ -1,0 +1,397 @@
+{
+  "discovery_id": "sahel--tibetan-plateau",
+  "region_ids": [
+    "sahel",
+    "tibetan-plateau"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "sahel",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.20447317968014822,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.40415434909646974,
+            -0.004792010263826724
+          ],
+          "direction": "falling",
+          "evidence_label": "Some evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.20447317968014822,
+              "p_value": 0.002854591794940824,
+              "r_squared": 0.029466726514822097
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.20479858549271618,
+              "p_value": 0.03790501059302652
+            },
+            "robust": {
+              "slope_per_decade": -0.21552026498137905,
+              "p_value": 0.00041133076991028625
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.20431623840677637
+            },
+            "mann_kendall": {
+              "tau": -0.11727982162764772,
+              "p_value": 0.0024508829882422412
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-12",
+              "slope_per_decade": -0.19814034762586097,
+              "p_value": 0.003267178022035009
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.08374933895337394,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.3761282001870735,
+            "effective_sample_size": 136.0058895082848
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "tibetan-plateau",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.24752924035152177,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            0.059953157209230445,
+            0.4351053234938131
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.24752924035152177,
+              "p_value": 0.0003346394024037142,
+              "r_squared": 0.042324331327206435
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.24792316709397808,
+              "p_value": 0.015215896110157376
+            },
+            "robust": {
+              "slope_per_decade": 0.271484160547276,
+              "p_value": 3.2097111522391193e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.2718151192223899
+            },
+            "mann_kendall": {
+              "tau": 0.16954292084726869,
+              "p_value": 1.190624851345889e-05
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2006-02",
+              "slope_per_decade": 0.26130056974272836,
+              "p_value": 0.00010849353611620245
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.02457384565573527,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.31919679070194434,
+            "effective_sample_size": 154.82221017285835
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "precipitation",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 10.814711515468218,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            5.840092136515305,
+            15.78933089442113
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 10.814711515468218,
+              "p_value": 1.3961298110602825e-14,
+              "r_squared": 0.18054687087874358
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 10.831922427891548,
+              "p_value": 7.207046483469588e-07
+            },
+            "robust": {
+              "slope_per_decade": 4.455578408500535,
+              "p_value": 1.3955248148514243e-08
+            },
+            "theil_sen": {
+              "slope_per_decade": 2.347067498039511
+            },
+            "mann_kendall": {
+              "tau": 0.2568561872909699,
+              "p_value": 3.2538105255045655e-11
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2024-08",
+              "slope_per_decade": 10.080666376405583,
+              "p_value": 4.214411691098671e-14
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0002705483192734049,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5567609767029273,
+            "effective_sample_size": 85.41562190924346
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "tibetan-plateau",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 3.9844803261891486,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            2.399744286394577,
+            5.569216365983721
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 3.9844803261891486,
+              "p_value": 2.3645556546588744e-07,
+              "r_squared": 0.08586644006104754
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 3.9908213683749287,
+              "p_value": 3.726462903163251e-06
+            },
+            "robust": {
+              "slope_per_decade": 2.8937320692330575,
+              "p_value": 1.992610291225702e-07
+            },
+            "theil_sen": {
+              "slope_per_decade": 2.786779871732648
+            },
+            "mann_kendall": {
+              "tau": 0.21404682274247494,
+              "p_value": 3.2236558901291645e-08
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-07",
+              "slope_per_decade": 4.070245185709404,
+              "p_value": 4.809226948046937e-08
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.3574773727662552e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.06628925633917387,
+            "effective_sample_size": 262.6990954217653
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 121.44053170280833,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 1.440531702808323,
+    "mirror": 0.0
+  },
+  "evidence_label": "Some evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Air temperature is rising in one of these places and falling in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "sahel",
+              "label": "Sahel"
+            },
+            {
+              "option_id": "tibetan-plateau",
+              "label": "Tibetan Plateau"
+            }
+          ],
+          "answer_option_id": "tibetan-plateau",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "sahel",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "tibetan-plateau",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Sahel: -0.204 \u00b0C/decade (95% interval -0.404 to -0.005). Tibetan Plateau: 0.248 \u00b0C/decade (95% interval 0.06 to 0.435). Tibetan Plateau is changing faster. Evidence label for Sahel: Some evidence. Evidence label for Tibetan Plateau: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "sahel",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "tibetan-plateau",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "tibetan-plateau",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Some evidence.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

@@ -17,8 +17,8 @@ from engine.contracts import as_dict
 
 
 @pytest.fixture(scope="module")
-def catalog(stub_dir) -> Catalog:
-    return load_catalog(stub_dir / "catalog.json")
+def catalog(catalog_path) -> Catalog:
+    return load_catalog(catalog_path)
 
 
 def test_two_significant_trends_of_opposite_sign_are_a_candidate(catalog):

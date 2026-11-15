@@ -1,0 +1,262 @@
+{
+  "discovery_id": "equatorial-pacific--horn-of-africa",
+  "region_ids": [
+    "equatorial-pacific",
+    "horn-of-africa"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.1115956396493484,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.6403549650518323,
+            0.8635462443505291
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.1115956396493484,
+              "p_value": 0.06401259059449081,
+              "r_squared": 0.011463983562396057
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.1117732368768018,
+              "p_value": 0.4485959279723693
+            },
+            "robust": {
+              "slope_per_decade": 0.052177314501148195,
+              "p_value": 0.33502009302458724
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.06613849289052764
+            },
+            "mann_kendall": {
+              "tau": 0.042541806020066894,
+              "p_value": 0.2718309583604366
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2015-12",
+              "slope_per_decade": 0.10673392890586236,
+              "p_value": 0.07282622658948396
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.8099349871107294,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.9347568161313521,
+            "effective_sample_size": 10.11649370990796
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.05030431748667229,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.08843418393479303,
+            0.18904281890813762
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.05030431748667229,
+              "p_value": 0.21391580042828715,
+              "r_squared": 0.005178886413162606
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.050384373547486816,
+              "p_value": 0.4479961380499311
+            },
+            "robust": {
+              "slope_per_decade": 0.04218405569297597,
+              "p_value": 0.26018796958908597
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.04579077490516527
+            },
+            "mann_kendall": {
+              "tau": 0.040222965440356744,
+              "p_value": 0.29882328479384945
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2009-06",
+              "slope_per_decade": 0.052962870241420525,
+              "p_value": 0.18616669346133738
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.5898330862125173,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.4995636435991198,
+            "effective_sample_size": 100.11639556686849
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [
+    {
+      "series": [
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "temperature"
+        },
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "temperature"
+        }
+      ],
+      "correlation": 0.3079275142814863,
+      "p_value": 0.0011243177858006913,
+      "adjusted_p_value": 0.023235900906547622,
+      "significant_after_correction": true
+    }
+  ],
+  "score": 6.149526525016866,
+  "score_components": {
+    "opposite_sign": 0.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 1.1495265250168665,
+    "mirror": 5.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Air temperature seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "equatorial-pacific",
+              "label": "Equatorial Pacific"
+            },
+            {
+              "option_id": "horn-of-africa",
+              "label": "Horn of Africa"
+            }
+          ],
+          "answer_option_id": "equatorial-pacific",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "equatorial-pacific",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "horn-of-africa",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Equatorial Pacific: 0.112 \u00b0C/decade (95% interval -0.64 to 0.864). Horn of Africa: 0.05 \u00b0C/decade (95% interval -0.088 to 0.189). Equatorial Pacific is changing faster. Evidence label for Equatorial Pacific: Not enough evidence yet. Evidence label for Horn of Africa: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

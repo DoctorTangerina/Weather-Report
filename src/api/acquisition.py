@@ -1,0 +1,61 @@
+"""Cancellable bridge to #6's download and monthly Series pipeline."""
+
+import asyncio
+import json
+import os
+import sys
+import tempfile
+from pathlib import Path
+from typing import Any
+
+from engine.contracts import Period, Region, Variable
+
+
+class AcquisitionUnavailable(Exception):
+    """Expected upstream/authentication/quality failure, not a programming error."""
+
+
+async def acquire_series(
+    region: Region, variable: Variable, period: Period, *, token: str
+) -> dict[str, Any]:
+    root = Path(__file__).resolve().parents[2]
+    env = {
+        **os.environ,
+        "EARTHDATA_TOKEN": token,
+        "PYTHONPATH": os.pathsep.join((str(root), str(root / "src"))),
+    }
+    with tempfile.TemporaryDirectory(prefix="weather-acquisition-") as workspace:
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "api.acquisition_worker",
+            cwd=root,
+            env=env,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        request = {
+            "region_id": region.region_id,
+            "variable_id": variable.variable_id,
+            "period": {"start": period.start, "end": period.end},
+            "bbox": [
+                region.bbox.west,
+                region.bbox.south,
+                region.bbox.east,
+                region.bbox.north,
+            ],
+            "dataset": variable.source.dataset,
+            "workspace": workspace,
+        }
+        try:
+            output, _ = await process.communicate(json.dumps(request).encode())
+        finally:
+            if process.returncode is None:
+                process.kill()
+                await process.wait()
+        if process.returncode == 2:
+            raise AcquisitionUnavailable("Acquisition or source data unavailable")
+        if process.returncode != 0:
+            raise RuntimeError("Acquisition worker failed unexpectedly")
+        return json.loads(output)

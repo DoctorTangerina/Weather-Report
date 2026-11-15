@@ -20,6 +20,18 @@ _Avoid_: Metric, parameter, indicator
 The fixed list of Variables the engine and the user can choose from, each with its NASA source, units and plain-language definition. Users cannot add a Variable outside it.
 _Avoid_: Variable list, dataset list
 
+**Series**:
+The monthly values of one Variable over one Region across a period, averaged over the Region's area, together with a record of its quality.
+_Avoid_: Time series, data, curve
+
+**Quality gate**:
+The check that decides whether a Series has enough valid data to be used: too many missing months, or, for a land-only Variable, too little of the Region being valid land.
+_Avoid_: Filter, validation
+
+**Excluded series**:
+A Series that failed the Quality gate. It keeps its reasons but no values, and takes no part in any Trend, Mirror or Candidate Discovery.
+_Avoid_: Dropped series, bad series
+
 **Trend**:
 The direction and rate of change of one Variable over one Region across a period, together with its uncertainty and statistical significance.
 _Avoid_: Slope, change, tendency
@@ -33,7 +45,7 @@ The reference to the paper whose time-series methods the engine uses to evaluate
 _Avoid_: Data source, paper for this Variable
 
 **Mirror**:
-Two Region–Variable series, possibly of different Variables in different Regions, that move together or in opposite directions month to month beyond what chance explains.
+Two Series, possibly of different Variables in different Regions, that move together or in opposite directions month to month beyond what chance explains.
 _Avoid_: Correlation pair, teleconnection
 
 **Contrast**:
@@ -55,6 +67,12 @@ _Avoid_: Finding, insight, result
 **Candidate Discovery**:
 A Discovery the engine has found and scored but not yet selected for presentation to a user.
 _Avoid_: Proposal, lead
+
+**Selected area**:
+A rectangular geographic area chosen by a user on the map for a Manual investigation. It is distinct from a named Region in the fixed Region catalog.
+
+**Correlation map**:
+A pairwise correlation matrix for a user-selected list of Source series or Derived series, which may represent different Variables and Selected areas.
 
 ## Experiences
 

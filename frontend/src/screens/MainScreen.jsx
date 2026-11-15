@@ -85,7 +85,7 @@ export default function MainScreen({
     [exploring, region, secondRegion],
   )
 
-  const discoverySeries = useSeries(refs)
+  const discoverySeries = useSeries(refs, showing || investigating ? discovery.period : undefined)
   // Wait for the list of stored series before comparing, so the first request
   // is the data-backed default pair rather than whatever the catalog lists first.
   const comparing = exploring && available.settled
@@ -96,7 +96,13 @@ export default function MainScreen({
   )
   const { loading: seriesLoading, series, notice: seriesNotice, error: seriesError } =
     exploring ? comparison : discoverySeries
-  const banner = notice ?? seriesNotice
+  const displayedHighlights = (showing || investigating) && discoverySeries.substituted
+    ? [...new Set(series.map((item) => item.region_id))].map((id, index) => ({
+      region: catalog.regions.find((item) => item.region_id === id),
+      color: REGION_COLORS[index % REGION_COLORS.length],
+    })).filter((item) => item.region)
+    : highlights
+  const banner = notice ?? (exploring ? seriesNotice : null)
   const timelineKey =
     discovery && !exploring
       ? `${phase}/${discovery.discovery_id}`
@@ -122,7 +128,7 @@ export default function MainScreen({
       </header>
 
       <section className="globe-panel" aria-label="Interactive Earth globe">
-        <RegionGlobe highlights={showing || investigating ? highlights : explored} />
+        <RegionGlobe highlights={showing || investigating ? displayedHighlights : explored} />
         <p className="globe-hint">Drag to explore · Scroll or pinch to zoom</p>
       </section>
 
@@ -178,7 +184,10 @@ export default function MainScreen({
           <DiscoveryPanel
             discovery={discovery}
             catalog={catalog}
-            highlights={highlights}
+            highlights={displayedHighlights}
+            responses={discoverySeries.responses}
+            substituted={discoverySeries.substituted}
+            seriesError={seriesError}
             series={series}
             seriesLoading={seriesLoading}
             timestamp={timestamp}
@@ -191,12 +200,13 @@ export default function MainScreen({
             key={discovery.discovery_id}
             discovery={discovery}
             catalog={catalog}
-            highlights={highlights}
+            highlights={displayedHighlights}
             onBack={onBack}
             stepIndex={investigationStep}
             onStepChange={setInvestigationStep}
             loading={seriesLoading}
-            series={seriesLoading ? NONE : series}
+            responses={discoverySeries.responses}
+            substituted={discoverySeries.substituted}
             error={seriesError}
             timestamp={timestamp}
           />

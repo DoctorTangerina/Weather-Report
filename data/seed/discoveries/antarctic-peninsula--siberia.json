@@ -1,0 +1,397 @@
+{
+  "discovery_id": "antarctic-peninsula--siberia",
+  "region_ids": [
+    "antarctic-peninsula",
+    "siberia"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "antarctic-peninsula",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.5164462280676008,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.8793304014611778,
+            -0.15356205467402367
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.5164462280676008,
+              "p_value": 0.0001626355695824751,
+              "r_squared": 0.04667349208596286
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.5172681187662035,
+              "p_value": 0.028229223491291373
+            },
+            "robust": {
+              "slope_per_decade": -0.4973640435410176,
+              "p_value": 3.501326481905643e-05
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.48704876177221423
+            },
+            "mann_kendall": {
+              "tau": -0.14028985507246378,
+              "p_value": 0.0002904294869741825
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-09",
+              "slope_per_decade": -0.5035374983355326,
+              "p_value": 0.00017171448729677956
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.015188020030767338,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.2974963103967879,
+            "effective_sample_size": 162.4290606394971
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.5130040132497568,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.01823590361026961,
+            1.0442439301097832
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.5130040132497568,
+              "p_value": 0.013115209156582302,
+              "r_squared": 0.020471508157633215
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.513820425886582,
+              "p_value": 0.08948348076892775
+            },
+            "robust": {
+              "slope_per_decade": 0.46776781168781345,
+              "p_value": 0.00787677935531578
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.4559277726699857
+            },
+            "mann_kendall": {
+              "tau": 0.09364548494983278,
+              "p_value": 0.015569016245467481
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2007-01",
+              "slope_per_decade": 0.5435626230850665,
+              "p_value": 0.00755313249850132
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.106146819813052,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.26317059707539997,
+            "effective_sample_size": 174.99522343947135
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "precipitation",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "antarctic-peninsula",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 2.900175007560924,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -0.4407406091537114,
+            6.241090624275559
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 2.900175007560924,
+              "p_value": 0.04833871900194887,
+              "r_squared": 0.013017580392401074
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 2.9047904481111555,
+              "p_value": 0.1612768659437652
+            },
+            "robust": {
+              "slope_per_decade": 3.137092036289866,
+              "p_value": 0.02511998128504309
+            },
+            "theil_sen": {
+              "slope_per_decade": 2.963917381480017
+            },
+            "mann_kendall": {
+              "tau": 0.07549609810479375,
+              "p_value": 0.0511682599166409
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2003-08",
+              "slope_per_decade": 3.225999072247935,
+              "p_value": 0.026304620032086137
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.15330353894350712,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.1463780130596451,
+            "effective_sample_size": 223.3875677697445
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.9390296585212833,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -1.0208784254401082,
+            2.8989377424826746
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.9390296585212833,
+              "p_value": 0.29848635914769533,
+              "r_squared": 0.003626827054809777
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.9405240633597893,
+              "p_value": 0.42549893696122615
+            },
+            "robust": {
+              "slope_per_decade": 1.2457225317189276,
+              "p_value": 0.11066187964862263
+            },
+            "theil_sen": {
+              "slope_per_decade": 1.3821820551873887
+            },
+            "mann_kendall": {
+              "tau": 0.06176142697881829,
+              "p_value": 0.11064537286790216
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2016-09",
+              "slope_per_decade": 1.0465146298735262,
+              "p_value": 0.2376941199724593
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.45524051660938564,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.09826060012496665,
+            "effective_sample_size": 246.31842381646797
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 121.62689733044635,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 1.62689733044635,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Air temperature seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "antarctic-peninsula",
+              "label": "Antarctic Peninsula"
+            },
+            {
+              "option_id": "siberia",
+              "label": "Siberia"
+            }
+          ],
+          "answer_option_id": "antarctic-peninsula",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "antarctic-peninsula",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "siberia",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Antarctic Peninsula: -0.516 \u00b0C/decade (95% interval -0.879 to -0.154). Siberia: 0.513 \u00b0C/decade (95% interval -0.018 to 1.044). Antarctic Peninsula is changing faster. Evidence label for Antarctic Peninsula: Strong evidence. Evidence label for Siberia: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "antarctic-peninsula",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "antarctic-peninsula",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

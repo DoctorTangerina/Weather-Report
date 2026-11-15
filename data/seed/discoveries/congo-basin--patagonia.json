@@ -1,0 +1,397 @@
+{
+  "discovery_id": "congo-basin--patagonia",
+  "region_ids": [
+    "congo-basin",
+    "patagonia"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "congo-basin",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 7.4051189278788705,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            1.6049596089234415,
+            13.2052782468343
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 7.4051189278788705,
+              "p_value": 0.0020749713347414634,
+              "r_squared": 0.031369534752082553
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 7.416903694691111,
+              "p_value": 0.052064713451631925
+            },
+            "robust": {
+              "slope_per_decade": 5.13980154099428,
+              "p_value": 0.014773144632763554
+            },
+            "theil_sen": {
+              "slope_per_decade": 5.19287927670395
+            },
+            "mann_kendall": {
+              "tau": 0.0865551839464883,
+              "p_value": 0.02536996192414698
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2022-11",
+              "slope_per_decade": 6.633111098617286,
+              "p_value": 0.0048053619146633956
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.029840978553658703,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.20705114511240388,
+            "effective_sample_size": 197.07918544257407
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "patagonia",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -4.228423480623099,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -6.827565205729108,
+            -1.62928175551709
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -4.228423480623099,
+              "p_value": 0.0010011556118451775,
+              "r_squared": 0.035733678742161455
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -4.235152742528025,
+              "p_value": 0.0062545221734161705
+            },
+            "robust": {
+              "slope_per_decade": -3.5535109651567156,
+              "p_value": 0.0015410008115104383
+            },
+            "theil_sen": {
+              "slope_per_decade": -3.573885900218185
+            },
+            "mann_kendall": {
+              "tau": -0.11736900780379042,
+              "p_value": 0.0024322574780404746
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2017-03",
+              "slope_per_decade": -4.427106171533019,
+              "p_value": 0.0004085182421083027
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.005999959596488267,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.03693428395821842,
+            "effective_sample_size": 278.62876103359315
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "soil-moisture",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "congo-basin",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.42435609426049975,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -0.7098403263526065,
+            -0.13887186216839292
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.42435609426049975,
+              "p_value": 2.7207595957856638e-08,
+              "r_squared": 0.09864328627969428
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.42503142947995365,
+              "p_value": 0.012759543470195363
+            },
+            "robust": {
+              "slope_per_decade": -0.3686422421978966,
+              "p_value": 5.286666320494524e-09
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.3750063118064021
+            },
+            "mann_kendall": {
+              "tau": -0.21569676700111484,
+              "p_value": 2.5262434694875427e-08
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2016-02",
+              "slope_per_decade": -0.4159271581424446,
+              "p_value": 2.411097692267626e-08
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.012588951794772553,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5767061106223528,
+            "effective_sample_size": 80.54016278478795
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "patagonia",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -1.5469818602395864,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -2.0524216219975537,
+            -1.041542098481619
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -1.5469818602395864,
+              "p_value": 8.97705890916402e-24,
+              "r_squared": 0.28797432649769983
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -1.5494437816028162,
+              "p_value": 7.469287092226994e-06
+            },
+            "robust": {
+              "slope_per_decade": -1.5978030859553747,
+              "p_value": 1.4387557576862787e-29
+            },
+            "theil_sen": {
+              "slope_per_decade": -1.601051961665369
+            },
+            "mann_kendall": {
+              "tau": -0.3814492753623189,
+              "p_value": 6.663166265494323e-23
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2024-06",
+              "slope_per_decade": -1.588427169161894,
+              "p_value": 3.771431824944876e-25
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 6.736271087327215e-07,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.530496246132087,
+            "effective_sample_size": 92.0297103088863
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 121.86610897844179,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 1.8661089784417881,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Precipitation is rising in one of these places and falling in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "congo-basin",
+              "label": "Congo Basin"
+            },
+            {
+              "option_id": "patagonia",
+              "label": "Patagonia"
+            }
+          ],
+          "answer_option_id": "congo-basin",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "congo-basin",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "patagonia",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Congo Basin: 7.405 mm/month/decade (95% interval 1.605 to 13.205). Patagonia: -4.228 mm/month/decade (95% interval -6.828 to -1.629). Congo Basin is changing faster. Evidence label for Congo Basin: Strong evidence. Evidence label for Patagonia: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "congo-basin",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "patagonia",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "congo-basin",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "patagonia",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

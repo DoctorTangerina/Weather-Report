@@ -1,0 +1,342 @@
+{
+  "discovery_id": "amazon-basin--equatorial-pacific",
+  "region_ids": [
+    "amazon-basin",
+    "equatorial-pacific"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -18.818092206498186,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -26.392110478429693,
+            -11.24407393456668
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -18.818092206498186,
+              "p_value": 1.4338031440512334e-13,
+              "r_squared": 0.1678329675237798
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -18.848039980553665,
+              "p_value": 0.0006169936714173048
+            },
+            "robust": {
+              "slope_per_decade": -20.072627823745886,
+              "p_value": 8.074553918923618e-20
+            },
+            "theil_sen": {
+              "slope_per_decade": -20.1732476949432
+            },
+            "mann_kendall": {
+              "tau": -0.31143812709030105,
+              "p_value": 8.663082670642543e-16
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2005-01",
+              "slope_per_decade": -19.380364732174172,
+              "p_value": 9.32407496877725e-15
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.8556865462329033e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.4258010532524733,
+            "effective_sample_size": 120.81607292357299
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 3.1499714901378586,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -18.673945607230362,
+            24.973888587506078
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 3.1499714901378586,
+              "p_value": 0.31422144617212316,
+              "r_squared": 0.003398736758826449
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 3.154984465599585,
+              "p_value": 0.6408988777494153
+            },
+            "robust": {
+              "slope_per_decade": -0.017557647677714443,
+              "p_value": 0.992044442516785
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.29689176133597556
+            },
+            "mann_kendall": {
+              "tau": -0.006778149386845039,
+              "p_value": 0.8610169666484817
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2015-12",
+              "slope_per_decade": 2.5804790959497472,
+              "p_value": 0.37348567450768067
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.811527554399329,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.8394990415154966,
+            "effective_sample_size": 26.17576114944955
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [
+    {
+      "series": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "precipitation"
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "precipitation"
+        }
+      ],
+      "correlation": -0.357438134063829,
+      "p_value": 1.2601944741503847e-05,
+      "adjusted_p_value": 0.0005974804389207119,
+      "significant_after_correction": true
+    },
+    {
+      "series": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "precipitation"
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "temperature"
+        }
+      ],
+      "correlation": -0.41316859880226986,
+      "p_value": 1.117838253219682e-06,
+      "adjusted_p_value": 7.722665417957689e-05,
+      "significant_after_correction": true
+    },
+    {
+      "series": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "soil-moisture"
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "precipitation"
+        }
+      ],
+      "correlation": -0.5218777800146509,
+      "p_value": 8.578444358373478e-06,
+      "adjusted_p_value": 0.0004233199685417769,
+      "significant_after_correction": true
+    },
+    {
+      "series": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "soil-moisture"
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "temperature"
+        }
+      ],
+      "correlation": -0.498512401380837,
+      "p_value": 0.0002574134672897822,
+      "adjusted_p_value": 0.006915841821185481,
+      "significant_after_correction": true
+    },
+    {
+      "series": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "temperature"
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "precipitation"
+        }
+      ],
+      "correlation": 0.5125132691222398,
+      "p_value": 5.404009563255052e-05,
+      "adjusted_p_value": 0.0020741103371350344,
+      "significant_after_correction": true
+    },
+    {
+      "series": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "temperature"
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "temperature"
+        }
+      ],
+      "correlation": 0.5576969144559109,
+      "p_value": 0.00017513606050534268,
+      "adjusted_p_value": 0.004982105815316689,
+      "significant_after_correction": true
+    }
+  ],
+  "score": 130.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 30.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Precipitation seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "amazon-basin",
+              "label": "Amazon Basin"
+            },
+            {
+              "option_id": "equatorial-pacific",
+              "label": "Equatorial Pacific"
+            }
+          ],
+          "answer_option_id": "amazon-basin",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "amazon-basin",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "equatorial-pacific",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Amazon Basin: -18.818 mm/month/decade (95% interval -26.392 to -11.244). Equatorial Pacific: 3.15 mm/month/decade (95% interval -18.674 to 24.974). Amazon Basin is changing faster. Evidence label for Amazon Basin: Strong evidence. Evidence label for Equatorial Pacific: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

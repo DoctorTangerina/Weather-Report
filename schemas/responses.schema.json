@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://weather-report.local/schemas/responses.schema.json",
   "title": "HTTP responses",
-  "description": "What the API returns (BS-009). Every success body is a resource under \"data\" plus a \"notice\", which is null unless the service served something other than a fresh result.",
+  "description": "What the API returns (BS-009). Every success body is a resource under \"data\" plus a \"notice\", which is set when live acquisition fails. Series provenance distinguishes live, cached and preloaded data.",
   "$defs": {
     "catalogResponse": {
       "type": "object",
@@ -39,6 +39,7 @@
       "type": "object",
       "properties": {
         "data": { "$ref": "series.schema.json" },
+        "provenance": { "type": "string", "enum": ["live", "cache", "preloaded"] },
         "notice": { "$ref": "common.schema.json#/$defs/notice" }
       },
       "required": ["data", "notice"],
@@ -105,7 +106,7 @@
       "additionalProperties": false
     },
     "errorResponse": {
-      "description": "Returned with a 4xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region.",
+      "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region.",
       "type": "object",
       "properties": {
         "error": {
@@ -118,6 +119,8 @@
                 "variable_not_in_catalog",
                 "variable_not_available_for_region",
                 "result_not_available",
+                "invalid_period",
+                "live_data_unavailable",
                 "no_discovery_left_in_session"
               ]
             },
