@@ -1,7 +1,7 @@
 import { Component, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Globe from 'react-globe.gl'
 import { AREA_COLOR, withAlpha } from '../palette.js'
-import { rectangleFromCorners, unwrapped } from '../selectedArea.js'
+import { handles, rectangleFromCorners, resizeArea, unwrapped } from '../selectedArea.js'
 
 const FLIGHT_MS = 1600
 const polygonSideColor = ({ properties: { kind, color } }) =>
@@ -81,6 +81,7 @@ function framing(points, aspect) {
 
 function labelElement({ region, color }) {
   const element = document.createElement('div')
+  element.setAttribute('aria-hidden', 'true')
   element.className = region.region_id ? 'globe-label' : 'globe-label globe-label-area'
   element.style.setProperty('--region', color)
   element.textContent = region.name
@@ -91,6 +92,11 @@ function labelElement({ region, color }) {
 // given: clicking one opens it in Explore My World (#75).
 // A Selected area is drawn in its own colour on top; while `drawing`, a drag on
 // the globe sketches a new rectangle instead of turning the globe (#79).
+// When `onAreaChange` is given, every rectangle of the area has a handle at each
+// corner and on each edge. Dragging one resizes that rectangle on the globe, and
+// only on release is the area handed back, so a drag asks the API for nothing
+// until it ends. A resize that would part the area is held at its last joined
+// shape, and the reason comes with the area (#81).
 const CATALOG_COLOR = '#cfe3ee'
 const NO_REGIONS = []
 // Catalog boxes stay faint until hovered; the others are always clearly visible.
@@ -107,6 +113,7 @@ function RegionGlobe({
   drawing = false,
   onDrawn,
   onDrawCancel,
+  onAreaChange,
 }) {
   // Equivalent highlights can arrive in new arrays as series requests settle.
   // Keep polygons, labels and the camera flight stable across those renders.
@@ -118,6 +125,11 @@ function RegionGlobe({
   const [ready, setReady] = useState(false)
   const [hovered, setHovered] = useState(null)
   const [sketch, setSketch] = useState(null)
+  // { index, handle, area, problem } while a handle is dragged; `area` is shown.
+  const [resizing, setResizing] = useState(null)
+  const resizingRef = useRef(null)
+  resizingRef.current = resizing
+  const shownArea = resizing?.area ?? selectedArea
   const still = highlights.length > 0 || Boolean(selectedArea) || drawing || reducedMotion()
 
   useEffect(() => {
@@ -163,21 +175,27 @@ function RegionGlobe({
     return [
       ...catalogPolygons.filter(({ properties }) => !highlighted.has(properties.regionId)),
       ...highlightLayers.map((layer) => layer.polygon),
-      ...(selectedArea ?? []).map((rectangle) =>
+      ...(shownArea ?? []).map((rectangle) =>
         boxPolygon(unwrapped(rectangle), { color: AREA_COLOR, kind: 'area', name: 'Selected area' }),
       ),
       ...(sketchKey
         ? [boxPolygon(unwrapped(sketchKey.split(',').map(Number)), { color: AREA_COLOR, kind: 'sketch' })]
         : []),
     ]
-  }, [highlights, highlightLayers, catalogPolygons, selectedArea, sketchKey])
+  }, [highlights, highlightLayers, catalogPolygons, shownArea, sketchKey])
+  const resizable = Boolean(onAreaChange) && !drawing
   const labels = useMemo(() => {
     const regionLabels = highlightLayers.map((layer) => layer.label)
-    if (!selectedArea) return regionLabels
-    const [west, , east, north] = unwrapped(selectedArea[0])
+    if (!shownArea) return regionLabels
+    const [west, , east, north] = unwrapped(shownArea[0])
     const area = { region: { name: 'Selected area' }, color: AREA_COLOR }
-    return [...regionLabels, { ...area, lat: north, lng: (west + east) / 2 }]
-  }, [highlightLayers, selectedArea])
+    const grips = resizable
+      ? shownArea.flatMap((rectangle, index) =>
+          handles(rectangle).map((place) => ({ ...place, index, kind: 'handle' })),
+        )
+      : []
+    return [...regionLabels, { ...area, lat: north, lng: (west + east) / 2 }, ...grips]
+  }, [highlightLayers, shownArea, resizable])
   const rings = useMemo(
     () => (reducedMotion() ? [] : highlightLayers.map((layer) => layer.ring)),
     [highlightLayers],
@@ -188,13 +206,22 @@ function RegionGlobe({
     [hovered],
   )
 
-  // A new Selected area may be on the far side, as typed edges often are: face it.
-  const areaKey = selectedArea ? JSON.stringify(selectedArea) : ''
+  // A new Selected area may be on the far side, as typed edges often are: face
+  // it. Joining a rectangle keeps the first one, so the camera stays; so does
+  // resizing, which happens where the user is already looking.
+  const resizedTo = useRef('')
+  const [facing, setFacing] = useState('')
+  useEffect(() => {
+    if (!selectedArea) setFacing('')
+    else if (JSON.stringify(selectedArea) !== resizedTo.current) {
+      setFacing(JSON.stringify(selectedArea[0]))
+    }
+  }, [selectedArea])
   const areaCentre = useMemo(() => {
-    if (!areaKey) return null
-    const [west, south, east, north] = unwrapped(JSON.parse(areaKey)[0])
+    if (!facing) return null
+    const [west, south, east, north] = unwrapped(JSON.parse(facing))
     return { lat: (south + north) / 2, lng: (west + east) / 2 }
-  }, [areaKey])
+  }, [facing])
 
   const aim = useCallback(() => {
     const globe = globeRef.current
@@ -240,6 +267,59 @@ function RegionGlobe({
     window.addEventListener('keydown', cancel)
     return () => window.removeEventListener('keydown', cancel)
   }, [drawing, ready, onDrawCancel])
+
+  // While a handle is dragged the globe holds still, and the pointer is followed
+  // anywhere on the page: the handle under it is redrawn as the area changes.
+  const dragging = Boolean(resizing)
+  useEffect(() => {
+    const globe = globeRef.current
+    if (!dragging) return undefined
+    if (globe) globe.controls().enabled = false
+    const move = (event) => {
+      const point = pointAt(event)
+      const current = resizingRef.current
+      if (!point || !current) return
+      const { area, error } = resizeArea(current.area, current.index, current.handle, point)
+      setResizing({ ...current, area: area ?? current.area, problem: error ?? null })
+    }
+    const end = () => {
+      const current = resizingRef.current
+      setResizing(null)
+      if (!current) return
+      resizedTo.current = JSON.stringify(current.area)
+      onAreaChange?.(current.area, current.problem)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+    return () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+      if (globe) globe.controls().enabled = !drawing
+    }
+    // Runs once per drag: pointAt reads only refs, and onAreaChange only calls
+    // state setters (see the memo below).
+  }, [dragging])
+
+  const startResize = useRef(null)
+  startResize.current = (index, handle) =>
+    selectedArea && setResizing({ index, handle, area: selectedArea, problem: null })
+  const htmlElement = useCallback((item) => {
+    if (item.kind !== 'handle') return labelElement(item)
+    const element = document.createElement('div')
+    element.className = `area-handle area-handle-${item.handle}`
+    element.dataset.handle = item.handle
+    element.dataset.rectangle = String(item.index)
+    element.setAttribute('aria-hidden', 'true')
+    element.style.setProperty('--region', AREA_COLOR)
+    element.addEventListener('pointerdown', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      startResize.current?.(item.index, item.handle)
+    })
+    return element
+  }, [])
 
   const pointAt = (event) => {
     const box = containerRef.current.getBoundingClientRect()
@@ -298,7 +378,7 @@ function RegionGlobe({
             onPolygonClick={clickable ? click : undefined}
             polygonsTransitionDuration={reducedMotion() ? 0 : 700}
             htmlElementsData={labels}
-            htmlElement={labelElement}
+            htmlElement={htmlElement}
             htmlAltitude={0.02}
             ringsData={rings}
             ringColor={ringColor}
@@ -326,7 +406,7 @@ function RegionGlobe({
 // restarting globe layer transitions when only the surrounding controls update.
 // Callers pass fresh callback closures each render; those only call state
 // setters, so the globe compares whether each is given, not its identity.
-const CALLBACKS = ['onRegionClick', 'onAreaClick', 'onDrawn', 'onDrawCancel']
+const CALLBACKS = ['onRegionClick', 'onAreaClick', 'onDrawn', 'onDrawCancel', 'onAreaChange']
 const sameJson = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 export default memo(RegionGlobe, (previous, next) =>
   sameJson(previous.highlights, next.highlights) &&

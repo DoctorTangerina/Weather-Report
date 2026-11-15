@@ -54,3 +54,86 @@ export function describeRectangle([west, south, east, north]) {
 export function describeArea(rectangles) {
   return rectangles.map(describeRectangle).join('; ')
 }
+
+// #81: a Selected area is one shape, so each rectangle must touch or overlap
+// another. The API refuses an area that is not (src/api/explore.py), with the
+// same rule: edges that meet count, and 180° and -180° are one line.
+const TOUCH_HINT = 'Rectangles must touch or overlap the Selected area.'
+
+function touches(a, b) {
+  if (Math.max(a[1], b[1]) > Math.min(a[3], b[3])) return false
+  const [aWest, , aEast] = unwrapped(a)
+  const [bWest, , bEast] = unwrapped(b)
+  return [-360, 0, 360].some((turn) => Math.max(aWest, bWest + turn) <= Math.min(aEast, bEast + turn))
+}
+
+function isJoined(rectangles) {
+  const reached = new Set([0])
+  let grew = true
+  while (grew) {
+    grew = false
+    rectangles.forEach((rectangle, index) => {
+      if (!reached.has(index) && [...reached].some((other) => touches(rectangle, rectangles[other]))) {
+        reached.add(index)
+        grew = true
+      }
+    })
+  }
+  return reached.size === rectangles.length
+}
+
+// The area with `rectangle` added, or the reason it cannot be.
+export function joinRectangle(area, rectangle) {
+  if (area.some((other) => touches(rectangle, other))) return { area: [...area, rectangle] }
+  return { error: `${TOUCH_HINT} Draw the new one against it, or draw a new area.` }
+}
+
+// Where a rectangle's resize handles sit: each corner and the middle of each
+// edge, clockwise from the north-west corner. Longitudes are unwrapped, like the
+// rectangle as drawn, so the handles of one crossing 180° stay on it.
+export function handles(rectangle) {
+  const [west, south, east, north] = unwrapped(rectangle)
+  const lat = (south + north) / 2
+  const lng = (west + east) / 2
+  return [
+    { handle: 'nw', lat: north, lng: west },
+    { handle: 'n', lat: north, lng },
+    { handle: 'ne', lat: north, lng: east },
+    { handle: 'e', lat, lng: east },
+    { handle: 'se', lat: south, lng: east },
+    { handle: 's', lat: south, lng },
+    { handle: 'sw', lat: south, lng: west },
+    { handle: 'w', lat, lng: west },
+  ]
+}
+
+// The longitude `lng` names that lies nearest `reference`, as an edge moves.
+const nearest = (lng, reference) => lng + 360 * Math.round((reference - lng) / 360)
+// East edges keep 180° as 180°, so a rectangle ending there does not cross it.
+const wrapEast = (lng) => (wrap(lng) === -180 ? 180 : wrap(lng))
+
+// The rectangle after its `handle` ('n', 'ne', 'e', … 'nw') is dragged to
+// `point`. Only the edges the handle stands on move, each to the point's nearer
+// side, so a rectangle can grow across 180° and one wider than half the globe
+// keeps its width. Null when no width or height is left.
+export function resizeRectangle(rectangle, handle, { lat, lng }) {
+  let [west, south, east, north] = unwrapped(rectangle)
+  const latitude = round(Math.max(-90, Math.min(90, lat)))
+  if (handle.includes('n')) north = latitude
+  if (handle.includes('s')) south = latitude
+  if (handle.includes('e')) east = round(nearest(lng, east))
+  if (handle.includes('w')) west = round(nearest(lng, west))
+  const [low, high] = [Math.min(west, east), Math.max(west, east)]
+  if (south === north || low === high || high - low >= 360) return null
+  return [wrap(low), Math.min(south, north), wrapEast(high), Math.max(south, north)]
+}
+
+// The area after one of its rectangles is resized; the reason it cannot be if
+// that would part it; neither when the drag leaves the rectangle no width.
+export function resizeArea(area, index, handle, point) {
+  const resized = resizeRectangle(area[index], handle, point)
+  if (!resized) return {}
+  const next = area.map((rectangle, at) => (at === index ? resized : rectangle))
+  if (!isJoined(next)) return { error: `${TOUCH_HINT} A rectangle cannot be resized away from the rest.` }
+  return { area: next }
+}
