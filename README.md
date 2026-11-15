@@ -100,7 +100,9 @@ fixtures still do.
 | `GET /api/catalog` | `catalogResponse` |
 | `GET /api/series?region_id=&variable_id=&period_start=&period_end=` | `seriesResponse` |
 | `GET /api/comparison?region_a=&region_b=&variable_id=&period_start=&period_end=` | `comparisonResponse`: two computed Trends and their monthly series, in requested Region order |
-| `GET /api/explore/series?region_id=&variable_id=…&aggregation=&time_step=&period_start=&period_end=` | `exploreSeriesResponse`: Explore My World, one Series per Variable (1–5, `variable_id` repeated) for a catalog Region over 2000-01 to the latest month. Only monthly means are answered so far; other Aggregations and Time steps return 501 `not_available_yet` |
+| `GET /api/explore/series?region_id=&variable_id=…&aggregation=&time_step=&period_start=&period_end=` | `exploreSeriesResponse` (200) or `exploreJobResponse` (202): Explore My World, one Series per Variable (1–5, `variable_id` repeated) for a catalog Region over 2000-01 to the latest month. Only monthly means are answered so far; other Aggregations and Time steps return 501 `not_available_yet` |
+| `GET /api/explore/jobs/{id}` | `exploreJobResponse`: status, progress, result or failure |
+| `GET /api/explore/options` | `exploreOptionsResponse`: latest requestable month |
 | `GET /api/discoveries` | `discoveryListResponse`, highest score first |
 | `GET /api/discoveries/{discovery_id}` | `discoveryResponse` |
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |
@@ -217,3 +219,30 @@ unexpected worker failures propagate as server errors.
 
 Integration tests use synthetic NetCDF files with the actual #6 reader and
 quality gate. They do not constitute a real authenticated NASA download.
+
+## Explore My World background Series
+
+`GET /api/explore/series` returns monthly catalog Region means immediately when
+covered by the seed or results cache (`exploreSeriesResponse`). Otherwise it
+returns HTTP 202 with `data.job` (`exploreJobResponse`). Poll the job's `url`
+(`/api/explore/jobs/{id}`) for `queued`, `running`, `succeeded` or `failed`, and
+`progress` from 0 to 100 (completed Variables). A successful job includes its
+view in `result`; a failed job includes a safe `error` message and can be retried.
+Explore My World displays progress, then the chart or acquisition failure.
+
+`GET /api/explore/options` exposes `latest_month`. Set
+`WEATHER_REPORT_LATEST_MONTH=YYYY-MM` to the source's known availability; by
+default it is the last complete UTC calendar month. This default is a request
+limit, not a guarantee NASA has published every Variable: unavailable months
+produce an acquisition failure. The view still opens on the seed period.
+
+Jobs use `EARTHDATA_TOKEN`, `WEATHER_REPORT_LIVE_TIMEOUT_SECONDS` and
+`WEATHER_REPORT_CACHE_DIR` as described above. Completed Series persist in the
+existing cache without expiry; an identical request returns them without
+acquiring again. Job references live in one API process and do not survive a
+restart; run one worker (or use sticky routing). Daily/3-hourly Time steps and
+other Aggregations remain follow-up work. Discoveries and comparisons use their
+existing seed-only paths.
+
+Run the browser checks with the real API and synthetic acquisition grids:
+`cd frontend && npx playwright test --config playwright.jobs.config.js`.

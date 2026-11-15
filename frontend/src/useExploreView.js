@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getExploreOptions } from './api.js'
 import useExploreSeries from './useExploreSeries.js'
 
 export const FIRST_MONTH = '2000-01'
 export const MAX_VARIABLES = 5
 
 // One Explore My World view (#75): a catalog Region, up to five Variables and one
-// period. Only Variables with stored data are offered. A period outside 2000-01 to
-// the latest available month is refused here, before anything is requested.
+// period. Only Variables with stored data are offered. The API supplies the last
+// requestable month; the initial period still uses the seed set.
 export default function useExploreView(catalog, region, available) {
   const regionId = region?.region_id ?? null
   const ofRegion = catalog && region
@@ -14,7 +15,15 @@ export default function useExploreView(catalog, region, available) {
     : []
   const offered = ofRegion.filter((item) => available.has(regionId, item.variable_id))
   const unavailable = ofRegion.filter((item) => !offered.includes(item))
-  const latest = available.latest
+  const [latestAvailable, setLatestAvailable] = useState(null)
+  useEffect(() => {
+    let cancelled = false
+    getExploreOptions().then(({ data }) => {
+      if (!cancelled) setLatestAvailable(data.latest_month)
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+  const latest = latestAvailable ?? available.latest
 
   // Choices belong to one Region; opening another starts from its defaults.
   const [choice, setChoice] = useState(null)
@@ -25,7 +34,7 @@ export default function useExploreView(catalog, region, available) {
           regionId,
           chosen: offered.slice(0, 1).map((item) => item.variable_id),
           start: FIRST_MONTH,
-          end: latest ?? '',
+          end: available.latest ?? '',
         }
   const update = (change) => setChoice({ ...current, ...change })
 

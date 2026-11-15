@@ -105,10 +105,18 @@ export default function ExploreMyWorld({ catalog, region, view, color, timestamp
       {view.chosen.length === 0 && <p role="status">Choose at least one Variable.</p>}
       {view.error && (
         <p className="notice" role="status">
-          {view.error.code === 'result_not_available'
+          {view.error.code === 'acquisition_failed'
+            ? view.error.message
+            : view.error.code === 'result_not_available'
             ? `There is no stored data yet for ${region.name} over this period.`
             : `The Series could not be loaded: ${view.error.message}`}
         </p>
+      )}
+      {view.loading && view.progress != null && (
+        <div role="status">
+          <p>Obtaining the Series: {view.progress}%</p>
+          <progress aria-label="Series acquisition progress" value={view.progress} max="100" />
+        </div>
       )}
       {view.loading &&
         view.chosen.map((id) => <div key={id} className="skeleton skeleton-chart" aria-hidden="true" />)}

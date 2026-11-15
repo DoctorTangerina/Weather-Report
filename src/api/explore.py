@@ -1,9 +1,7 @@
-"""Series on demand for Explore My World (#75, spec #72 BS-007).
+"""Explore My World Series: seed/cache lookup, validation and acquisition requests.
 
-One request describes one view: a catalog Region, one to five Variables, one
-Aggregation, one Time step and one period. Monthly area-weighted means are cut
-from the preloaded Series. Any other Aggregation or Time step needs data fetched
-from NASA, which arrives with background jobs (#77), so it is refused for now.
+Monthly means absent from the stores are built by #77's background jobs.
+Other Aggregations and Time steps remain owned by their follow-up tickets.
 """
 
 from __future__ import annotations
@@ -31,6 +29,11 @@ TIME_STEPS = ("3-hourly", "daily", "monthly")
 # ADR 0004: how many months a sub-monthly request may span.
 LIMITS = {"3-hourly": (12, "1 year"), "daily": (120, "10 years")}
 _MONTH = re.compile(r"[0-9]{4}-(0[1-9]|1[0-2])")
+
+
+class AcquisitionNeeded(Exception):
+    def __init__(self, view: dict[str, Any]) -> None:
+        self.view = view
 
 
 class Refusal(Exception):
@@ -157,10 +160,13 @@ def explore_series(
     time_step: str,
     start: str,
     end: str | None,
+    *,
+    cache: ResultStore | None = None,
+    latest: str | None = None,
 ) -> dict[str, Any]:
     """The view's Series, or a Refusal saying why it cannot be given."""
-    latest = latest_month(store)
-    end = latest if end is None else end
+    latest = latest or latest_month(store)
+    end = latest_month(store) if end is None else end
     _validate(
         catalog, region_id, variable_ids, aggregation, time_step, start, end, latest
     )
@@ -178,16 +184,26 @@ def explore_series(
         and item["period"]["start"] <= start
         and item["period"]["end"] >= end
     }
-    missing = [v for v in variable_ids if v not in covering]
+    cached = {
+        v: cache.series(region_id, v, Period(start, end)) if cache else None
+        for v in variable_ids
+    }
+    missing = [v for v in variable_ids if v not in covering and cached[v] is None]
     if missing:
-        raise Refusal(
-            404,
-            "result_not_available",
-            f"No stored Series for {region_id} and {', '.join(missing)} "
-            f"from {start} to {end}.",
+        raise AcquisitionNeeded(
+            {
+                "region_id": region_id,
+                "variable_ids": variable_ids,
+                "aggregation": aggregation,
+                "time_step": time_step,
+                "period": {"start": start, "end": end},
+            }
         )
     series = []
     for variable_id in variable_ids:
+        if cached[variable_id] is not None:
+            series.append(cached[variable_id])
+            continue
         period = Period(**covering[variable_id])
         payload = store.series(region_id, variable_id, period)
         assert payload is not None

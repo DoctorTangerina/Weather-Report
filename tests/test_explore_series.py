@@ -107,12 +107,13 @@ def test_a_period_starting_before_2000_is_refused(client, validator_for):
         validator_for,
         "period_out_of_range",
     )
-    assert "2000-01" in message and "2024-12" in message
+    assert "2000-01" in message
+    assert client.get("/api/explore/options").json()["data"]["latest_month"] in message
 
 
 def test_a_period_ending_after_the_latest_month_is_refused(client, validator_for):
     refused(
-        explore(client, period_start="2024-01", period_end="2025-01"),
+        explore(client, period_start="2024-01", period_end="9999-12"),
         validator_for,
         "period_out_of_range",
     )
@@ -202,13 +203,11 @@ def test_series_the_seed_set_cannot_answer_are_not_available_yet(
     assert response.json()["error"]["code"] == "not_available_yet"
 
 
-def test_a_variable_without_a_stored_series_is_named(client, validator_for):
+def test_a_variable_without_a_stored_series_starts_a_job(client, validator_for):
     # The stub holds no soil moisture for the Sahel.
     response = explore(client, ("temperature", "soil-moisture"))
-    assert response.status_code == 404
-    validator_for(RESPONSES, "#/$defs/errorResponse").validate(response.json())
-    assert response.json()["error"]["code"] == "result_not_available"
-    assert "soil-moisture" in response.json()["error"]["message"]
+    assert response.status_code == 202
+    validator_for(RESPONSES, "#/$defs/exploreJobResponse").validate(response.json())
 
 
 def test_explore_requests_leave_the_discoveries_untouched(client):
