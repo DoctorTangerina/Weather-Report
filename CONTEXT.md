@@ -90,6 +90,10 @@ _Avoid_: Recipe (on its own), pipeline, workflow, transformation
 **Derived series**:
 The result of applying a Processing recipe to one or more Source series. It keeps its Processing recipe and the provenance of its inputs.
 
+**Linear detrending**:
+An explicitly selected Processing recipe step in Explore My World that removes a fitted linear change from a Series, either preserving its mean or returning deviations around zero. The Source series is preserved; the result is a Derived series.
+_Avoid_: Automatic trend removal, seasonal removal
+
 **Field map**:
 The values of one Variable in every grid cell of a Region or Selected area at one Time step, drawn on the globe at the data's own resolution. Its colour scale spans that Variable's range over the area and period, so every Time step is drawn on the same scale.
 _Avoid_: Heatmap (reserved for the Correlation map display), raster, layer

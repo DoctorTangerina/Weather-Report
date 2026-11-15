@@ -2,8 +2,10 @@
 
 The Region catalog supplies the area, the Variable catalog supplies the field,
 units and land-only flag, and the gathering config says which acquired dataset
-holds a Variable. Native observations are reduced to one mean per calendar
-month, then the quality gate (BS-003) decides whether the series may be used.
+holds a Variable. Each native time step's cells are converted to catalog units
+and combined with the requested Aggregation (area-weighted mean by default),
+then each calendar month's values are combined with the same Aggregation (spec
+#72), and the quality gate (BS-003) decides whether the series may be used.
 
 The result is a plain dict in the shape of `schemas/series.schema.json`. It
 carries no engine import, so the engine can read it with `Series.from_dict`.
@@ -20,6 +22,9 @@ from collections.abc import Callable, Mapping
 from dataclasses import asdict
 from pathlib import Path
 
+import numpy as np
+
+from .aggregation import AGGREGATIONS, combine
 from .models import Bbox, Period, SelectedArea
 from .quality_gate import assess_quality, months_in
 from .selection import SeriesSelectionError, TimeWindow
@@ -28,35 +33,49 @@ from .series import DEFAULT_CONFIG, ROOT, load_series_config, open_source
 DEFAULT_CATALOG = ROOT / "data/catalog.json"
 DEFAULT_PERIOD = Period("2000-01", "2024-12")
 
-# A conversion turns the monthly means in the file's units into catalog units.
-# It gets the values, the first month (YYYY-MM) and the file's units, and keeps
-# missing months missing.
-Conversion = Callable[[list[float | None], str, str], list[float | None]]
+# A conversion turns grid-cell values in the file's units into catalog units.
+# It gets one native time step's cells (a masked array, missing cells masked)
+# and that step's month (YYYY-MM). Converting cells before they are combined
+# keeps Aggregations such as root mean square right for offset units (K to °C).
+Conversion = Callable[[np.ndarray, str], np.ndarray]
 
 
-def _kelvin_to_celsius(values, start, units):
-    return [None if value is None else value - 273.15 for value in values]
+def _rate_to_monthly_total(cells, month):
+    """MERRA-2's mean rate (kg m-2 s-1) to mm per month: 1 kg m-2 is 1 mm deep.
 
-
-def _rate_to_monthly_total(values, start, units):
-    """MERRA-2's mean rate (kg m-2 s-1) to mm per month, by the engine's own helper.
-
-    The helper multiplies each month by its own length and refuses anything that
-    cannot be a precipitation rate, so a wrong value never passes as a total.
+    Each value is multiplied by the seconds in its own month (28 to 31 days).
     """
-    from engine import precipitation_rate_to_monthly_total
+    from engine.units import seconds_in_month
 
-    try:
-        return precipitation_rate_to_monthly_total(values, start, units)
-    except ValueError as error:
-        raise SeriesSelectionError("implausible_values", str(error)) from None
+    return cells * seconds_in_month(int(month[:4]), int(month[5:]))
+
+
+def _check_monthly_precipitation(values, months):
+    """Refuse totals that cannot be precipitation, so they never pass as data."""
+    from engine.units import MONTHLY_PRECIPITATION_CEILING
+
+    for value, month in zip(values, months):
+        if value is None:
+            continue
+        if value < 0:
+            raise SeriesSelectionError(
+                "implausible_values", f"negative precipitation in {month}"
+            )
+        if value > MONTHLY_PRECIPITATION_CEILING:
+            raise SeriesSelectionError(
+                "implausible_values",
+                f"{value:.0f} mm in {month} is wetter than any month ever recorded; "
+                "the input is probably not a rate in kg m-2 s-1",
+            )
 
 
 CONVERSIONS: dict[str, Conversion] = {
-    "identity": lambda values, start, units: values,
-    "kelvin_to_celsius": _kelvin_to_celsius,
+    "identity": lambda cells, month: cells,
+    "kelvin_to_celsius": lambda cells, month: cells - 273.15,
     "rate_per_second_to_per_month": _rate_to_monthly_total,
 }
+# Checks on the finished values, for conversions that can expose bad input.
+PLAUSIBILITY = {"rate_per_second_to_per_month": _check_monthly_precipitation}
 
 
 def get_catalog_series(
@@ -66,10 +85,16 @@ def get_catalog_series(
     *,
     catalog_path: Path = DEFAULT_CATALOG,
     config_path: Path = DEFAULT_CONFIG,
+    aggregation: str = "mean",
+    withhold_excluded: bool = True,
 ) -> dict:
     """The monthly series for a catalog Region and Variable, with its quality.
 
     period: inclusive start/end in YYYY-MM. Default 2000-01 to 2024-12.
+    aggregation: one of `aggregation.AGGREGATIONS`; it combines the Region's
+    cells (area-weighted, except minimum and maximum), then each month's values.
+    withhold_excluded: False keeps the values of a series the gate excluded,
+    for a caller that joins it to other months and gates the whole again.
     Raises SeriesSelectionError if the ids are not in the catalogs, the Variable
     is not offered for the Region, the data is not acquired, a land-only Variable
     has no land mask, or the file's units cannot be reported in catalog units.
@@ -81,6 +106,8 @@ def get_catalog_series(
         period,
         catalog_path=catalog_path,
         config_path=config_path,
+        aggregation=aggregation,
+        withhold_excluded=withhold_excluded,
     )[region_id]
     if isinstance(result, SeriesSelectionError):
         raise result
@@ -95,6 +122,8 @@ def get_catalog_series_many(
     catalog_path: Path = DEFAULT_CATALOG,
     config_path: Path = DEFAULT_CONFIG,
     on_file=None,
+    aggregation: str = "mean",
+    withhold_excluded: bool = True,
 ) -> dict:
     """`get_catalog_series` for several Regions of one Variable, reading each file once.
 
@@ -103,6 +132,7 @@ def get_catalog_series_many(
     the period or the data as a whole is raised, as it would be for one Region.
     `on_file(done, total, path)` is called after each file is read.
     """
+    _check_aggregation(aggregation)
     catalog = _load_catalog(catalog_path)
     variable = _find(catalog["variables"], "variable_id", variable_id)
     if variable is None:
@@ -139,6 +169,8 @@ def get_catalog_series_many(
         window,
         entry.get("dataset_id"),
         on_file,
+        aggregation=aggregation,
+        cell_conversion=_cell_conversion(entry, variable["units"]),
     )
 
     for region_id, native in natives.items():
@@ -154,6 +186,8 @@ def get_catalog_series_many(
                 window,
                 months,
                 catalog["engine_version"],
+                aggregation,
+                withhold_excluded,
             )
         except SeriesSelectionError as error:
             results[region_id] = error
@@ -167,12 +201,16 @@ def get_area_series(
     *,
     catalog_path: Path = DEFAULT_CATALOG,
     config_path: Path = DEFAULT_CONFIG,
+    aggregation: str = "mean",
+    withhold_excluded: bool = True,
 ) -> dict:
     """The monthly Series for a Selected area, built like a catalog Region's.
 
     The area replaces the Region: `area` stands where `region_id` would, so the
-    result can never be mistaken for a Region's Series.
+    result can never be mistaken for a Region's Series. `aggregation` and
+    `withhold_excluded` mean what they do for `get_catalog_series`.
     """
+    _check_aggregation(aggregation)
     catalog = _load_catalog(catalog_path)
     variable = _find(catalog["variables"], "variable_id", variable_id)
     if variable is None:
@@ -189,6 +227,8 @@ def get_area_series(
         entry.get("variable", variable["source"]["variable"]),
         window,
         entry.get("dataset_id"),
+        aggregation=aggregation,
+        cell_conversion=_cell_conversion(entry, variable["units"]),
     )["area"]
     if isinstance(native, SeriesSelectionError):
         raise native
@@ -201,11 +241,42 @@ def get_area_series(
         window,
         _months(selected),
         catalog["engine_version"],
+        aggregation,
+        withhold_excluded,
     )
 
 
+def _check_aggregation(aggregation: str) -> None:
+    if aggregation not in AGGREGATIONS:
+        raise SeriesSelectionError(
+            "invalid_aggregation",
+            "Choose an Aggregation from " + ", ".join(AGGREGATIONS) + ".",
+        )
+
+
+def _cell_conversion(entry: dict, catalog_units: str):
+    """Convert one native time step's cells to catalog units, by the file's units."""
+    conversions: dict[str, Conversion] = {}
+
+    def convert_cells(cells, timestamp, units):
+        if units not in conversions:
+            conversions[units] = _conversion(entry, units, catalog_units)
+        return conversions[units](cells, timestamp[:7])
+
+    return convert_cells
+
+
 def _series(
-    identity, variable, native, entry, selected, window, months, engine_version
+    identity,
+    variable,
+    native,
+    entry,
+    selected,
+    window,
+    months,
+    engine_version,
+    aggregation="mean",
+    withhold_excluded=True,
 ) -> dict:
     land_only = bool(variable["land_only"] or native.land_only)
     if variable["land_only"] and not native.land_only:
@@ -213,17 +284,15 @@ def _series(
             "land_mask_unavailable",
             "This land-only Variable has no configured land mask in the acquired data.",
         )
-    convert = _conversion(entry, native.units, variable["units"])
-
+    # The cells are already in catalog units (see `_cell_conversion`).
     buckets: dict[str, list[float]] = {}
     for stamp, value in native.observations.items():
         if window.contains(stamp) and value is not None and math.isfinite(value):
             buckets.setdefault(stamp[:7], []).append(value)
-    monthly = [
-        sum(buckets[month]) / len(buckets[month]) if month in buckets else None
-        for month in months
-    ]
-    monthly = convert(monthly, selected.start, native.units)
+    monthly = [_month_value(buckets.get(month), aggregation) for month in months]
+    check = PLAUSIBILITY.get(entry.get("conversion", "identity"))
+    if check is not None:
+        check(monthly, months)
 
     try:
         quality = assess_quality(
@@ -239,11 +308,27 @@ def _series(
         "variable_id": variable["variable_id"],
         "period": {"start": selected.start, "end": selected.end},
         "units": variable["units"],
-        "values": monthly if quality.included else [None] * len(monthly),
+        "values": monthly
+        if quality.included or not withhold_excluded
+        else [None] * len(monthly),
         "quality": {**asdict(quality), "exclusions": list(quality.exclusions)},
         "source": dict(variable["source"]),
         "engine_version": engine_version,
     }
+
+
+def _month_value(values: list[float] | None, aggregation: str) -> float | None:
+    """A month's value from its native time steps' values (spec #72).
+
+    Values are combined over time only when the month holds several native time
+    steps. One value is the month's value as it is: combining a single value
+    would turn a standard deviation into 0.
+    """
+    if not values:
+        return None
+    if len(values) == 1:
+        return values[0]
+    return combine(values, aggregation=aggregation)
 
 
 def _load_catalog(path: Path) -> dict:
@@ -330,8 +415,11 @@ def build_series_files(
     catalog_path: Path = DEFAULT_CATALOG,
     config_path: Path = DEFAULT_CONFIG,
     progress: Callable[[str], None] | None = None,
+    aggregation: str = "mean",
 ) -> list[dict]:
     """Write one series file per Region and Variable and report each outcome.
+
+    Every series is built with `aggregation` (see `get_catalog_series`).
 
     Files are named `<region>__<variable>.json`, like the committed stub set.
     A series the data cannot provide is reported and skipped, not fatal. Each
@@ -351,6 +439,7 @@ def build_series_files(
                 period,
                 catalog_path=catalog_path,
                 config_path=config_path,
+                aggregation=aggregation,
                 on_file=lambda done, total, path, v=variable_id: (
                     say(f"{v}: file {done}/{total}")
                     if done in (1, total) or done % 25 == 0

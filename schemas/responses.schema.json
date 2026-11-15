@@ -106,7 +106,7 @@
       "additionalProperties": false
     },
     "exploreSeriesResponse": {
-      "description": "Explore My World (#75, #79): the Series of one catalog Region or one Selected area for one to five Variables, built with one Aggregation and one Time step over one period. Each Series covers exactly the requested period, and its quality is the Quality gate's verdict on that period.",
+      "description": "Explore My World (#75, #79): the Series of one catalog Region or one Selected area for one to five Variables, built with one Aggregation and one Time step over one period. Each Series covers exactly the requested period, and its quality is the Quality gate's verdict on that period. Every value combines the area's grid cells, then a month's native time steps, by `aggregation` (#78): area-weighted for all but minimum and maximum; standard deviation is the population one.",
       "type": "object",
       "properties": {
         "data": {

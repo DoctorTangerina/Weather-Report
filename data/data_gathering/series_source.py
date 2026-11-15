@@ -148,17 +148,39 @@ class NetCDFSeriesSource:
         window: TimeWindow,
         dataset_id: str | None = None,
         on_file=None,
+        *,
+        aggregation: str = "mean",
+        cell_conversion=None,
     ) -> dict:
         """Each named area's series, reading every file once.
 
         A problem with the Variable or dataset itself is raised. A problem with
         one area (nothing readable there, a mask that does not align) is that
         area's value in the result, as the SeriesSelectionError `select` raises.
+        `aggregation` combines each area's cells at every timestamp, after
+        `cell_conversion` (see `netcdf.extract_many`).
         """
         with _READ_LOCK:
-            return self._select_many(areas, variable, window, dataset_id, on_file)
+            return self._select_many(
+                areas,
+                variable,
+                window,
+                dataset_id,
+                on_file,
+                aggregation,
+                cell_conversion,
+            )
 
-    def _select_many(self, areas, variable, window, dataset_id, on_file):
+    def _select_many(
+        self,
+        areas,
+        variable,
+        window,
+        dataset_id,
+        on_file,
+        aggregation="mean",
+        cell_conversion=None,
+    ):
         datasets = self._datasets()
         if dataset_id is not None:
             datasets = {
@@ -211,6 +233,8 @@ class NetCDFSeriesSource:
                 time_window=(window.lower, window.upper),
                 land_mask_provider=mask_provider,
                 on_file=on_file,
+                statistic=aggregation,
+                cell_conversion=cell_conversion,
             )
         except SeriesSelectionError:
             raise

@@ -10,6 +10,138 @@
   },
   "contrasts": [
     {
+      "variable_id": "vegetation-index",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "sahara",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.0002294034333060218,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.0002655467438308711,
+            0.0007243536104429147
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.0002294034333060218,
+              "p_value": 0.019598785706547668,
+              "r_squared": 0.018204141351704246
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.0002450758745103345,
+              "p_value": 0.29215364055210746
+            },
+            "robust": {
+              "slope_per_decade": 0.00016195157469457575,
+              "p_value": 0.07423343497174023
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.00015099676945840522
+            },
+            "mann_kendall": {
+              "tau": 0.05627258647392876,
+              "p_value": 0.14676051730099587
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2000-02",
+              "slope_per_decade": 0.00019030174321448115,
+              "p_value": 0.047801308232560534
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.47412207545736174,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.7268335284631979,
+            "effective_sample_size": 47.298580693063315
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.00783055769138942,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            0.0028042203006733686,
+            0.012856895082105472
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.00783055769138942,
+              "p_value": 0.000641390159694418,
+              "r_squared": 0.03853553678102352
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.007934866372762722,
+              "p_value": 0.0014198911555535153
+            },
+            "robust": {
+              "slope_per_decade": 0.005265573493099808,
+              "p_value": 0.0009597869945242237
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.004947807364907124
+            },
+            "mann_kendall": {
+              "tau": 0.12257861776391103,
+              "p_value": 0.001573009952164633
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2011-04",
+              "slope_per_decade": 0.00798500859111997,
+              "p_value": 0.00016383221829701115
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.008486231855116903,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.11645699818492063,
+            "effective_sample_size": 236.62295813649624
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
       "variable_id": "soil-moisture",
       "kind": "magnitude_gap",
       "trends": [
@@ -58,8 +190,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.15943558015984738,
+            "family_size": 92,
+            "adjusted_p_value": 0.1701350681407485,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -121,8 +253,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.4589317851294989,
+            "family_size": 92,
+            "adjusted_p_value": 0.47412207545736174,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -143,22 +275,22 @@
     }
   ],
   "mirrors": [],
-  "score": 1.5373318692371472,
+  "score": 25.093156171401912,
   "score_components": {
     "opposite_sign": 0.0,
-    "multi_variable": 0.0,
+    "multi_variable": 20.0,
     "surprising_pair": 0.0,
-    "magnitude_gap": 1.5373318692371472,
+    "magnitude_gap": 5.093156171401912,
     "mirror": 0.0
   },
   "evidence_label": "Not enough evidence yet",
   "headline_eligible": false,
   "narrative": {
-    "question": "Soil moisture seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "question": "Vegetation index (NDVI) seems to be changing faster in one of these places than in the other. Is the difference real?",
     "investigation": {
       "steps": [
         {
-          "question": "Where do you think soil moisture is changing faster?",
+          "question": "Where do you think vegetation index (ndvi) is changing faster?",
           "options": [
             {
               "option_id": "sahara",
@@ -176,33 +308,33 @@
           "series": [
             {
               "region_id": "sahara",
-              "variable_id": "soil-moisture"
+              "variable_id": "vegetation-index"
             },
             {
               "region_id": "siberia",
-              "variable_id": "soil-moisture"
+              "variable_id": "vegetation-index"
             }
           ],
-          "comparison": "Sahara: -0.177 mm/decade (95% interval -0.385 to 0.031). Siberia: -0.514 mm/decade (95% interval -1.627 to 0.6). Siberia is changing faster. Evidence label for Sahara: Not enough evidence yet. Evidence label for Siberia: Not enough evidence yet.",
+          "comparison": "Sahara: 0 NDVI/decade (95% interval 0 to 0.001). Siberia: 0.008 NDVI/decade (95% interval 0.003 to 0.013). Siberia is changing faster. Evidence label for Sahara: Not enough evidence yet. Evidence label for Siberia: Strong evidence.",
           "kind": "check"
         },
         {
-          "prompt": "What could make soil moisture change this way?",
+          "prompt": "What could make vegetation index (ndvi) change this way?",
           "possible_causes": [
             {
-              "text": "Less rain means less water soaks into the soil.",
+              "text": "Plants grow more when there is more rain and soil water.",
               "kind": "context"
             },
             {
-              "text": "Hotter air pulls more water out of the soil through evaporation.",
+              "text": "A longer warm season gives plants more time to grow.",
               "kind": "context"
             },
             {
-              "text": "Farming and irrigation change how much water the soil holds.",
+              "text": "Clearing forests for farms or towns removes plant cover.",
               "kind": "context"
             },
             {
-              "text": "Melting snow and ice add water to the soil in spring.",
+              "text": "Droughts and fires cut back plant growth.",
               "kind": "context"
             }
           ],
@@ -216,6 +348,26 @@
         "end": "2024-12"
       },
       "sources": [
+        {
+          "region_id": "sahara",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
         {
           "region_id": "sahara",
           "variable_id": "soil-moisture",
@@ -237,7 +389,7 @@
           }
         }
       ],
-      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
       "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
     }
   },

@@ -33,9 +33,14 @@ async def acquire_series(
     *,
     token: str,
     source: GridAcquisitionSource | None = None,
+    aggregation: str = "mean",
+    keep_values: bool = False,
     rectangles: list[list[float]] | None = None,
 ) -> dict[str, Any]:
-    """A catalog Region's Series, or with `region` None a Selected area's."""
+    """A catalog Region's Series, or with `region` None a Selected area's.
+
+    keep_values keeps an excluded Series' values.
+    """
     root = Path(__file__).resolve().parents[2]
     env = {
         **os.environ,
@@ -62,6 +67,8 @@ async def acquire_series(
             "period": {"start": period.start, "end": period.end},
             "dataset": variable.source.dataset,
             "time_step": "monthly",
+            "aggregation": aggregation,
+            "keep_values": keep_values,
             "workspace": workspace,
         }
         if source is not None:

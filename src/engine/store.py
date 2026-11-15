@@ -48,6 +48,11 @@ class JsonResultStore:
         self._discoveries: list[dict[str, Any]] = []
         self._load()
 
+    @property
+    def root(self) -> Path:
+        """The directory this store reads and writes."""
+        return self._root
+
     def series(
         self, region_id: str, variable_id: str, period: Period
     ) -> dict[str, Any] | None:

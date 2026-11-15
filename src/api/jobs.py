@@ -1,9 +1,15 @@
-"""Process-local jobs; finished Series live in the existing persistent results cache."""
+"""Process-local jobs; acquired Series pieces live in a persistent results cache.
+
+A job acquires only the months the seed set does not hold (`view["acquire"]`),
+keeps each piece in the cache (a Selected area's in its own), then builds the
+view's result with `finish`.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
 
@@ -31,6 +37,7 @@ class SeriesJobs:
         cache: ResultStore,
         source: GridAcquisitionSource | None,
         timeout: float,
+        finish: Callable[[], dict[str, Any]],
         area_cache: AreaSeriesCache | None = None,
     ) -> dict[str, Any]:
         area = view.get("area")
@@ -56,13 +63,17 @@ class SeriesJobs:
         self.jobs[job_id] = job
         self.pending[key] = job_id
         task = asyncio.create_task(
-            self._run(job, key, view, catalog, cache, source, timeout, area_cache)
+            self._run(
+                job, key, view, catalog, cache, source, timeout, finish, area_cache
+            )
         )
         self.tasks.add(task)
         task.add_done_callback(self.tasks.discard)
         return job
 
-    async def _run(self, job, key, view, catalog, cache, source, timeout, area_cache):
+    async def _run(
+        self, job, key, view, catalog, cache, source, timeout, finish, area_cache
+    ):
         job["status"] = "running"
         area = view.get("area")
         # A Selected area is never a Region: its Series have their own cache.
@@ -75,10 +86,10 @@ class SeriesJobs:
                 if area is None:
                     region = catalog.region(view["region_id"])
                     assert region is not None
-                period = Period(**view["period"])
-                series = []
+                acquire = view["acquire"]
                 token = settings().get("EARTHDATA_TOKEN", "")
-                for variable_id in view["variable_ids"]:
+                for done, (variable_id, months) in enumerate(acquire.items(), 1):
+                    period = Period(**months)
                     payload = store.series(place, variable_id, period)
                     if payload is None:
                         if source is None and not token:
@@ -91,20 +102,21 @@ class SeriesJobs:
                             period,
                             token=token,
                             source=source,
+                            aggregation=view["aggregation"],
+                            # A Region's piece is joined to seeded months and
+                            # gated again; a Selected area's is served whole.
+                            keep_values=area is None,
                             rectangles=None if area is None else area["rectangles"],
                         )
                         if (
                             payload.get(identity) != view[identity]
                             or payload["variable_id"] != variable_id
-                            or payload["period"] != view["period"]
+                            or payload["period"] != months
                         ):
                             raise AcquisitionUnavailable("Unexpected acquired Series")
                         store.save_series(payload)
-                    series.append(payload)
-                    job["progress"] = int(100 * len(series) / len(view["variable_ids"]))
-                job["result"] = {
-                    k: v for k, v in view.items() if k != "variable_ids"
-                } | {"series": series}
+                    job["progress"] = int(100 * done / len(acquire))
+                job["result"] = finish()
                 job["status"] = "succeeded"
         except asyncio.CancelledError:
             self._fail(job)

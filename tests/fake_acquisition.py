@@ -21,6 +21,9 @@ class FakeGridAcquisitionSource:
     values: list[list[list[float | None]]]
     units: str
     land_mask: list[list[int]] | None = None
+    # Explicit [low, high] cell bounds; one degree around each centre by default.
+    latitude_bounds: list[list[float]] | None = None
+    longitude_bounds: list[list[float]] | None = None
 
     def prepare(self, request: dict, *, fetch: bool = False) -> Path:
         directory = Path(request["workspace"])
@@ -28,9 +31,9 @@ class FakeGridAcquisitionSource:
         field_name = "synthetic_field"
         with Dataset(path, "w") as data:
             data.createDimension("bounds", 2)
-            for name, coordinates, units in (
-                ("lat", self.latitudes, "degrees_north"),
-                ("lon", self.longitudes, "degrees_east"),
+            for name, coordinates, units, explicit in (
+                ("lat", self.latitudes, "degrees_north", self.latitude_bounds),
+                ("lon", self.longitudes, "degrees_east", self.longitude_bounds),
             ):
                 data.createDimension(name, len(coordinates))
                 axis = data.createVariable(name, "f8", (name,))
@@ -39,7 +42,9 @@ class FakeGridAcquisitionSource:
                 # Fixed one-degree cell bounds keep separated synthetic cells equal-area.
                 axis.bounds = name + "_bounds"
                 bounds = data.createVariable(axis.bounds, "f8", (name, "bounds"))
-                bounds[:] = [[centre - 0.5, centre + 0.5] for centre in coordinates]
+                bounds[:] = explicit or [
+                    [centre - 0.5, centre + 0.5] for centre in coordinates
+                ]
             data.createDimension("time", len(self.timestamps))
             time = data.createVariable("time", "f8", ("time",))
             time.units = "hours since 2000-01-01 00:00:00"

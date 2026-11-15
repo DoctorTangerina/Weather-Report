@@ -21,6 +21,10 @@ class AreaSeriesCache:
     def __init__(self, root: str | Path) -> None:
         self._root = Path(root)
 
+    @property
+    def root(self) -> Path:
+        return self._root
+
     def _path(self, rectangles: list, variable_id: str, period: Period) -> Path:
         identity = json.dumps(
             [rectangles, variable_id, period.start, period.end, ENGINE_VERSION]

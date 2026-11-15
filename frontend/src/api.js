@@ -38,11 +38,11 @@ export const getSeries = (regionId, variableId, period) => {
 }
 
 // Explore My World: the Series of a catalog Region (`regionId`) or a
-// Selected area (`rectangles`): monthly means, returned directly or through a
-// background job.
-export const getExploreSeries = (place, variableIds, period) => {
+// Selected area (`rectangles`) with one Aggregation: monthly Series, returned
+// directly or through a background job.
+export const getExploreSeries = (place, variableIds, period, aggregation) => {
   const params = new URLSearchParams({
-    aggregation: 'mean',
+    aggregation,
     time_step: 'monthly',
     period_start: period.start,
     period_end: period.end,

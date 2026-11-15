@@ -7,11 +7,11 @@ const EMPTY = { loading: false, series: [], error: null }
 // only asks for them, and never shows an earlier answer under new settings.
 // `place` is { regionId } or { rectangles }, and null with nothing open.
 // `period` is null while the chosen period is invalid, so nothing is requested.
-export default function useExploreSeries(place, variableIds, period) {
+export default function useExploreSeries(place, variableIds, period, aggregation) {
   const placeKey = place?.regionId ?? JSON.stringify(place?.rectangles ?? null)
   const key =
     place && period && variableIds.length > 0
-      ? `${placeKey}/${variableIds.join(',')}/${period.start}/${period.end}`
+      ? `${placeKey}/${variableIds.join(',')}/${period.start}/${period.end}/${aggregation}`
       : null
   const [state, setState] = useState(EMPTY)
 
@@ -29,7 +29,7 @@ export default function useExploreSeries(place, variableIds, period) {
       timer = setTimeout(resolve, 300)
     })
     const load = async () => {
-      let { data } = await getExploreSeries(place, variableIds, period)
+      let { data } = await getExploreSeries(place, variableIds, period, aggregation)
       while (!cancelled && data.job) {
         const job = data.job
         if (job.status === 'failed') throw new ApiError(job.error.code, job.error.message)

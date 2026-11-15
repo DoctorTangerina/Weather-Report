@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DEFAULT_AGGREGATION } from './aggregations.js'
 import { getExploreOptions } from './api.js'
 import useExploreSeries from './useExploreSeries.js'
 
@@ -12,9 +13,10 @@ function addMonths(month, count) {
 }
 
 // One Explore My World view: a catalog Region (#75) or a Selected area (#79), up
-// to five Variables and one period. A Region offers the Variables with stored
-// data; a Selected area offers those the API can fetch for any area. The API
-// supplies the last requestable month; a Region's initial period uses the seed set.
+// to five Variables, one Aggregation (#78) and one period, the same for every
+// chart. A Region offers the Variables with stored data; a Selected area offers
+// those the API can fetch for any area. The API supplies the last requestable
+// month; a Region's initial period uses the seed set.
 export default function useExploreView(catalog, region, available, area = null) {
   const [options, setOptions] = useState(null)
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function useExploreView(catalog, region, available, area = null) 
           chosen: offered.slice(0, 1).map((item) => item.variable_id),
           start: area && latest ? addMonths(latest, -11) : FIRST_MONTH,
           end: (area ? latest : available.latest) ?? '',
+          aggregation: DEFAULT_AGGREGATION,
         }
   const update = (change) => setChoice({ ...current, ...change })
 
@@ -83,6 +86,7 @@ export default function useExploreView(catalog, region, available, area = null) 
     place,
     chosen,
     periodError ? null : { start: current.start, end: current.end },
+    current.aggregation,
   )
 
   return {
@@ -94,6 +98,8 @@ export default function useExploreView(catalog, region, available, area = null) 
     end: current.end,
     setStart: (start) => update({ start }),
     setEnd: (end) => update({ end }),
+    aggregation: current.aggregation,
+    setAggregation: (aggregation) => update({ aggregation }),
     latest,
     range,
     periodError,

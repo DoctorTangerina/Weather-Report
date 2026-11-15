@@ -190,7 +190,6 @@ def test_requests_outside_the_catalogs_and_glossary_are_refused(
 @pytest.mark.parametrize(
     "params",
     [
-        {"aggregation": "maximum"},
         {"time_step": "daily", "period_start": "2010-01", "period_end": "2010-12"},
     ],
 )

@@ -327,6 +327,29 @@ def test_kelvin_is_shown_as_celsius_when_the_catalog_says_celsius(tmp_path):
     assert result["values"] == pytest.approx([month - 273.15 for month in range(1, 11)])
 
 
+@pytest.mark.parametrize("aggregation", ["root_mean_square", "mean_absolute_value"])
+def test_cells_are_in_catalog_units_before_they_are_combined(tmp_path, aggregation):
+    # Issue #78: an Aggregation of °C values is not the Aggregation of K values
+    # minus 273.15. Every cell holds month+1 K, so each value is 273.15 - (month+1).
+    configured = {
+        "temperature-c": {"native_units": "K", "conversion": "kelvin_to_celsius"}
+    }
+    paths = make_setup(tmp_path, series_config=configured)
+    result = get_catalog_series(
+        "test-region", "temperature-c", PERIOD, aggregation=aggregation, **paths
+    )
+    assert result["values"] == pytest.approx([273.15 - month for month in range(1, 11)])
+
+
+def test_an_unknown_aggregation_is_refused(tmp_path):
+    paths = make_setup(tmp_path)
+    with pytest.raises(SeriesSelectionError) as error:
+        get_catalog_series(
+            "test-region", "temperature", PERIOD, aggregation="mode", **paths
+        )
+    assert error.value.code == "invalid_aggregation"
+
+
 def test_kelvin_is_never_relabelled_as_celsius(tmp_path):
     with pytest.raises(SeriesSelectionError) as error:
         series(tmp_path, variable="temperature-c")
@@ -432,6 +455,19 @@ def test_series_files_are_written_per_region_and_variable_named_like_the_stub_se
         ("test-region", "temperature", "included"),
         ("test-region", "soil-moisture", "included"),
     ]
+
+
+def test_series_files_can_be_built_with_another_aggregation(tmp_path):
+    # Issue #78: the seed build writes non-mean Aggregations the same way.
+    paths = make_setup(tmp_path)
+    out = tmp_path / "out"
+    build_series_files(
+        ["test-region"], ["temperature"], PERIOD, out, aggregation="maximum", **paths
+    )
+    written = json.loads((out / "test-region__temperature.json").read_text())
+    assert written == get_catalog_series(
+        "test-region", "temperature", PERIOD, aggregation="maximum", **paths
+    )
 
 
 def test_one_unavailable_series_does_not_stop_the_others_and_is_reported(tmp_path):

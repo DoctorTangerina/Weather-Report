@@ -1,7 +1,7 @@
 # Manual data processing
 
-Public Python methods for issue #46's arithmetic, scaling, simple resampling and
-missing-value management. Everything in this
+Public Python methods for issue #46's arithmetic, scaling, simple resampling,
+missing-value management, temporal filtering, linear detrending and Pearson comparison. Everything in this
 package is independent of the API and automatic engine. It performs no downloads
 or file reads, needs no Earthdata token, and adds no third-party dependencies.
 
@@ -43,6 +43,8 @@ The returned object contains:
 - `series`: every new output, keyed by operation ID. Each has `timestamps`,
   `values`, `units`, `calendar`, `expression`, `inputs`, `provenance`, `recipe`
   and `warnings`.
+- `comparisons`: every Pearson comparison, keyed by operation ID (see
+  [Pearson comparison](#pearson-comparison)); empty when none was requested.
 - `recipe`: ordered instructions under `operations`, ready to replay with
   compatible replacement inputs.
 - `warnings`: unit warnings/conversions, tagged with the producing operation ID.
@@ -101,6 +103,58 @@ response = process_series(
 - Scaling results have `expression: None` and a `scaling` object identifying the
   method and, for Z-score, `ddof`. Inputs, provenance and ordered instructions are
   recorded in the same way as arithmetic results.
+
+## Linear detrending
+
+Linear detrending must be explicitly requested in the ordered Processing recipe.
+It fits ordinary least squares with an intercept against actual elapsed UTC time,
+using every valid value in its immediate input, including explicitly filled
+observations. Irregular spacing and the different lengths of calendar months are
+respected; observation index is not used as elapsed time. It supports 3-hourly,
+daily and monthly Series and performs no seasonal or outlier removal.
+
+```python
+response = process_series({
+    "series": {"A": {
+        "timestamps": ["2024-01-01", "2024-01-02", "2024-01-04"],
+        "values": [10, 12, 16],
+        "units": "K",
+        "time_step": "daily",
+    }},
+    "operations": [{
+        "id": "detrended",
+        "operation": "detrend",
+        "input": "A",
+        "preserve_mean": False,
+    }],
+})
+# response["series"]["detrended"]["values"] is approximately [0, 0, 0].
+```
+
+The caller must supply a boolean `preserve_mean`: `False` subtracts the complete
+fitted line to return residuals around zero; `True` removes the slope while
+retaining the mean of valid input observations. For equally spaced `[20, 22, 24]`,
+the respective results are `[0, 0, 0]` and `[22, 22, 22]`, within floating-point
+precision. Missing or non-boolean choices raise `invalid_detrending_parameters`.
+
+Timestamp labels, nulls, filled flags, units, Time step and Aggregation are
+preserved. Source quality and previous processing history remain in provenance;
+no supplied object is modified. Constant inputs are accepted. Fewer than two
+valid observations raise `insufficient_observations`; timestamps must already be
+ordered and distinct, as for other processing operations. Unsupported
+non-Gregorian calendars raise `unsupported_calendar`. An unrepresentable
+nonfinite output raises `nonfinite_result`.
+
+Each Derived series records `expression: None` and
+`detrending: {"method": "ols", "time_basis": "elapsed_utc_seconds", "preserve_mean": ...}`.
+The reusable Processing recipe retains the explicit mean convention. Replay
+fits the replacement input anew. Place a missing-value or temporal-filter step
+before detrending to change its fitting sample; later steps do not alter the
+earlier fit. Source series and Derived series can both be used by subsequent
+arithmetic operations or Pearson comparisons with their visible sample values
+and filled flags.
+
+The agreed behavior is recorded in [the issue #53 design](../../docs/linear-detrending.md).
 
 ## Resampling
 
@@ -172,10 +226,19 @@ A Series can declare `time_step` (`3-hourly`, `daily`, `monthly`) and `aggregati
 
 ```python
 series_a = {**hourly_series, "time_step": "hourly", "aggregation": "maximum"}
-response = process_series({
-    "series": {"A": series_a},
-    "operations": [{"id": "result", "operation": "resample", "input": "A", "frequency": "daily"}],
-})
+response = process_series(
+    {
+        "series": {"A": series_a},
+        "operations": [
+            {
+                "id": "result",
+                "operation": "resample",
+                "input": "A",
+                "frequency": "daily",
+            }
+        ],
+    }
+)
 ```
 
 Resampling inherits that Series' Aggregation; an explicit conflicting aggregation
@@ -260,6 +323,101 @@ or changing the source. Removing all observations returns an empty Derived serie
 subsequent numeric operations require nonempty inputs. Failed acquisition quality
 cannot be repaired by filling: excluded sources remain excluded.
 
+## Temporal filters
+
+Use `operation: "filter"` to construct an explicit sample from one input by local
+time of day, weekday, month or a custom date window (#52, delivery phase two):
+
+```python
+{
+    "id": "monday_nights",
+    "operation": "filter",
+    "input": "A",
+    "timezone": "America/Sao_Paulo",  # the input's confirmed IANA zone; required
+    "mode": "include",  # or "exclude"; required
+    "hours": {"start": "18:00", "end": "06:00"},
+    "weekdays": ["monday"],
+}
+```
+
+- Conditions: `hours` (`{start, end}` as `HH:MM`), `weekdays` (lower-case names),
+  `months` (numbers 1–12) and `dates` (`{start, end}` as `YYYY-MM-DD`). At least
+  one is required; several in one step must all match. Chain steps for other
+  combinations, such as two date windows.
+- `include` keeps the observations matching every condition; `exclude` drops them.
+- A time-of-day window includes its start and excludes its end, and runs over
+  midnight when the end precedes the start (`18:00`–`06:00`). A date window
+  includes the whole of both dates.
+- There is no default zone: a Region or Selected area spanning several zones
+  needs the caller's explicit choice. Sub-daily observations are read in that
+  zone, following its daylight-saving rules; a repeated local hour keeps both
+  observed instants. Daily and monthly Time steps are UTC days and months, so
+  their weekday, date and month are read from the UTC label whatever the zone
+  (`temporal_filter.read_in` says which was used).
+- The input must declare its Time step (`unknown_time_step` otherwise), and a
+  filter finer than it is refused with `unsupported_temporal_resolution`: `hours`
+  needs 3-hourly or finer data, `weekdays` and `dates` daily or finer. Only
+  Gregorian calendars are supported.
+- Retained observations keep their input timestamp labels (their UTC identity),
+  values and `filled` flags. Deliberately excluded observations are listed in
+  `temporal_filter.excluded_timestamps`, separately from missing values; they
+  do not count as missing, and the source Quality gate record stays unchanged in
+  provenance. `temporal_filter` also records the mode, zone and conditions, and
+  the step is replayable from the recipe like any other.
+
+## Pearson comparison
+
+Compare two named series (Source or Derived) with an exploratory Pearson
+correlation:
+
+```python
+response = process_series(
+    {
+        "series": {"A": rainfall, "B": temperature},
+        "operations": [
+            {"id": "A_filled", "operation": "missing", "input": "A", "policy": "mean"},
+            {"id": "AB", "operation": "pearson", "inputs": ["A_filled", "B"]},
+        ],
+    }
+)
+comparison = response["comparisons"]["AB"]
+```
+
+- Inputs may come from different Regions or Selected areas and different
+  Variables and units; there is no geographic pairing restriction and no unit
+  acknowledgement, because r does not depend on units.
+- Both inputs must have the same declared Time step and calendar; mixed Time steps
+  raise `unaligned_series` (resample first). Unlike arithmetic, the inputs may
+  cover different periods: observations pair only at **exactly equal** UTC
+  instants (`2024-01-02` pairs with `2024-01-01T21:00:00-03:00`; 00:00 never pairs
+  with 00:01). Nothing is filled, shifted, interpolated or resampled implicitly.
+- A pair is jointly valid when both values are present. Pearson needs at least
+  three jointly valid pairs and inputs that vary over those pairs.
+- No Mirror preprocessing, thresholds or Evidence labels are applied, and scaling
+  is not a prerequisite.
+
+A comparison is reported, not raised, when r is undefined, so its sample stays
+visible:
+
+- `method`: `"pearson"`.
+- `r`: the correlation in [-1, 1], or `None`.
+- `valid_pairs`: jointly valid pairs used; `filled_pairs`: those in which at
+  least one value was explicitly filled by an earlier `missing` step (`filled`).
+- `analyzed_period`: `{start, end}` of the jointly valid pairs, or `None`.
+- `overlap`: `{start, end, timestamps}` over the shared instants (including pairs
+  with a missing side), or `None` when no instant is shared.
+- `explanation`: `None` when r is returned; otherwise `insufficient_pairs` (with
+  `required_pairs: 3`) or `constant_input` (with the constant input IDs).
+- `sample`: the shared `timestamps` (labels of the first input), a per-pair
+  `valid` flag, and per input its `values`, `filled` flags and `units`, for
+  raw-versus-processed overlays.
+- `calendar`, `inputs`, `provenance`, `recipe` and `warnings`, as for Derived
+  series.
+
+A comparison is not a series: later steps cannot use its ID as an input, and its
+ID cannot be reused. Large finite values do not overflow the calculation. No
+maximum sample size is enforced; that limit was left open in the specification.
+
 ## Input requirements
 
 Each used input needs nonempty, equal-length `timestamps` and `values` lists,
@@ -334,5 +492,5 @@ From the repository root with the project's local environment:
 .venv/bin/ruff check data/data_processing
 ```
 
-Tests exercise the public method and preview with deterministic fixtures. No API,
-engine or correlation implementation is included here.
+Tests exercise the public method and preview with deterministic fixtures. No API
+or engine implementation is included here.

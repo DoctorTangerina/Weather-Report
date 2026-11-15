@@ -18,6 +18,7 @@ import os
 import re
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
+from functools import partial
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -43,6 +44,7 @@ from engine.discovery import SessionHistory
 from .acquisition import AcquisitionUnavailable, acquire_series
 from .area_cache import AreaSeriesCache
 from .explore import (
+    AGGREGATIONS,
     AREA_VARIABLES,
     FIRST_MONTH,
     AcquisitionNeeded,
@@ -63,6 +65,8 @@ CATALOG_PATH = Path(
 )
 
 explore_jobs = SeriesJobs()
+_aggregation_caches: dict[Path, JsonResultStore] = {}
+_aggregation_seeds: dict[Path, JsonResultStore] = {}
 
 
 @asynccontextmanager
@@ -245,39 +249,84 @@ async def get_explore_series(
 
     A Selected area is one or more `rectangle=west,south,east,north` values.
     """
+    build = partial(
+        explore_series,
+        catalog,
+        store,
+        region_id,
+        variable_id or [],
+        aggregation,
+        time_step,
+        period_start,
+        period_end,
+        rectangles=rectangle,
+        cache=explore_cache(aggregation),
+        seed=explore_seed(aggregation),
+        area_cache=explore_area_cache(aggregation),
+        latest=explore_latest_month(),
+    )
     try:
-        data = explore_series(
-            catalog,
-            store,
-            region_id,
-            variable_id or [],
-            aggregation,
-            time_step,
-            period_start,
-            period_end,
-            rectangles=rectangle,
-            cache=live_store,
-            area_cache=area_cache,
-            latest=explore_latest_month(),
-        )
+        data, provenance = build()
     except AcquisitionNeeded as needed:
         job = explore_jobs.start(
             needed.view,
             catalog,
-            live_store,
+            explore_cache(aggregation),
             acquisition_source,
             LIVE_TIMEOUT_SECONDS,
-            area_cache=area_cache,
+            finish=lambda: build()[0],
+            area_cache=explore_area_cache(aggregation),
         )
         return JSONResponse(status_code=202, content=ok({"job": dict(job)}))
     except Refusal as refusal:
         return error(refusal.status, refusal.code, refusal.message)
-    # A Selected area is only ever answered directly from its own cache.
-    cached = "area" in data or any(
-        live_store.series(region_id, v, Period(**data["period"])) is not None
-        for v in variable_id or []
-    )
-    return {**ok(data), "provenance": "cache" if cached else "preloaded"}
+    return {**ok(data), "provenance": provenance}
+
+
+def explore_seed(aggregation: str) -> JsonResultStore | None:
+    """The seed set's Series built with `aggregation`.
+
+    Means are the seed set the Discoveries come from. Every other Aggregation
+    lives in its own folder under it, which the Discovery engine never reads.
+    """
+    if aggregation == "mean":
+        return store
+    if aggregation not in AGGREGATIONS:
+        return None
+    root = store.root / "aggregations" / aggregation
+    if root not in _aggregation_seeds:
+        _aggregation_seeds[root] = JsonResultStore(root, ENGINE_VERSION)
+    return _aggregation_seeds[root]
+
+
+def explore_cache(aggregation: str) -> JsonResultStore | None:
+    """Where Explore My World keeps the Series pieces it acquired with `aggregation`.
+
+    One folder per Aggregation beside the live results cache, which is keyed
+    without one. A piece keeps its values even when it alone fails the Quality
+    gate, so nothing that serves stored Series directly (`/api/series`) reads it.
+    """
+    if aggregation not in AGGREGATIONS:
+        # An unknown Aggregation is refused before any cache is read.
+        return None
+    root = live_store.root / "explore" / aggregation
+    if root not in _aggregation_caches:
+        _aggregation_caches[root] = JsonResultStore(root, ENGINE_VERSION)
+    return _aggregation_caches[root]
+
+
+def explore_area_cache(aggregation: str) -> AreaSeriesCache | None:
+    """Where Explore My World keeps Selected-area Series built with `aggregation`.
+
+    Means live in the area cache itself; every other Aggregation in its own
+    folder under it.
+    """
+    if aggregation == "mean":
+        return area_cache
+    if aggregation not in AGGREGATIONS:
+        # An unknown Aggregation is refused before any cache is read.
+        return None
+    return AreaSeriesCache(area_cache.root / aggregation)
 
 
 def explore_latest_month() -> str:
