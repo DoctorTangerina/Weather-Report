@@ -17,7 +17,6 @@ students about trends and statistical evidence. See `CONTEXT.md` for the vocabul
 | `frontend/` | React: the three screens |
 | `data/catalog.json` | The Region and Variable catalog, with confirmed NASA sources |
 | `data/stub/` | Synthetic stub set the API contract tests run against |
-
 | `data/seed/` | The seed set: results computed from real NASA data, committed so the demo needs no network |
 | `scripts/` | `generate_stub_data.py` regenerates `data/stub/`; `build_seed_set.py` regenerates `data/seed/` |
 | `tests/` | Seam 1 (engine interface) and seam 2 (HTTP contract) |
@@ -28,7 +27,7 @@ Python 3.11 or newer, Node 18 or newer.
 
 ```sh
 pip install -e ".[api,dev]"
-python -m pytest                                  # 30 tests, no network
+python -m pytest                                  # 265 tests, no network
 python -m uvicorn api.main:app --port 8000        # API on :8000
 ```
 
@@ -54,6 +53,13 @@ Discoveries) and writes `data/seed/series/` and `data/seed/discoveries/`. Commit
 the result. It refuses to overwrite the seed set when no Candidate carries one of
 the three Evidence labels (`--allow-missing-labels` overrides). Rerun it whenever
 the engine or the data changes.
+
+The seed contains 71 Series: temperature and precipitation for all 25 Regions,
+and soil moisture for the 21 Regions that offer it. Soil moisture is not offered
+for `greenland-coast`, `antarctic-peninsula`, `equatorial-pacific` or
+`north-atlantic`: GLDAS does not simulate ice sheets or open ocean. These four
+pairs are outside the current catalog. Vegetation index
+remains unavailable (#41). See `docs/catalog-sources.md` for the catalog rationale.
 
 ## The contracts
 
@@ -104,8 +110,8 @@ engine's Trend methods and rates the two Trends together as the family for
 multiple-comparison correction. A pair does not need to be a stored Discovery.
 The default period is 2000-01 through 2024-12. Missing series or insufficient
 observations return `404 result_not_available`; the UI clears the old analysis
-and displays the error. The bundled synthetic data covers only four Regions
-and two Variables, so other catalog choices may be unavailable until #12/#13.
+and displays the error. The bundled synthetic data used by the contract tests covers only four Regions
+and two Variables; the API serves the real seed set by default.
 
 ## The stub set
 
@@ -125,10 +131,9 @@ Variable comes from, and how its NASA units convert to the units students see, i
 The fixtures are built through `engine.contracts`, so the committed JSON cannot drift
 from the Python contract objects.
 
-## What is not built yet
+## Engine interfaces
 
-The engine's statistical and storytelling functions raise `NotImplementedError` with
-their ticket number. The seams are in place:
+The implemented engine functions are exercised through these public seams:
 
 | Seam | Ticket |
 | --- | --- |
@@ -166,10 +171,12 @@ example, before attempting acquisition. Series responses add `provenance`:
 The UI labels preloaded and cached data separately. Different examples retain
 their actual Region, Variable and period and cannot answer the original investigation.
 
-- `WEATHER_REPORT_DATA_DIR`: catalog, preloaded Series and Discoveries (default `data/stub`).
+- `WEATHER_REPORT_DATA_DIR`: preloaded Series and Discoveries (default `data/seed`).
 - `WEATHER_REPORT_CACHE_DIR`: writable live-result storage (default `.scratch/results-cache`).
-- `WEATHER_REPORT_LIVE_TIMEOUT_SECONDS`: positive finite acquisition deadline (default `15`).
-- `EARTHDATA_TOKEN`: server-only acquisition credential; never send it from the client.
+- `WEATHER_REPORT_LIVE_TIMEOUT_SECONDS`: positive finite acquisition deadline (default `120` seconds).
+- `EARTHDATA_TOKEN`: server-only acquisition credential, read from the exported
+  environment, then the repository-root `.env`, then `data/data_gathering/.env`
+  (in that precedence order); never send it from the client.
 
 Malformed/inverted periods return `422` (`invalid_period`). Expected acquisition
 failures use a deterministic fallback: same Region/Variable, then same Variable,
@@ -198,7 +205,7 @@ still require the trusted mask configured by #6; vegetation remains #41.
 
 `WEATHER_REPORT_ACQUISITION_CONFIG` selects the server-controlled gathering JSON
 (default `data/data_gathering/config.json`). Run the API from this repository with
-its `data/` package available. The exported `EARTHDATA_TOKEN` is passed only in
+its `data/` package available. The resolved `EARTHDATA_TOKEN` is passed only in
 the child environment. Worker diagnostics are suppressed to avoid leaking token
 or download URLs. Missing sources/authentication errors trigger fallback;
 unexpected worker failures propagate as server errors.
