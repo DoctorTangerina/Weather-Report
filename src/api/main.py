@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -40,6 +40,7 @@ from engine.discovery import SessionHistory
 
 from .acquisition import AcquisitionUnavailable, acquire_series
 from .explore import FIRST_MONTH, Refusal, explore_series
+from .grid_source import GridAcquisitionSource
 from .results import example_response, select_example, usable
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -123,12 +124,23 @@ def list_available_series() -> dict[str, Any]:
     return ok(store.available_series())
 
 
+def get_acquisition_source() -> GridAcquisitionSource | None:
+    """Override this dependency to supply grids without NASA or server credentials.
+
+    None selects on-demand NASA subsetting inside the cancellable worker.
+    """
+    return None
+
+
 @app.get("/api/series")
 async def get_series(
     region_id: str,
     variable_id: str,
     period_start: str = "2000-01",
     period_end: str = "2024-12",
+    acquisition_source: Annotated[
+        GridAcquisitionSource | None, Depends(get_acquisition_source)
+    ] = None,
 ) -> Any:
     rejection = reject_outside_catalog(region_id, variable_id)
     if rejection is not None:
@@ -156,15 +168,19 @@ async def get_series(
     if payload is not None and usable(payload, catalog):
         return {**ok(payload), "provenance": "preloaded"}
     try:
-        token = settings().get("EARTHDATA_TOKEN")
-        if not token:
+        token = os.environ.get("EARTHDATA_TOKEN")
+        if not token and acquisition_source is None:
             raise AcquisitionUnavailable("Server token unavailable")
+        source_options = (
+            {"source": acquisition_source} if acquisition_source is not None else {}
+        )
         acquired = await asyncio.wait_for(
             acquire_series(
                 region,
                 variable,
                 period,
-                token=token,
+                token=token or "",
+                **source_options,
             ),
             timeout=LIVE_TIMEOUT_SECONDS,
         )
