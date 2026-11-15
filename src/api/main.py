@@ -56,6 +56,7 @@ from .explore import (
     Refusal,
     explore_series,
 )
+from .field_map import FieldCache, FieldJobs, field_view
 from .grid_source import GridAcquisitionSource
 from .jobs import SeriesJobs
 from .processing import run_recipe
@@ -71,6 +72,7 @@ CATALOG_PATH = Path(
 )
 
 explore_jobs = SeriesJobs()
+field_jobs = FieldJobs()
 _aggregation_caches: dict[Path, JsonResultStore] = {}
 _aggregation_seeds: dict[Path, JsonResultStore] = {}
 
@@ -79,6 +81,7 @@ _aggregation_seeds: dict[Path, JsonResultStore] = {}
 async def lifespan(app: FastAPI):
     yield
     await explore_jobs.close()
+    await field_jobs.close()
 
 
 app = FastAPI(title="Weather Report", version=ENGINE_VERSION, lifespan=lifespan)
@@ -203,7 +206,7 @@ async def get_series(
         token = settings().get("EARTHDATA_TOKEN")
         if not token and acquisition_source is None:
             raise AcquisitionUnavailable("Server token unavailable")
-        source_options = (
+        source_options: dict[str, Any] = (
             {"source": acquisition_source} if acquisition_source is not None else {}
         )
         acquired = await asyncio.wait_for(
@@ -239,6 +242,48 @@ async def get_series(
     return error(
         503, "live_data_unavailable", "No live data or usable examples available."
     )
+
+
+@app.get("/api/explore/field-map")
+async def get_field_map(
+    variable_id: str,
+    region_id: str | None = None,
+    rectangle: Annotated[list[str] | None, Query()] = None,
+    aggregation: str = "mean",
+    time_step: str = "monthly",
+    period_start: str = FIRST_MONTH,
+    period_end: str | None = None,
+    acquisition_source: Annotated[
+        GridAcquisitionSource | None, Depends(get_acquisition_source)
+    ] = None,
+) -> Any:
+    try:
+        view = field_view(
+            catalog,
+            region_id,
+            rectangle,
+            variable_id,
+            aggregation,
+            time_step,
+            period_start,
+            period_end or explore_latest_month(),
+            explore_latest_month(),
+        )
+    except Refusal as refusal:
+        return error(refusal.status, refusal.code, refusal.message)
+    cache = FieldCache(live_store.root / "field-maps" / ENGINE_VERSION)
+    result = cache.read(view)
+    if result is not None:
+        return {**ok(result), "provenance": "cache"}
+    job = field_jobs.start(
+        view,
+        catalog,
+        cache,
+        acquisition_source,
+        LIVE_TIMEOUT_SECONDS,
+        lambda: cache.read(view),
+    )
+    return JSONResponse(status_code=202, content=ok({"job": dict(job)}))
 
 
 @app.get("/api/explore/series")
@@ -277,10 +322,12 @@ async def get_explore_series(
     try:
         data, provenance = build()
     except AcquisitionNeeded as needed:
+        cache = explore_cache(aggregation, time_step)
+        assert cache is not None, "A validated Explore My World view requires a cache."
         job = explore_jobs.start(
             needed.view,
             catalog,
-            explore_cache(aggregation, time_step),
+            cache,
             acquisition_source,
             LIVE_TIMEOUT_SECONDS,
             finish=lambda: build()[0],
@@ -408,7 +455,7 @@ async def process_explore_series(request: Request) -> Any:
 
 @app.get("/api/explore/jobs/{job_id}")
 async def get_explore_job(job_id: str) -> Any:
-    job = explore_jobs.jobs.get(job_id)
+    job = explore_jobs.jobs.get(job_id) or field_jobs.jobs.get(job_id)
     if job is None:
         return error(404, "job_not_found", "No background job with this reference.")
     return ok({"job": dict(job)})

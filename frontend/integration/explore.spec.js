@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test'
 
 // #75, Explore My World for a catalog Region, against the real API and the
-// committed seed set. Reduced motion keeps the globe from turning, so a Region
-// stays where the pointer found it.
+// committed seed set, with Amazon vegetation omitted by the isolated API
+// harness to exercise unavailable Variables. Reduced motion keeps the globe
+// from turning, so a Region stays where the pointer found it.
 test.use({ reducedMotion: 'reduce' })
 
 const exploreRequests = (page) => {
