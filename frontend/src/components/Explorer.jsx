@@ -11,12 +11,21 @@ export default function Explorer({
   onRegion,
   onSecondRegion,
   onVariable,
+  hasData = () => true,
+  error = null,
   series,
   seriesLoading,
   timestamp,
   highlights,
   trends,
 }) {
+  // Not every Region has a stored series for every Variable. Mark the missing
+  // ones for the chosen Variable instead of letting a student hit a blank.
+  const label = (item) =>
+    variable && !hasData(item.region_id, variable.variable_id)
+      ? `${item.name} (no data yet)`
+      : item.name
+
   return (
     <section className="explorer" aria-labelledby="explore-heading">
       <h3 id="explore-heading">Or compare two Regions</h3>
@@ -30,7 +39,7 @@ export default function Explorer({
         >
           {catalog.regions.filter((item) => item.region_id !== secondRegion?.region_id).map((item) => (
             <option key={item.region_id} value={item.region_id}>
-              {item.name}
+              {label(item)}
             </option>
           ))}
         </select>
@@ -41,7 +50,7 @@ export default function Explorer({
           onChange={(event) => onSecondRegion(event.target.value)}
         >
           {catalog.regions.filter((item) => item.region_id !== region?.region_id).map((item) => (
-            <option key={item.region_id} value={item.region_id}>{item.name}</option>
+            <option key={item.region_id} value={item.region_id}>{label(item)}</option>
           ))}
         </select>
         <label htmlFor="explore-variable">Variable</label>
@@ -58,6 +67,13 @@ export default function Explorer({
           ))}
         </select>
       </div>
+      {error && (
+        <p className="notice" role="status">
+          {error.code === 'result_not_available'
+            ? `There is no stored data yet for ${region?.name} and ${secondRegion?.name} with ${variable?.name.toLowerCase()}. Try a Region that is not marked "no data yet".`
+            : `The comparison could not be loaded: ${error.message}`}
+        </p>
+      )}
       {region && <p className="muted">{region.description}</p>}
       {secondRegion && <p className="muted">{secondRegion.description}</p>}
       {variables.length === 0 && <p role="status">These Regions have no shared Variable.</p>}

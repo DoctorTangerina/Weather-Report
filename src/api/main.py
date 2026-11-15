@@ -111,6 +111,16 @@ def reject_outside_catalog(region_id: str, variable_id: str) -> JSONResponse | N
     return None
 
 
+@app.get("/api/series/available")
+def list_available_series() -> dict[str, Any]:
+    """The preloaded series held for each Region and Variable, without values.
+
+    These are exactly the pairs /api/comparison can compare: it reads this store
+    only, not the live cache, so a client can tell which pairs will work before
+    asking."""
+    return ok(store.available_series())
+
+
 @app.get("/api/series")
 async def get_series(
     region_id: str,

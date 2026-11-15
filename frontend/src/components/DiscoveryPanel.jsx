@@ -1,4 +1,5 @@
 import { formatRate } from '../format.js'
+import Evidence from './Evidence.jsx'
 import SeriesResults from './SeriesResults.jsx'
 
 const LABEL_TONE = {
@@ -100,6 +101,8 @@ export default function DiscoveryPanel({
           </p>
         )}
       </section>
+
+      <Evidence discovery={discovery} catalog={catalog} />
 
       <div className="panel-actions">
         <button className="primary" disabled={seriesLoading || Boolean(seriesError)} onClick={onInvestigate}>
