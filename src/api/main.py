@@ -42,6 +42,7 @@ from engine.discovery import SessionHistory
 
 from .acquisition import AcquisitionUnavailable, acquire_series
 from .explore import (
+    AGGREGATIONS,
     FIRST_MONTH,
     AcquisitionNeeded,
     Refusal,
@@ -61,6 +62,7 @@ CATALOG_PATH = Path(
 )
 
 explore_jobs = SeriesJobs()
+_aggregation_caches: dict[Path, JsonResultStore] = {}
 
 
 @asynccontextmanager
@@ -249,21 +251,41 @@ async def get_explore_series(
             time_step,
             period_start,
             period_end,
-            cache=live_store,
+            cache=explore_cache(aggregation),
             latest=explore_latest_month(),
         )
     except AcquisitionNeeded as needed:
         job = explore_jobs.start(
-            needed.view, catalog, live_store, acquisition_source, LIVE_TIMEOUT_SECONDS
+            needed.view,
+            catalog,
+            explore_cache(aggregation),
+            acquisition_source,
+            LIVE_TIMEOUT_SECONDS,
         )
         return JSONResponse(status_code=202, content=ok({"job": dict(job)}))
     except Refusal as refusal:
         return error(refusal.status, refusal.code, refusal.message)
+    cache = explore_cache(aggregation)
     cached = any(
-        live_store.series(region_id, v, Period(**data["period"])) is not None
+        cache.series(region_id, v, Period(**data["period"])) is not None
         for v in variable_id or []
     )
     return {**ok(data), "provenance": "cache" if cached else "preloaded"}
+
+
+def explore_cache(aggregation: str) -> JsonResultStore:
+    """Where Explore My World Series built with `aggregation` are cached.
+
+    Means share the live results cache. The cache is keyed without an
+    Aggregation, so every other Aggregation keeps its own beside it.
+    """
+    if aggregation == "mean" or aggregation not in AGGREGATIONS:
+        # An unknown Aggregation is refused before any cache is read.
+        return live_store
+    root = live_store.root / "aggregations" / aggregation
+    if root not in _aggregation_caches:
+        _aggregation_caches[root] = JsonResultStore(root, ENGINE_VERSION)
+    return _aggregation_caches[root]
 
 
 def explore_latest_month() -> str:

@@ -1,0 +1,173 @@
+"""Issue #78: Aggregations through spec #72's HTTP seam (BS-008).
+
+Only the gridded acquisition source is replaced. Its synthetic grids give exact
+expected values: cells on one latitude row with equal one-degree bounds have
+equal areas, and explicit longitude bounds make one cell three times another.
+"""
+
+import math
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+from api import main
+from engine import ENGINE_VERSION, JsonResultStore
+from tests.fake_acquisition import FakeGridAcquisitionSource
+
+RESPONSES = "responses.schema.json"
+
+
+class CountingSource(FakeGridAcquisitionSource):
+    calls = 0
+
+    def prepare(self, request, *, fetch=False):
+        self.calls += 1
+        return super().prepare(request, fetch=fetch)
+
+
+@pytest.fixture
+def api(tmp_path, monkeypatch):
+    monkeypatch.setenv("WEATHER_REPORT_LATEST_MONTH", "2025-02")
+    monkeypatch.setattr(main, "live_store", JsonResultStore(tmp_path, ENGINE_VERSION))
+    sources = {}
+
+    def use(source):
+        sources["current"] = source
+        return source
+
+    main.app.dependency_overrides[main.get_acquisition_source] = lambda: sources.get(
+        "current"
+    )
+    with TestClient(main.app) as client:
+        yield client, use
+    main.app.dependency_overrides.clear()
+
+
+def two_cells(first, second, **grid):
+    """One native (monthly) time step, January 2025, over two Sahel cells."""
+    return CountingSource(
+        timestamps=["2025-01-01T00:00:00"],
+        latitudes=[15.0],
+        longitudes=grid.pop("longitudes", [0.0, 1.0]),
+        values=[[[first, second]]],
+        units="°C",
+        **grid,
+    )
+
+
+def explore(client, aggregation, *, start="2025-01", end="2025-01", variables=None):
+    return client.get(
+        "/api/explore/series",
+        params={
+            "region_id": "sahel",
+            "variable_id": variables or ["temperature"],
+            "aggregation": aggregation,
+            "period_start": start,
+            "period_end": end,
+        },
+    )
+
+
+def series_of(client, response, validator_for):
+    """The view's data, waiting for its background job if one was started."""
+    body = response.json()
+    if response.status_code == 200:
+        validator_for(RESPONSES, "#/$defs/exploreSeriesResponse").validate(body)
+        return body["data"]
+    assert response.status_code == 202, body
+    url = body["data"]["job"]["url"]
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        body = client.get(url).json()
+        validator_for(RESPONSES, "#/$defs/exploreJobResponse").validate(body)
+        job = body["data"]["job"]
+        if job["status"] == "succeeded":
+            return job["result"]
+        assert job["status"] != "failed", job
+        time.sleep(0.02)
+    pytest.fail("Job did not finish")
+
+
+@pytest.mark.parametrize(
+    "aggregation,value",
+    [
+        ("mean", 1),
+        ("median", 1),
+        ("minimum", -1),
+        ("maximum", 3),
+        ("root_mean_square", math.sqrt(5)),
+        ("standard_deviation", 2),
+        ("mean_absolute_value", 2),
+    ],
+)
+def test_each_aggregation_combines_two_equal_area_cells(
+    api, validator_for, aggregation, value
+):
+    # BS-008: two equal-area cells holding -1 and 3 at one native time step.
+    client, use = api
+    use(two_cells(-1.0, 3.0))
+    data = series_of(client, explore(client, aggregation), validator_for)
+    assert data["aggregation"] == aggregation
+    assert data["series"][0]["values"] == [pytest.approx(value)]
+
+
+def test_cells_count_in_proportion_to_their_area(api, validator_for):
+    # BS-008: the second cell spans 3 degrees of longitude, the first 1.
+    client, use = api
+    use(
+        two_cells(
+            -4.0,
+            0.0,
+            longitudes=[0.5, 2.5],
+            longitude_bounds=[[0.0, 1.0], [1.0, 4.0]],
+        )
+    )
+    data = series_of(client, explore(client, "mean_absolute_value"), validator_for)
+    assert data["series"][0]["values"] == [pytest.approx(1)]
+
+
+def test_a_mean_in_the_seed_period_is_answered_from_the_seed_set(api, validator_for):
+    client, use = api
+    source = use(two_cells(-1.0, 3.0))
+    response = explore(client, "mean", start="2000-01", end="2024-12")
+    assert response.status_code == 200
+    assert response.json()["provenance"] == "preloaded"
+    assert source.calls == 0
+
+
+def test_other_aggregations_in_the_seed_period_are_acquired_not_seeded(
+    api, validator_for
+):
+    # The seed set holds area-weighted means only (issue #78).
+    client, use = api
+    source = use(
+        CountingSource(
+            timestamps=["2024-12-01T00:00:00"],
+            latitudes=[15.0],
+            longitudes=[0.0, 1.0],
+            values=[[[-1.0, 3.0]]],
+            units="°C",
+        )
+    )
+    response = explore(client, "maximum", start="2024-12", end="2024-12")
+    assert response.status_code == 202
+    data = series_of(client, response, validator_for)
+    assert data["series"][0]["values"] == [pytest.approx(3)]
+    assert source.calls == 1
+
+
+def test_a_cached_series_answers_only_its_own_aggregation(api, validator_for):
+    client, use = api
+    source = use(two_cells(-1.0, 3.0))
+    series_of(client, explore(client, "mean"), validator_for)
+    maximum = explore(client, "maximum")
+    assert maximum.status_code == 202
+    assert series_of(client, maximum, validator_for)["series"][0]["values"] == [
+        pytest.approx(3)
+    ]
+    again = explore(client, "maximum")
+    assert again.status_code == 200
+    assert again.json()["provenance"] == "cache"
+    assert again.json()["data"]["series"][0]["values"] == [pytest.approx(3)]
+    assert source.calls == 2

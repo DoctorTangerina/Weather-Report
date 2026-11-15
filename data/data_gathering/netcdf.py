@@ -15,6 +15,11 @@ from pathlib import Path
 import numpy as np
 from netCDF4 import Dataset, num2date
 
+if __package__:
+    from .aggregation import combine
+else:
+    from aggregation import combine
+
 
 def load_manifest(path: Path) -> dict:
     """Resolve source files relative to the manifest, not the working directory."""
@@ -220,6 +225,8 @@ def extract(
     time_window=None,
     land_mask_provider=None,
     verbose=True,
+    statistic="mean",
+    cell_conversion=None,
 ) -> dict:
     """Series for one area. See `extract_many`, which reads each file once for many."""
     result = extract_many(
@@ -234,6 +241,8 @@ def extract(
         max_series=max_series,
         time_window=time_window,
         land_mask_provider=land_mask_provider,
+        statistic=statistic,
+        cell_conversion=cell_conversion,
         on_file=(lambda done, total, path: print(f"Read {path.name}", flush=True))
         if verbose
         else None,
@@ -257,8 +266,16 @@ def extract_many(
     time_window=None,
     land_mask_provider=None,
     on_file=None,
+    statistic="mean",
+    cell_conversion=None,
 ) -> dict:
     """Series for several named areas, opening each file once.
+
+    `statistic` is the Aggregation (see `aggregation.combine`) that combines an
+    area's cells at each timestamp, weighted as `aggregation` says.
+    `cell_conversion(values, timestamp, units)`, if given, turns each
+    timestamp's cell values into the units wanted before they are combined, so
+    Aggregations that do not commute with a unit change still come out right.
 
     Each area gets the result `extract` would give it alone, or, when `extract`
     would have raised for it (a conflict, a limit, a land mask that cannot be
@@ -375,6 +392,8 @@ def extract_many(
                                 time_window,
                                 land_mask_provider,
                                 label,
+                                statistic,
+                                cell_conversion,
                             )
                         except (ValueError, TypeError) as error:
                             # Conflicts and resource limits must never silently yield partial series.
@@ -424,6 +443,8 @@ def _read_field(
     time_window,
     land_mask_provider,
     label,
+    statistic="mean",
+    cell_conversion=None,
 ):
     """Add one field of one file to one area's output; returns the area's series count."""
     spatial = tuple(
@@ -523,6 +544,8 @@ def _read_field(
             values = np.ma.array(
                 numeric, mask=np.ma.getmaskarray(raw) | ~np.isfinite(numeric)
             )
+            if cell_conversion is not None:
+                values = cell_conversion(values, timestamp, field["units"])
             if aggregation != "none" and spatial:
                 axes = [
                     geo["dims"].index(dim)
@@ -535,14 +558,14 @@ def _read_field(
                     values = np.ma.masked_where(~inside, values)
                 if land is not None:
                     values = np.ma.masked_where(~np.transpose(land, axes), values)
-                reduced = np.ma.average(values, weights=weights)
+                value = combine(values, weights, statistic)
             else:
                 reduced = values.item() if not np.ma.is_masked(values) else np.ma.masked
-            value = (
-                None
-                if np.ma.is_masked(reduced) or not np.isfinite(reduced)
-                else float(reduced)
-            )
+                value = (
+                    None
+                    if np.ma.is_masked(reduced) or not np.isfinite(reduced)
+                    else float(reduced)
+                )
             if timestamp in field["observations"]:
                 raise ValueError(
                     f"Duplicate/overlapping timestamp {timestamp} for {key}; mosaic tiles before extraction."

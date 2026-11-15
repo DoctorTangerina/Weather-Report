@@ -6,10 +6,10 @@ const EMPTY = { loading: false, series: [], error: null }
 // The Series for one Explore My World view. The API builds every value; this
 // only asks for them, and never shows an earlier answer under new settings.
 // `period` is null while the chosen period is invalid, so nothing is requested.
-export default function useExploreSeries(regionId, variableIds, period) {
+export default function useExploreSeries(regionId, variableIds, period, aggregation) {
   const key =
     regionId && period && variableIds.length > 0
-      ? `${regionId}/${variableIds.join(',')}/${period.start}/${period.end}`
+      ? `${regionId}/${variableIds.join(',')}/${period.start}/${period.end}/${aggregation}`
       : null
   const [state, setState] = useState(EMPTY)
 
@@ -27,7 +27,7 @@ export default function useExploreSeries(regionId, variableIds, period) {
       timer = setTimeout(resolve, 300)
     })
     const load = async () => {
-      let { data } = await getExploreSeries(regionId, variableIds, period)
+      let { data } = await getExploreSeries(regionId, variableIds, period, aggregation)
       while (!cancelled && data.job) {
         const job = data.job
         if (job.status === 'failed') throw new ApiError(job.error.code, job.error.message)

@@ -1,7 +1,8 @@
 """Explore My World Series: seed/cache lookup, validation and acquisition requests.
 
-Monthly means absent from the stores are built by #77's background jobs.
-Other Aggregations and Time steps remain owned by their follow-up tickets.
+The seed set answers monthly means only. Any other monthly Series absent from
+the cache, whatever its Aggregation (#78), is built by #77's background jobs.
+Sub-monthly Time steps remain owned by their follow-up ticket.
 """
 
 from __future__ import annotations
@@ -9,6 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from data.data_gathering.aggregation import AGGREGATIONS
 from data.data_gathering.quality_gate import assess_quality
 from engine import Period, applies_to
 from engine.contracts import Catalog
@@ -16,15 +18,6 @@ from engine.store import ResultStore
 
 FIRST_MONTH = "2000-01"
 MAX_VARIABLES = 5
-AGGREGATIONS = (
-    "mean",
-    "median",
-    "minimum",
-    "maximum",
-    "root_mean_square",
-    "standard_deviation",
-    "mean_absolute_value",
-)
 TIME_STEPS = ("3-hourly", "daily", "monthly")
 # ADR 0004: how many months a sub-monthly request may span.
 LIMITS = {"3-hourly": (12, "1 year"), "daily": (120, "10 years")}
@@ -164,23 +157,28 @@ def explore_series(
     cache: ResultStore | None = None,
     latest: str | None = None,
 ) -> dict[str, Any]:
-    """The view's Series, or a Refusal saying why it cannot be given."""
+    """The view's Series, or a Refusal saying why it cannot be given.
+
+    `cache` holds Series built with this `aggregation` only.
+    """
     latest = latest or latest_month(store)
     end = latest_month(store) if end is None else end
     _validate(
         catalog, region_id, variable_ids, aggregation, time_step, start, end, latest
     )
-    if (aggregation, time_step) != ("mean", "monthly"):
+    if time_step != "monthly":
         raise Refusal(
             501,
             "not_available_yet",
-            "Only monthly mean Series are available so far. Other Aggregations "
-            "and Time steps need data fetched from NASA, which is not built yet.",
+            "Only monthly Series are available so far. Finer Time steps need "
+            "data fetched from NASA, which is not built yet.",
         )
+    # The seed set holds area-weighted means only (BS-013 keeps it that way).
     covering = {
         item["variable_id"]: item["period"]
         for item in store.available_series()
-        if item["region_id"] == region_id
+        if aggregation == "mean"
+        and item["region_id"] == region_id
         and item["period"]["start"] <= start
         and item["period"]["end"] >= end
     }

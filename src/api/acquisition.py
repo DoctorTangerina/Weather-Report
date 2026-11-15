@@ -33,6 +33,7 @@ async def acquire_series(
     *,
     token: str,
     source: GridAcquisitionSource | None = None,
+    aggregation: str = "mean",
 ) -> dict[str, Any]:
     root = Path(__file__).resolve().parents[2]
     env = {
@@ -53,6 +54,7 @@ async def acquire_series(
             ],
             "dataset": variable.source.dataset,
             "time_step": "monthly",
+            "aggregation": aggregation,
             "workspace": workspace,
         }
         if source is not None:

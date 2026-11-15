@@ -1,3 +1,4 @@
+import { AGGREGATIONS, describeAggregation } from '../aggregations.js'
 import { FIRST_MONTH, MAX_VARIABLES } from '../useExploreView.js'
 import Chart from './Chart.jsx'
 
@@ -98,9 +99,21 @@ export default function ExploreMyWorld({ catalog, region, view, color, timestamp
       ) : (
         <p className="chart-note">{view.range}</p>
       )}
-      <p className="chart-note">
-        Monthly values. Each is the mean over the Region, weighted by the area of each grid cell.
-      </p>
+      <div className="catalog-controls">
+        <label htmlFor="explore-aggregation">Aggregation</label>
+        <select
+          id="explore-aggregation"
+          value={view.aggregation}
+          onChange={(event) => view.setAggregation(event.target.value)}
+        >
+          {AGGREGATIONS.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="chart-note">{describeAggregation(view.aggregation)}</p>
 
       {view.chosen.length === 0 && <p role="status">Choose at least one Variable.</p>}
       {view.error && (

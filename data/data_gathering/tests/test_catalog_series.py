@@ -327,6 +327,29 @@ def test_kelvin_is_shown_as_celsius_when_the_catalog_says_celsius(tmp_path):
     assert result["values"] == pytest.approx([month - 273.15 for month in range(1, 11)])
 
 
+@pytest.mark.parametrize("aggregation", ["root_mean_square", "mean_absolute_value"])
+def test_cells_are_in_catalog_units_before_they_are_combined(tmp_path, aggregation):
+    # Issue #78: an Aggregation of °C values is not the Aggregation of K values
+    # minus 273.15. Every cell holds month+1 K, so each value is 273.15 - (month+1).
+    configured = {
+        "temperature-c": {"native_units": "K", "conversion": "kelvin_to_celsius"}
+    }
+    paths = make_setup(tmp_path, series_config=configured)
+    result = get_catalog_series(
+        "test-region", "temperature-c", PERIOD, aggregation=aggregation, **paths
+    )
+    assert result["values"] == pytest.approx([273.15 - month for month in range(1, 11)])
+
+
+def test_an_unknown_aggregation_is_refused(tmp_path):
+    paths = make_setup(tmp_path)
+    with pytest.raises(SeriesSelectionError) as error:
+        get_catalog_series(
+            "test-region", "temperature", PERIOD, aggregation="mode", **paths
+        )
+    assert error.value.code == "invalid_aggregation"
+
+
 def test_kelvin_is_never_relabelled_as_celsius(tmp_path):
     with pytest.raises(SeriesSelectionError) as error:
         series(tmp_path, variable="temperature-c")

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
+import { DEFAULT_AGGREGATION } from './aggregations.js'
 import { getExploreOptions } from './api.js'
 import useExploreSeries from './useExploreSeries.js'
 
 export const FIRST_MONTH = '2000-01'
 export const MAX_VARIABLES = 5
 
-// One Explore My World view (#75): a catalog Region, up to five Variables and one
-// period. Only Variables with stored data are offered. The API supplies the last
+// One Explore My World view (#75): a catalog Region, up to five Variables, one
+// Aggregation (#78) and one period, the same for every chart. Only Variables with stored data are offered. The API supplies the last
 // requestable month; the initial period still uses the seed set.
 export default function useExploreView(catalog, region, available) {
   const regionId = region?.region_id ?? null
@@ -35,6 +36,7 @@ export default function useExploreView(catalog, region, available) {
           chosen: offered.slice(0, 1).map((item) => item.variable_id),
           start: FIRST_MONTH,
           end: available.latest ?? '',
+          aggregation: DEFAULT_AGGREGATION,
         }
   const update = (change) => setChoice({ ...current, ...change })
 
@@ -66,6 +68,7 @@ export default function useExploreView(catalog, region, available) {
     regionId,
     chosen,
     periodError ? null : { start: current.start, end: current.end },
+    current.aggregation,
   )
 
   return {
@@ -77,6 +80,8 @@ export default function useExploreView(catalog, region, available) {
     end: current.end,
     setStart: (start) => update({ start }),
     setEnd: (end) => update({ end }),
+    aggregation: current.aggregation,
+    setAggregation: (aggregation) => update({ aggregation }),
     latest,
     range,
     periodError,

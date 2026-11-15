@@ -75,7 +75,12 @@ class SeriesJobs:
                         variable = catalog.variable(variable_id)
                         assert region is not None and variable is not None
                         payload = await acquire_series(
-                            region, variable, period, token=token, source=source
+                            region,
+                            variable,
+                            period,
+                            token=token,
+                            source=source,
+                            aggregation=view["aggregation"],
                         )
                         if (
                             payload["region_id"] != view["region_id"]

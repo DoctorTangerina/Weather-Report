@@ -19,7 +19,12 @@ def run(request: dict) -> dict:
         else NasaGridAcquisitionSource().prepare(request)
     )
     args = (request["region_id"], request["variable_id"], request["period"])
-    return get_catalog_series(*args, catalog_path=catalog, config_path=config)
+    return get_catalog_series(
+        *args,
+        catalog_path=catalog,
+        config_path=config,
+        aggregation=request.get("aggregation", "mean"),
+    )
 
 
 def main() -> None:
