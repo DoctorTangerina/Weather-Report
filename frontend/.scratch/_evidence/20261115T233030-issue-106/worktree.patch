@@ -1,0 +1,748 @@
+diff --git a/frontend/e2e/explore-timeline.spec.js b/frontend/e2e/explore-timeline.spec.js
+new file mode 100644
+index 0000000..128ec16
+--- /dev/null
++++ b/frontend/e2e/explore-timeline.spec.js
+@@ -0,0 +1,124 @@
++import { test, expect } from '@playwright/test'
++import { readFileSync } from 'node:fs'
++
++const seed = (path) => JSON.parse(readFileSync(new URL(`../../data/${path}`, import.meta.url)))
++const catalog = seed('catalog.json')
++const source = seed('seed/series/sahel__temperature.json')
++
++test.use({ locale: 'pt-BR' })
++
++for (const width of [1440, 390]) {
++test(`Explore timeline stays compact and requests the chosen period at ${width}px`, async ({ page }) => {
++  await page.setViewportSize({ width, height: 1000 })
++  await page.clock.install()
++  const requests = []
++  let release
++  const pending = new Promise((resolve) => { release = resolve })
++  await page.route('**/api/**', async (route) => {
++    const url = new URL(route.request().url())
++    let data
++    if (url.pathname === '/api/catalog') data = catalog
++    else if (url.pathname === '/api/discoveries') data = []
++    else if (url.pathname === '/api/series/available') data = [source]
++    else if (url.pathname === '/api/explore/options') data = { latest_month: '2025-02', area_variable_ids: ['temperature'], time_steps: [
++      { time_step: 'monthly', variable_ids: ['temperature'] },
++      { time_step: 'daily', variable_ids: ['temperature'], max_months: 120, limit: '10 years' },
++      { time_step: '3-hourly', variable_ids: ['temperature'], max_months: 12, limit: '1 year' },
++    ] }
++    else if (url.pathname === '/api/explore/series') {
++      requests.push(url)
++      await pending
++      if (url.searchParams.get('time_step') !== 'monthly') {
++        return route.fulfill({ status: 501, json: { error: { code: 'not_available_yet', message: 'Only monthly Series are available so far.' } } })
++      }
++      const start = url.searchParams.get('period_start')
++      const end = url.searchParams.get('period_end')
++      const index = (month) => Number(month.slice(0, 4)) * 12 + Number(month.slice(5))
++      data = { series: [{ ...source, period: { start, end }, values: source.values.slice(index(start) - index(source.period.start), index(end) - index(source.period.start) + 1) }] }
++    } else return route.fulfill({ status: 404, json: {} })
++    await route.fulfill({ json: { data } })
++  })
++  await page.goto('/')
++  const initialHeight = (await page.locator('.timeline-panel').boundingBox()).height
++  await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
++  await expect.poll(() => requests.length).toBe(1)
++  await expect(page.getByRole('group', { name: 'Period', exact: true })).toHaveCount(0)
++  const start = page.getByRole('slider', { name: 'Range start', exact: true })
++  const end = page.getByRole('slider', { name: 'Range end', exact: true })
++  await expect(start).toBeEnabled()
++  await expect(page.locator('.timeline-endpoints')).toHaveText('2000-012025-02')
++  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 10000))
++  await start.fill('120')
++  await page.clock.runFor(100)
++  expect(requests).toHaveLength(1)
++  await end.fill('131')
++  await page.clock.runFor(350)
++  await expect.poll(() => requests.at(-1).searchParams.get('period_end')).toBe('2010-12')
++  expect(requests.at(-1).searchParams.get('period_start')).toBe('2010-01')
++  expect(requests).toHaveLength(2)
++  release()
++  await expect(page.locator('.explore .chart')).toHaveCount(1)
++  await expect(page.locator('.timeline-endpoints')).toHaveText('2000-012025-02')
++  await expect(page.getByLabel('Selected timestamp', { exact: true })).toContainText('2010-01')
++  await expect(page.getByRole('button', { name: 'Show full period' })).toHaveCount(0)
++  await expect(page.locator('.timeline-panel select')).toHaveCount(0)
++  const choices = page.getByRole('group', { name: 'Time step', exact: true })
++  const headingBox = await page.getByRole('heading', { name: 'Time series', exact: true }).boundingBox()
++  const choicesBox = await choices.boundingBox()
++  expect(Math.abs(headingBox.y - choicesBox.y)).toBeLessThan(8)
++  expect(choicesBox.x).toBeGreaterThan(headingBox.x + headingBox.width)
++  expect((await page.locator('.timeline-panel').boundingBox()).height).toBeLessThanOrEqual(initialHeight + 6)
++  await page.locator('.timeline-panel').screenshot({ path: `test-results/explore-timeline-${width}.png` })
++  await expect(page.locator('.explore input[type=month]')).toHaveCount(0)
++  await expect(page.locator('.explore select')).toHaveCount(1)
++  await expect(page.locator('.timeline-start-label')).toHaveText('From 2010-01')
++  await expect(page.locator('.timeline-end-label')).toHaveText('To 2010-12')
++  const fromBox = await page.locator('.timeline-start-label').boundingBox()
++  const toBox = await page.locator('.timeline-end-label').boundingBox()
++  const railBox = await page.locator('.timeline-range-rail').boundingBox()
++  expect(Math.abs(fromBox.x + fromBox.width / 2 - (railBox.x + railBox.width * 120 / 301))).toBeLessThan(3)
++  expect(Math.abs(toBox.x + toBox.width / 2 - (railBox.x + railBox.width * 131 / 301))).toBeLessThan(3)
++  const timestampBox = await page.getByLabel('Selected timestamp', { exact: true }).boundingBox()
++  expect(Math.abs(timestampBox.x + timestampBox.width / 2 - width / 2)).toBeLessThan(3)
++  expect(choicesBox.x + choicesBox.width <= timestampBox.x || timestampBox.x + timestampBox.width <= choicesBox.x).toBe(true)
++  const normalHeight = (await page.locator('.timeline-panel').boundingBox()).height
++  await expect(start).toHaveValue('120')
++  await expect(end).toHaveValue('131')
++  await expect(page.locator('.timeline-endpoints')).toHaveText('2000-012025-02')
++  await expect(start).toHaveAttribute('aria-valuetext', '2010-01')
++  expect(requests).toHaveLength(2)
++
++  // Both caps are inclusive and are checked before contacting the API.
++  await end.fill('120')
++  await start.fill('0')
++  await choices.getByRole('button', { name: 'Daily', exact: true }).click()
++  await expect(page.locator('.timeline-panel [role="status"]')).toHaveText('Daily periods are limited to 10 years.')
++  const errorBox = await page.locator('.timeline-period-error').boundingBox()
++  const speedBox = await page.getByRole('group', { name: 'Playback speed' }).boundingBox()
++  expect(errorBox.x).toBeGreaterThan(speedBox.x + speedBox.width)
++  expect(errorBox.y).toBeLessThan(speedBox.y + speedBox.height)
++  expect(errorBox.y + errorBox.height).toBeGreaterThan(speedBox.y)
++  expect((await page.locator('.timeline-panel').boundingBox()).height).toBe(normalHeight)
++  await page.locator('.timeline-panel').screenshot({ path: `test-results/explore-timeline-error-${width}.png` })
++  await page.clock.runFor(400)
++  expect(requests).toHaveLength(2)
++  await end.fill('119')
++  await page.clock.runFor(350)
++  await expect.poll(() => requests.at(-1).searchParams.get('time_step')).toBe('daily')
++  await expect(page.locator('.explore [role="status"]')).toContainText('Only monthly Series are available so far.')
++  await expect(page.locator('.explore .chart')).toHaveCount(0)
++  await choices.getByRole('button', { name: '3-hourly', exact: true }).click()
++  await expect(page.locator('.timeline-panel [role="status"]')).toHaveText('3-hourly periods are limited to 1 year.')
++  const before = requests.length
++  await page.clock.runFor(400)
++  expect(requests).toHaveLength(before)
++  await end.fill('12')
++  await expect(page.locator('.timeline-panel [role="status"]')).toHaveText('3-hourly periods are limited to 1 year.')
++  await page.clock.runFor(400)
++  expect(requests).toHaveLength(before)
++  await end.fill('11')
++  await page.clock.runFor(350)
++  await expect.poll(() => requests.at(-1).searchParams.get('time_step')).toBe('3-hourly')
++  expect(requests.at(-1).searchParams.get('period_end')).toBe('2000-12')
++})
++}
+diff --git a/frontend/integration-aggregations/aggregations.spec.js b/frontend/integration-aggregations/aggregations.spec.js
+index 8bae246..abc0fbe 100644
+--- a/frontend/integration-aggregations/aggregations.spec.js
++++ b/frontend/integration-aggregations/aggregations.spec.js
+@@ -12,8 +12,8 @@ async function openWithTemperatureAndPrecipitation(page) {
+   await page.goto('/')
+   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
+   await expect(page.locator('.explore .chart')).toHaveCount(1)
+-  await page.getByLabel('From', { exact: true }).fill('2025-01')
+-  await page.getByLabel('To', { exact: true }).fill('2025-02')
++  await page.getByRole('slider', { name: 'Range end', exact: true }).fill('301')
++  await page.getByRole('slider', { name: 'Range start', exact: true }).fill('300')
+   await page.getByRole('checkbox', { name: 'Precipitation', exact: true }).check()
+   await expect(page.locator('.explore .chart')).toHaveCount(2)
+ }
+diff --git a/frontend/integration-areas/areas.spec.js b/frontend/integration-areas/areas.spec.js
+index 664125f..012f469 100644
+--- a/frontend/integration-areas/areas.spec.js
++++ b/frontend/integration-areas/areas.spec.js
+@@ -109,12 +109,9 @@ test('a Selected area opens the same view as a Region, with stacked charts', asy
+   expect(axes[0].length).toBeGreaterThan(0)
+   expect(axes[1]).toEqual(axes[0])
+   // The same choices as a Region's view: Variables, a period and its limits.
+-  await expect(page.getByLabel('From', { exact: true })).toHaveValue('2024-03')
+-  await expect(page.getByLabel('To', { exact: true })).toHaveValue('2025-02')
+-  await page.getByLabel('From', { exact: true }).fill('1999-12')
+-  await expect(page.locator('.explore [role="status"]').first()).toHaveText(
+-    'Periods run from 2000-01 to 2025-02, the latest available month.',
+-  )
++  await expect(page.getByRole('slider', { name: 'Range start', exact: true })).toHaveAttribute('aria-valuetext', '2024-03')
++  await expect(page.getByRole('slider', { name: 'Range end', exact: true })).toHaveAttribute('aria-valuetext', '2025-02')
++  await expect(page.locator('.timeline-endpoints')).toHaveText('2000-012025-02')
+   await expect(page.getByRole('checkbox', { name: /vegetation/i })).toHaveCount(0)
+ })
+ 
+diff --git a/frontend/integration-jobs/jobs.spec.js b/frontend/integration-jobs/jobs.spec.js
+index 3d50b0a..d24b7b5 100644
+--- a/frontend/integration-jobs/jobs.spec.js
++++ b/frontend/integration-jobs/jobs.spec.js
+@@ -5,8 +5,8 @@ async function openBeyondSeed(page) {
+   await page.goto('/')
+   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
+   await expect(page.locator('.explore .chart')).toHaveCount(1)
+-  await page.getByLabel('From', { exact: true }).fill('2025-01')
+-  await page.getByLabel('To', { exact: true }).fill('2025-02')
++  await page.getByRole('slider', { name: 'Range end', exact: true }).fill('301')
++  await page.getByRole('slider', { name: 'Range start', exact: true }).fill('300')
+ }
+ 
+ test('monthly acquisition shows progress then draws its Series; repeat uses cache', async ({ page }) => {
+@@ -16,10 +16,11 @@ test('monthly acquisition shows progress then draws its Series; repeat uses cach
+   await expect(page.locator('.explore .chart')).toHaveCount(1)
+   await expect(page.getByRole('progressbar')).toHaveCount(0)
+   await expect(page.locator('.explore .chart-time').first()).toHaveText('Jan 2025')
+-  await page.getByLabel('From', { exact: true }).fill('2024-01')
++  await page.getByRole('slider', { name: 'Range start', exact: true }).fill('288')
++  await expect(page.locator('.explore .chart-time').first()).toHaveText('Jan 2024')
+   const repeat = page.waitForResponse((r) => r.url().includes('/api/explore/series')
+     && new URL(r.url()).searchParams.get('period_start') === '2025-01')
+-  await page.getByLabel('From', { exact: true }).fill('2025-01')
++  await page.getByRole('slider', { name: 'Range start', exact: true }).fill('300')
+   const response = await repeat
+   expect(response.status()).toBe(200)
+   expect((await response.json()).provenance).toBe('cache')
+diff --git a/frontend/integration-time-steps/time-steps.spec.js b/frontend/integration-time-steps/time-steps.spec.js
+index a2df2e0..fa1d395 100644
+--- a/frontend/integration-time-steps/time-steps.spec.js
++++ b/frontend/integration-time-steps/time-steps.spec.js
+@@ -6,6 +6,10 @@ import { test, expect } from '@playwright/test'
+ // Monthly 2010-01 comes from the seed set; finer Time steps go through a job.
+ const charts = (page) => page.locator('.explore .chart')
+ const chart = (page, name) => page.locator('.explore .chart', { hasText: name })
++const chooseTimeStep = (page, step) => page.getByRole('group', { name: 'Time step', exact: true })
++  .getByRole('button', { name: step === '3-hourly' ? step : step[0].toUpperCase() + step.slice(1), exact: true }).click()
++const chooseMonth = (page, boundary, month) => page.getByRole('slider', { name: `Range ${boundary}`, exact: true })
++  .fill(String((Number(month.slice(0, 4)) - 2000) * 12 + Number(month.slice(5, 7)) - 1))
+ 
+ async function openSahel(page) {
+   await page.goto('/')
+@@ -15,8 +19,8 @@ async function openSahel(page) {
+ 
+ async function showTemperatureAndPrecipitation(page, start = '2010-01', end = '2010-01') {
+   await openSahel(page)
+-  await page.getByLabel('From', { exact: true }).fill(start)
+-  await page.getByLabel('To', { exact: true }).fill(end)
++  await chooseMonth(page, 'start', start)
++  await chooseMonth(page, 'end', end)
+   await page.getByRole('checkbox', { name: 'Precipitation', exact: true }).check()
+   await expect(charts(page)).toHaveCount(2)
+ }
+@@ -38,10 +42,10 @@ for (const [timeStep, unit, count] of [
+     await showTemperatureAndPrecipitation(page)
+     if (timeStep === 'monthly') {
+       // Leave monthly and come back, so the choice is a real change.
+-      await page.getByLabel('Time step', { exact: true }).selectOption('daily')
++      await chooseTimeStep(page, 'daily')
+       await expect(chart(page, 'Air temperature').getByRole('img')).toHaveAttribute('aria-label', /per day/)
+     }
+-    await page.getByLabel('Time step', { exact: true }).selectOption(timeStep)
++    await chooseTimeStep(page, timeStep)
+     for (const name of ['Air temperature', 'Precipitation']) {
+       await expect(chart(page, name).getByRole('img')).toHaveAttribute(
+         'aria-label',
+@@ -53,7 +57,7 @@ for (const [timeStep, unit, count] of [
+ 
+ test('daily values are drawn from the API, with daily totals of precipitation', async ({ page }) => {
+   await showTemperatureAndPrecipitation(page)
+-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
++  await chooseTimeStep(page, 'daily')
+   const ticks = (name) => chart(page, name).locator('text.chart-tick:not(.chart-time)')
+   await expect(ticks('Air temperature')).toHaveText(['31', '1'])
+   await expect(ticks('Precipitation')).toHaveText(['24', '24'])
+@@ -66,15 +70,15 @@ for (const [timeStep, limit, start, end] of [
+ ]) {
+   test(`a ${timeStep} period longer than ${limit} is refused before any data is requested`, async ({ page }) => {
+     await openSahel(page)
+-    await page.getByLabel('From', { exact: true }).fill('2010-01')
+-    await page.getByLabel('To', { exact: true }).fill('2010-01')
+-    await page.getByLabel('Time step', { exact: true }).selectOption(timeStep)
++    await chooseMonth(page, 'start', '2010-01')
++    await chooseMonth(page, 'end', '2010-01')
++    await chooseTimeStep(page, timeStep)
+     await expect(charts(page)).toHaveCount(1)
+     const requested = recordSeriesRequests(page)
+-    await page.getByLabel('From', { exact: true }).fill(start)
+-    await page.getByLabel('To', { exact: true }).fill(end)
++    await chooseMonth(page, 'start', start)
++    await chooseMonth(page, 'end', end)
+     const label = timeStep === 'daily' ? 'Daily' : '3-hourly'
+-    await expect(page.locator('.explore [role="status"]')).toContainText(
++    await expect(page.locator('.timeline-panel [role="status"]')).toContainText(
+       `${label} periods are limited to ${limit}.`,
+     )
+     await page.waitForTimeout(500)
+@@ -92,34 +96,34 @@ test('the view explains UTC days and the caps before any data is requested', asy
+ 
+ test('a Variable without data at the chosen Time step is not offered', async ({ page }) => {
+   await openSahel(page)
+-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
++  await chooseTimeStep(page, 'daily')
+   await expect(page.getByRole('checkbox', { name: /vegetation/i })).toHaveCount(0)
+   await expect(page.getByRole('checkbox', { name: 'Air temperature', exact: true })).toBeVisible()
+ })
+ 
+ test('changing the Time step removes a chosen Variable without data at it, with a note', async ({ page }) => {
+   await openSahel(page)
+-  await page.getByLabel('From', { exact: true }).fill('2010-01')
+-  await page.getByLabel('To', { exact: true }).fill('2010-01')
++  await chooseMonth(page, 'start', '2010-01')
++  await chooseMonth(page, 'end', '2010-01')
+   await page.getByRole('checkbox', { name: /vegetation/i }).check()
+   await expect(charts(page)).toHaveCount(2)
+-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
++  await chooseTimeStep(page, 'daily')
+   await expect(page.locator('.explore')).toContainText(
+     'Vegetation index (NDVI) was removed: it has no daily data.',
+   )
+   await expect(charts(page)).toHaveCount(1)
+   await expect(chart(page, 'Air temperature')).toBeVisible()
+   // Removed, not hidden: going back to monthly does not bring it back.
+-  await page.getByLabel('Time step', { exact: true }).selectOption('monthly')
++  await chooseTimeStep(page, 'monthly')
+   await expect(page.getByRole('checkbox', { name: /vegetation/i })).not.toBeChecked()
+   await expect(charts(page)).toHaveCount(1)
+ })
+ 
+ test('progress is shown while daily data is fetched, until the chart appears', async ({ page }) => {
+   await openSahel(page)
+-  await page.getByLabel('From', { exact: true }).fill('2010-03')
+-  await page.getByLabel('To', { exact: true }).fill('2010-03')
+-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
++  await chooseMonth(page, 'start', '2010-03')
++  await chooseMonth(page, 'end', '2010-03')
++  await chooseTimeStep(page, 'daily')
+   await expect(page.getByRole('progressbar')).toBeVisible()
+   await expect(charts(page)).toHaveCount(1)
+   await expect(page.getByRole('progressbar')).toHaveCount(0)
+@@ -128,9 +132,9 @@ test('progress is shown while daily data is fetched, until the chart appears', a
+ 
+ test('a failed fetch says which Series could not be obtained', async ({ page }) => {
+   await openSahel(page)
+-  await page.getByLabel('From', { exact: true }).fill('2010-02')
+-  await page.getByLabel('To', { exact: true }).fill('2010-02')
+-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
++  await chooseMonth(page, 'start', '2010-02')
++  await chooseMonth(page, 'end', '2010-02')
++  await chooseTimeStep(page, 'daily')
+   await expect(page.getByRole('progressbar')).toBeVisible()
+   const status = page.locator('.explore [role="status"]')
+   await expect(status).toContainText('The Series could not be obtained')
+diff --git a/frontend/integration/explore.spec.js b/frontend/integration/explore.spec.js
+index 69e9917..bdf4629 100644
+--- a/frontend/integration/explore.spec.js
++++ b/frontend/integration/explore.spec.js
+@@ -78,8 +78,8 @@ test('a shorter period is requested from the API and shared by every chart', asy
+   await openFromSidebar(page, 'sahel')
+   await page.getByRole('checkbox', { name: 'Precipitation', exact: true }).check()
+   await expect(page.locator('.explore .chart')).toHaveCount(2)
+-  await page.getByLabel('From', { exact: true }).fill('2010-01')
+-  await page.getByLabel('To', { exact: true }).fill('2010-12')
++  await page.getByRole('slider', { name: 'Range start', exact: true }).fill('120')
++  await page.getByRole('slider', { name: 'Range end', exact: true }).fill('131')
+   await expect.poll(() => requests.at(-1)?.searchParams.get('period_end')).toBe('2010-12')
+   expect(requests.at(-1).searchParams.get('period_start')).toBe('2010-01')
+   await expect(page.locator('.explore .chart')).toHaveCount(2)
+@@ -88,18 +88,14 @@ test('a shorter period is requested from the API and shared by every chart', asy
+   }
+ })
+ 
+-test('a period starting before 2000-01 is refused without a request', async ({ page }) => {
+-  const requests = exploreRequests(page)
++test('timeline bounds prevent choosing months outside the requestable span', async ({ page }) => {
+   await openFromSidebar(page, 'sahel')
+   await expect(page.locator('.explore .chart')).toHaveCount(1)
+-  const before = requests.length
+-  await page.getByLabel('From', { exact: true }).fill('1999-12')
+-  await expect(page.locator('.explore [role="status"]')).toHaveText(
+-    /Periods run from 2000-01 to \d{4}-\d{2}, the latest available month\./,
+-  )
+-  await page.waitForTimeout(500)
+-  expect(requests.length).toBe(before)
+-  await expect(page.locator('.explore .chart')).toHaveCount(0)
++  const start = page.getByRole('slider', { name: 'Range start', exact: true })
++  await start.press('Home')
++  await start.press('ArrowLeft')
++  await expect(start).toHaveAttribute('aria-valuetext', '2000-01')
++  await expect(start).toHaveAttribute('min', '0')
+ })
+ 
+ test('Variables without data are not offered, and Back returns to the welcome', async ({ page }) => {
+diff --git a/frontend/playwright.aggregations.config.js b/frontend/playwright.aggregations.config.js
+index 9e1ca30..9c20d47 100644
+--- a/frontend/playwright.aggregations.config.js
++++ b/frontend/playwright.aggregations.config.js
+@@ -5,8 +5,9 @@ import integration from './playwright.integration.config.js'
+ export default defineConfig({
+   ...integration,
+   testDir: './integration-aggregations',
+-  // Each Series is acquired in a worker process, which takes a few seconds.
+-  expect: { timeout: 20000 },
++  // Rebuilding two Variables starts two acquisition workers.
++  timeout: 120000,
++  expect: { timeout: 60000 },
+   webServer: integration.webServer.map((server, index) => index === 0
+     ? { ...server, env: { ...server.env, WEATHER_REPORT_E2E_API_APP: 'tests.explore_aggregation_app:app' } }
+     : server),
+diff --git a/frontend/playwright.integration.config.js b/frontend/playwright.integration.config.js
+index 9bcf5b2..843d91c 100644
+--- a/frontend/playwright.integration.config.js
++++ b/frontend/playwright.integration.config.js
+@@ -8,6 +8,9 @@ const apiURL = 'http://127.0.0.1:8765'
+ export default defineConfig({
+   testDir: './integration',
+   workers: 1,
++  // Real acquisition starts a Python worker and can exceed five seconds on Windows.
++  timeout: 90000,
++  expect: { timeout: 30000 },
+   use: { baseURL: 'http://127.0.0.1:4174', viewport: { width: 1440, height: 1000 } },
+   webServer: [
+     {
+diff --git a/frontend/src/components/ExploreMyWorld.jsx b/frontend/src/components/ExploreMyWorld.jsx
+index 2a53bf8..b53fd96 100644
+--- a/frontend/src/components/ExploreMyWorld.jsx
++++ b/frontend/src/components/ExploreMyWorld.jsx
+@@ -1,6 +1,5 @@
+ import { AGGREGATIONS, describeAggregation } from '../aggregations.js'
+-import { TIME_STEPS } from '../timeSteps.js'
+-import { FIRST_MONTH, MAX_VARIABLES } from '../useExploreView.js'
++import { MAX_VARIABLES } from '../useExploreView.js'
+ import Chart from './Chart.jsx'
+ 
+ const exclusion = (code, noun) =>
+@@ -87,55 +86,11 @@ export default function ExploreMyWorld({
+         {view.removed && <p className="notice" role="status">{view.removed}</p>}
+       </fieldset>
+ 
+-      <div className="catalog-controls">
+-        <label htmlFor="explore-time-step">Time step</label>
+-        <select
+-          id="explore-time-step"
+-          value={view.timeStep}
+-          onChange={(event) => view.setTimeStep(event.target.value)}
+-        >
+-          {TIME_STEPS.map((item) => (
+-            <option key={item.id} value={item.id}>
+-              {item.label}
+-            </option>
+-          ))}
+-        </select>
+-      </div>
+       <p className="chart-note">
+         {view.utcNote}
+         {view.limits && ` ${view.limits}`}
+       </p>
+ 
+-      <fieldset className="explore-choices explore-period">
+-        <legend>Period</legend>
+-        <span className="explore-month">
+-          <label htmlFor="explore-start">From</label>
+-          <input
+-            id="explore-start"
+-            type="month"
+-            min={FIRST_MONTH}
+-            max={view.latest ?? undefined}
+-            value={view.start}
+-            onChange={(event) => view.setStart(event.target.value)}
+-          />
+-        </span>
+-        <span className="explore-month">
+-          <label htmlFor="explore-end">To</label>
+-          <input
+-            id="explore-end"
+-            type="month"
+-            min={FIRST_MONTH}
+-            max={view.latest ?? undefined}
+-            value={view.end}
+-            onChange={(event) => view.setEnd(event.target.value)}
+-          />
+-        </span>
+-      </fieldset>
+-      {view.periodError ? (
+-        <p className="notice" role="status">{view.periodError}</p>
+-      ) : (
+-        <p className="chart-note">{view.range}</p>
+-      )}
+       <div className="catalog-controls">
+         <label htmlFor="explore-aggregation">Aggregation</label>
+         <select
+diff --git a/frontend/src/components/ExploreTimeline.jsx b/frontend/src/components/ExploreTimeline.jsx
+new file mode 100644
+index 0000000..7ca4dbb
+--- /dev/null
++++ b/frontend/src/components/ExploreTimeline.jsx
+@@ -0,0 +1,27 @@
++import { FIRST_MONTH } from '../useExploreView.js'
++import Timeline from './Timeline.jsx'
++
++export default function ExploreTimeline({ view, series, onTimestampChange }) {
++  const ready = Boolean(view.latest && view.start && view.end)
++
++  return <Timeline
++    series={series}
++    loading={view.loading}
++    domain={view.latest ? { start: FIRST_MONTH, end: view.latest } : null}
++    range={ready ? { start: view.start, end: view.end } : null}
++    onTimestampChange={onTimestampChange}
++    onRangeChange={(range) => { if (ready && range) view.setPeriod(range) }}
++    headingControls={
++      <div className="timeline-time-step" role="group" aria-label="Time step">
++        {['monthly', 'daily', '3-hourly'].map((step) => (
++          <button key={step} type="button" aria-pressed={view.timeStep === step}
++            onClick={() => view.setTimeStep(step)}>
++            {step === '3-hourly' ? step : step[0].toUpperCase() + step.slice(1)}
++          </button>
++        ))}
++      </div>
++    }
++  >
++    {view.periodError && <p className="notice timeline-period-error" role="status">{view.periodError}</p>}
++  </Timeline>
++}
+diff --git a/frontend/src/components/Timeline.jsx b/frontend/src/components/Timeline.jsx
+index 9657f84..d697a01 100644
+--- a/frontend/src/components/Timeline.jsx
++++ b/frontend/src/components/Timeline.jsx
+@@ -1,21 +1,28 @@
+ ﻿import { useEffect, useMemo, useState } from 'react'
+-import { timelineMonths } from '../timeline.js'
++import { monthIndex, monthTimestamp, timelineMonths } from '../timeline.js'
+ 
+-export default function Timeline({ series, loading, onTimestampChange, onRangeChange }) {
+-  const months = useMemo(() => timelineMonths(series), [series])
++export default function Timeline({ series, loading, onTimestampChange, onRangeChange, domain, range, headingControls, children }) {
++  const months = useMemo(() => {
++    if (!domain) return timelineMonths(series)
++    const first = monthIndex(domain.start)
++    return Array.from({ length: monthIndex(domain.end) - first + 1 }, (_, i) => monthTimestamp(first + i))
++  }, [series, domain?.start, domain?.end])
+   const [index, setIndex] = useState(0)
+   const [start, setStart] = useState(0)
+   const [end, setEnd] = useState(null)
+   const last = Math.max(0, months.length - 1)
+-  const rangeEnd = Math.min(end ?? last, last)
+-  const rangeStart = Math.min(start, rangeEnd)
+-  const selectedIndex = Math.max(rangeStart, Math.min(index, rangeEnd))
++  // Request timelines use calendar months independently of the loaded Series.
++  const offset = domain ? monthIndex(domain.start) : 0
++  const rangeEnd = range ? Math.max(0, Math.min(monthIndex(range.end) - monthIndex(domain.start), last)) : Math.min(end ?? last, last)
++  const rangeStart = range ? Math.max(0, Math.min(monthIndex(range.start) - monthIndex(domain.start), rangeEnd)) : Math.min(start, rangeEnd)
++  const selectedIndex = Math.max(rangeStart, Math.min(index - offset, rangeEnd))
+   const [playing, setPlaying] = useState(false)
+   const [speed, setSpeed] = useState(1)
++  const rangeEnabled = months.length > 0 && (Boolean(domain) || !loading)
+   const enabled = !loading && months.length > 0
+   const timestamp = enabled ? months[selectedIndex] : null
+-  const startTimestamp = enabled ? months[rangeStart] : null
+-  const endTimestamp = enabled ? months[rangeEnd] : null
++  const startTimestamp = rangeEnabled ? months[rangeStart] : null
++  const endTimestamp = rangeEnabled ? months[rangeEnd] : null
+ 
+   useEffect(() => {
+     onTimestampChange(timestamp)
+@@ -25,30 +32,34 @@ export default function Timeline({ series, loading, onTimestampChange, onRangeCh
+     // Series can arrive as a new array on every parent render. Notify only
+     // when the selected dates change, otherwise setting a new range object
+     // in the parent starts a render loop.
++    if (range) return
+     onRangeChange(startTimestamp && endTimestamp ? { start: startTimestamp, end: endTimestamp } : null)
+-  }, [startTimestamp, endTimestamp, onRangeChange])
++  }, [startTimestamp, endTimestamp, onRangeChange, range])
+ 
+   useEffect(() => {
+     if (!playing || !enabled) return
+     const timer = window.setInterval(() => {
+-      setIndex((current) => Math.min(Math.max(current, rangeStart) + 1, rangeEnd))
++      setIndex((current) => Math.min(Math.max(current - offset, rangeStart) + 1, rangeEnd) + offset)
+     }, 700 / speed)
+     return () => window.clearInterval(timer)
+-  }, [playing, enabled, rangeStart, rangeEnd, speed])
++  }, [playing, enabled, rangeStart, rangeEnd, speed, offset])
+ 
+   useEffect(() => {
+     if (selectedIndex >= rangeEnd || !enabled) setPlaying(false)
+   }, [selectedIndex, rangeEnd, enabled])
+ 
+   const togglePlayback = () => {
+-    if (!playing && selectedIndex === rangeEnd) setIndex(rangeStart)
++    if (!playing && selectedIndex === rangeEnd) setIndex(rangeStart + offset)
+     setPlaying((current) => !current)
+   }
+ 
+   return (
+-    <section className="timeline-panel" aria-labelledby="timeline-heading">
+-      <div className="timeline-heading">
+-        <h2 id="timeline-heading">Time series</h2>
++    <section className={`timeline-panel${domain ? ' has-request-period' : ''}`} aria-labelledby="timeline-heading">
++      <div className={`timeline-heading${headingControls ? ' has-time-step' : ''}`}>
++        <div className="timeline-title">
++          <h2 id="timeline-heading">Time series</h2>
++          {headingControls}
++        </div>
+         <output className="timeline-timestamp" htmlFor="series-timeline" aria-label="Selected timestamp">
+           {timestamp ? <><span className="timeline-viewing-label">Viewing</span> <time dateTime={timestamp}>{timestamp}</time></> : loading ? 'Loading…' : 'No series available'}
+         </output>
+@@ -75,7 +86,7 @@ export default function Timeline({ series, loading, onTimestampChange, onRangeCh
+               if (!enabled || rangeStart === rangeEnd) return
+               const bounds = event.currentTarget.getBoundingClientRect()
+               const next = Math.round((event.clientX - bounds.left) / bounds.width * last)
+-              setIndex(Math.max(rangeStart, Math.min(next, rangeEnd)))
++              setIndex(Math.max(rangeStart, Math.min(next, rangeEnd)) + offset)
+               setPlaying(false)
+             }} />
+             <label className="sr-only" htmlFor="series-timeline">Select month</label>
+@@ -83,22 +94,27 @@ export default function Timeline({ series, loading, onTimestampChange, onRangeCh
+               style={{ left: `calc(${last ? rangeStart / last * 100 : 0}% - 10px)`, width: `calc(${last ? (rangeEnd - rangeStart) / last * 100 : 0}% + 20px)` }}
+               value={enabled ? selectedIndex : 0}
+               disabled={!enabled || rangeStart === rangeEnd} aria-valuetext={timestamp ?? 'No data'}
+-              onChange={(event) => { setPlaying(false); setIndex(Number(event.target.value)) }} />
++              onChange={(event) => { setPlaying(false); setIndex(Number(event.target.value) + offset) }} />
+             <input className="timeline-boundary timeline-boundary-start" aria-label="Range start" type="range" min="0" max={last} step="1"
+-              value={rangeStart} disabled={!enabled || last === 0} aria-valuetext={months[rangeStart] ?? 'No data'}
++              value={rangeStart} disabled={!rangeEnabled || last === 0} aria-valuetext={months[rangeStart] ?? 'No data'}
+               onChange={(event) => {
+                 const next = Math.min(Number(event.target.value), rangeEnd)
+-                setStart(next); setIndex(Math.max(selectedIndex, next)); setPlaying(false)
++                if (range) onRangeChange({ start: months[next], end: range.end })
++                setStart(next); setIndex(Math.max(selectedIndex, next) + offset); setPlaying(false)
+               }} />
+             <input className="timeline-boundary timeline-boundary-end" aria-label="Range end" type="range" min="0" max={last} step="1"
+-              value={rangeEnd} disabled={!enabled || last === 0} aria-valuetext={months[rangeEnd] ?? 'No data'}
++              value={rangeEnd} disabled={!rangeEnabled || last === 0} aria-valuetext={months[rangeEnd] ?? 'No data'}
+               onChange={(event) => {
+                 const next = Math.max(Number(event.target.value), rangeStart)
+-                setEnd(next); setIndex(Math.min(selectedIndex, next)); setPlaying(false)
++                if (range) onRangeChange({ start: range.start, end: months[next] })
++                setEnd(next); setIndex(Math.min(selectedIndex, next) + offset); setPlaying(false)
+               }} />
+           </div>
+-          <div className="timeline-endpoints" aria-hidden="true">
+-            <span>{months[0] ?? '—'}</span><span>{months.at(-1) ?? '—'}</span>
++          <div className="timeline-track-footer">
++            <div className="timeline-endpoints" aria-hidden="true">
++              <span>{months[0] ?? '—'}</span><span>{months.at(-1) ?? '—'}</span>
++            </div>
++            {children}
+           </div>
+         </div>
+       </div>
+diff --git a/frontend/src/screens/MainScreen.jsx b/frontend/src/screens/MainScreen.jsx
+index 698e224..31006ac 100644
+--- a/frontend/src/screens/MainScreen.jsx
++++ b/frontend/src/screens/MainScreen.jsx
+@@ -6,6 +6,7 @@ import RegionGlobe from '../components/Globe.jsx'
+ import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
+ import SelectedAreaPanel from '../components/SelectedAreaPanel.jsx'
+ import Timeline from '../components/Timeline.jsx'
++import ExploreTimeline from '../components/ExploreTimeline.jsx'
+ import { AREA_COLOR, REGION_COLORS } from '../palette.js'
+ import { describeArea } from '../selectedArea.js'
+ import useAvailableSeries from '../useAvailableSeries.js'
+@@ -147,7 +148,7 @@ export default function MainScreen({
+     ? error
+     : null
+   const timelineKey = exploringPlace
+-    ? `explore/${exploredRegion?.region_id ?? describeArea(exploredArea)}/${exploreView.chosen}/${exploreView.start}/${exploreView.end}`
++    ? `explore/${exploredRegion?.region_id ?? describeArea(exploredArea)}`
+     : discovery && !exploring
+       ? `${phase}/${discovery.discovery_id}`
+       : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
+@@ -329,7 +330,12 @@ export default function MainScreen({
+       </aside>
+ 
+       {(showing || exploring || investigating || exploringPlace || phase === 'drawing') && (
+-        <Timeline
++        exploringPlace ? <ExploreTimeline
++          key={timelineKey}
++          view={exploreView}
++          series={timelineSeries}
++          onTimestampChange={setTimestamp}
++        /> : <Timeline
+           key={timelineKey}
+           series={timelineSeries}
+           loading={exploringPlace ? exploreView.loading : seriesLoading}
+diff --git a/frontend/src/styles.css b/frontend/src/styles.css
+index ed2a632..1868b8b 100644
+--- a/frontend/src/styles.css
++++ b/frontend/src/styles.css
+@@ -98,6 +98,25 @@ button:focus-visible { outline: 3px solid #47b5d7; outline-offset: 4px; }
+ .timeline-viewing-label::before { content: ''; width: 3px; height: 12px; background: #f4ad71; }
+ .timeline-controls .playback-button { flex: 0 0 auto; min-width: 6.5rem; margin: 0; background: #8bd9ed; color: #092536; border-color: #8bd9ed; }
+ .timeline-track { flex: 1; min-width: 0; }
++.timeline-title { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
++.timeline-title h2 { white-space: nowrap; }
++.timeline-time-step { display: inline-flex; flex: 0 0 auto; gap: 2px; padding: 2px; border: 1px solid #34465f; border-radius: 0.45rem; background: #0b1628; }
++.timeline-time-step button { margin: 0; padding: 0.25rem 0.45rem; border: 0; border-radius: 0.3rem; background: transparent; color: #a3b5cc; font-size: 0.7rem; line-height: 1.15; white-space: nowrap; }
++.timeline-time-step button:hover { background: #20334d; color: #eaf2fc; }
++.timeline-time-step button[aria-pressed="true"] { background: #29485c; color: #a4e6f5; }
++.timeline-time-step button:focus-visible { outline: 2px solid #8bd9ed; outline-offset: 1px; }
++.timeline-track-footer { position: relative; }
++.timeline-track-footer:has(.timeline-period-error) .timeline-endpoints { visibility: hidden; }
++.notice.timeline-period-error { position: absolute; inset: 0; margin: 0; padding: 0; border: 0; background: none; color: #ffd09b; font-size: 0.75rem; line-height: 1.5; white-space: nowrap; overflow-x: auto; }
++@media (max-width: 760px) {
++  .has-time-step .timeline-viewing-label { display: none; }
++  .timeline-heading.has-time-step { column-gap: 0.5rem; }
++  .has-time-step .timeline-title { display: contents; }
++  .has-time-step .timeline-title h2 { grid-column: 1; grid-row: 1; }
++  .has-time-step .timeline-time-step { grid-column: 3; grid-row: 1; justify-self: end; }
++  .has-time-step .timeline-time-step button { padding-inline: 0.2rem; }
++  .has-time-step .timeline-timestamp { grid-column: 2; grid-row: 1; }
++}
+ .timeline-track input { display: block; width: 100%; min-height: 2rem; margin: 0; accent-color: #8bd9ed; cursor: pointer; }
+ .timeline-track input:focus-visible { outline: 2px solid #8bd9ed; outline-offset: 3px; }
+ .timeline-track input:disabled { cursor: default; }
+@@ -443,6 +462,9 @@ button.experience-quiet:hover { box-shadow: 0 6px 18px #16202a14; }
+ .timeline-handle-label { position: absolute; width: 8rem; max-width: 100%; white-space: nowrap; font-size: 0.8rem; color: #a4e6f5; font-variant-numeric: tabular-nums; pointer-events: none; }
+ .timeline-start-label { top: 0; left: clamp(0px, var(--start), calc(100% - 8rem)); }
+ .timeline-end-label { top: 0; left: clamp(8rem, var(--end), 100%); transform: translateX(-100%); text-align: right; }
++.has-request-period .timeline-handle-label { font-size: 0.75rem; line-height: 1.1; text-align: center; }
++.has-request-period .timeline-start-label { left: clamp(0px, calc(var(--start) - 6rem), calc(100% - 8rem)); }
++.has-request-period .timeline-end-label { left: clamp(0px, calc(var(--end) - 2rem), calc(100% - 8rem)); transform: none; }
+ .timeline-range { position: relative; height: 4.5rem; margin: 0 10px; }
+ .timeline-range-rail { position: absolute; top: calc(50% - 2px); left: 0; right: 0; height: 4px; border-radius: 3px; background: linear-gradient(to right, #465269 var(--start), #8bd9ed var(--start), #8bd9ed var(--end), #465269 var(--end)); }
+ .timeline-range input { position: absolute; top: 50%; transform: translateY(-50%); height: 2rem; padding: 0; border: 0; left: -10px; width: calc(100% + 20px); appearance: none; background: transparent; pointer-events: none; }
+diff --git a/frontend/src/useExploreSeries.js b/frontend/src/useExploreSeries.js
+index 90e8ee9..8c50a7a 100644
+--- a/frontend/src/useExploreSeries.js
++++ b/frontend/src/useExploreSeries.js
+@@ -44,11 +44,14 @@ export default function useExploreSeries(place, variableIds, period, aggregation
+       }
+       if (!cancelled) setState({ ...EMPTY, series: data.series, key })
+     }
+-    load()
+-      .catch((error) => {
++    // Coalesce handle steps; cleanup also cancels obsolete acquisition polling.
++    const debounce = setTimeout(() => {
++      load().catch((error) => {
+         if (!cancelled) setState({ ...EMPTY, error, key })
+       })
++    }, 300)
+     return () => {
++      clearTimeout(debounce)
+       cancelled = true
+       clearTimeout(timer)
+       wake?.()
+diff --git a/frontend/src/useExploreView.js b/frontend/src/useExploreView.js
+index 07b4228..447dc70 100644
+--- a/frontend/src/useExploreView.js
++++ b/frontend/src/useExploreView.js
+@@ -9,6 +9,7 @@ import {
+   timeStepOf,
+ } from './timeSteps.js'
+ import useExploreSeries from './useExploreSeries.js'
++import { monthIndex } from './timeline.js'
+ 
+ export const FIRST_MONTH = '2000-01'
+ export const MAX_VARIABLES = 5
+@@ -111,6 +112,11 @@ export default function useExploreView(catalog, region, available, area = null)
+     periodError = periodLimitProblem(steps, current.timeStep, current.start, current.end)
+   }
+ 
++  const cap = { daily: [120, '10 years'], '3-hourly': [12, '1 year'] }[current.timeStep]
++  if (!periodError && cap && monthIndex(current.end) - monthIndex(current.start) + 1 > cap[0]) {
++    periodError = `${current.timeStep[0].toUpperCase()}${current.timeStep.slice(1)} periods are limited to ${cap[1]}.`
++  }
++
+   // Charts follow the catalog's order, whatever order the Variables were chosen in.
+   const chosen = offered
+     .filter((item) => current.chosen.includes(item.variable_id))
+@@ -131,8 +137,7 @@ export default function useExploreView(catalog, region, available, area = null)
+     toggle,
+     start: current.start,
+     end: current.end,
+-    setStart: (start) => update({ start }),
+-    setEnd: (end) => update({ end }),
++    setPeriod: (period) => update(period),
+     aggregation: current.aggregation,
+     setAggregation: (aggregation) => update({ aggregation }),
+     timeStep: current.timeStep,

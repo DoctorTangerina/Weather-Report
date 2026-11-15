@@ -1,0 +1,7 @@
+Reused observation summary, not a raw terminal transcript.
+Conversation tool chunk: 80160e
+Command: npm run test:time-steps
+Exit code: 0
+Result: 11 real-API tests passed (1.2m): all three Time steps, computed daily values/precipitation totals, caps without requests, UTC explanations, Variable removal, progress and failed-fetch reporting. Run after full-span migration, before final label/error-position CSS changes.
+Original run UTC: not captured.
+Summary captured UTC: 2026-11-15T23:30:30.811087Z

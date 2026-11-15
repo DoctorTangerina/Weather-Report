@@ -6,6 +6,7 @@ import RegionGlobe from '../components/Globe.jsx'
 import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
 import SelectedAreaPanel from '../components/SelectedAreaPanel.jsx'
 import Timeline from '../components/Timeline.jsx'
+import ExploreTimeline from '../components/ExploreTimeline.jsx'
 import { AREA_COLOR, REGION_COLORS } from '../palette.js'
 import { describeArea } from '../selectedArea.js'
 import useAvailableSeries from '../useAvailableSeries.js'
@@ -147,7 +148,7 @@ export default function MainScreen({
     ? error
     : null
   const timelineKey = exploringPlace
-    ? `explore/${exploredRegion?.region_id ?? describeArea(exploredArea)}/${exploreView.chosen}/${exploreView.start}/${exploreView.end}`
+    ? `explore/${exploredRegion?.region_id ?? describeArea(exploredArea)}`
     : discovery && !exploring
       ? `${phase}/${discovery.discovery_id}`
       : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
@@ -329,7 +330,12 @@ export default function MainScreen({
       </aside>
 
       {(showing || exploring || investigating || exploringPlace || phase === 'drawing') && (
-        <Timeline
+        exploringPlace ? <ExploreTimeline
+          key={timelineKey}
+          view={exploreView}
+          series={timelineSeries}
+          onTimestampChange={setTimestamp}
+        /> : <Timeline
           key={timelineKey}
           series={timelineSeries}
           loading={exploringPlace ? exploreView.loading : seriesLoading}

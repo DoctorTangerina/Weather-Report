@@ -1,0 +1,7 @@
+Reused observation summary, not a raw terminal transcript.
+Conversation tool chunk: 8899c4
+Command: npm run test:integration
+Exit code: 1
+Result: 6 passed; 1 failed: Variables without data are not offered, and Back returns to welcome expected 3 Amazon Basin checkboxes, received 4. Seed contains vegetation-index. Subsequently tracked independently in issue #108. No clean full-suite pass is claimed.
+Original run UTC: not captured.
+Summary captured UTC: 2026-11-15T23:30:30.811087Z

@@ -44,11 +44,14 @@ export default function useExploreSeries(place, variableIds, period, aggregation
       }
       if (!cancelled) setState({ ...EMPTY, series: data.series, key })
     }
-    load()
-      .catch((error) => {
+    // Coalesce handle steps; cleanup also cancels obsolete acquisition polling.
+    const debounce = setTimeout(() => {
+      load().catch((error) => {
         if (!cancelled) setState({ ...EMPTY, error, key })
       })
+    }, 300)
     return () => {
+      clearTimeout(debounce)
       cancelled = true
       clearTimeout(timer)
       wake?.()

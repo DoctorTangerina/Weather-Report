@@ -12,8 +12,8 @@ async function openWithTemperatureAndPrecipitation(page) {
   await page.goto('/')
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect(page.locator('.explore .chart')).toHaveCount(1)
-  await page.getByLabel('From', { exact: true }).fill('2025-01')
-  await page.getByLabel('To', { exact: true }).fill('2025-02')
+  await page.getByRole('slider', { name: 'Range end', exact: true }).fill('301')
+  await page.getByRole('slider', { name: 'Range start', exact: true }).fill('300')
   await page.getByRole('checkbox', { name: 'Precipitation', exact: true }).check()
   await expect(page.locator('.explore .chart')).toHaveCount(2)
 }
