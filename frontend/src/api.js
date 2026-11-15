@@ -62,3 +62,13 @@ export const surpriseMe = (session) =>
       shown_region_ids: session.shownRegionIds,
     }),
   })
+
+export const getFieldMap = (place, variableId, period, aggregation, timeStep) => {
+  const params = new URLSearchParams({
+    variable_id: variableId, aggregation, time_step: timeStep,
+    period_start: period.start, period_end: period.end,
+  })
+  if (place.regionId) params.set('region_id', place.regionId)
+  for (const rectangle of place.rectangles ?? []) params.append('rectangle', rectangle.join(','))
+  return request(`/api/explore/field-map?${params}`)
+}

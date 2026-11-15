@@ -171,6 +171,29 @@ class NetCDFSeriesSource:
                 cell_conversion,
             )
 
+    def select_cells(
+        self, area, variable, window, dataset_id, cell_conversion, land_only=False
+    ):
+        """Native cell observations and bounds, with the same masks as Series."""
+        with _READ_LOCK:
+            result = self._select_many(
+                {"field": area},
+                variable,
+                window,
+                dataset_id,
+                None,
+                cell_conversion=cell_conversion,
+                per_cell=True,
+                require_land_mask=land_only,
+            )["field"]
+        if isinstance(result, Exception):
+            raise result
+        if result["skipped"]:
+            raise SeriesSelectionError(
+                "series_source_unavailable", "Incomplete grid data."
+            )
+        return result["datasets"]
+
     def _select_many(
         self,
         areas,
@@ -180,6 +203,8 @@ class NetCDFSeriesSource:
         on_file,
         aggregation="mean",
         cell_conversion=None,
+        per_cell=False,
+        require_land_mask=False,
     ):
         datasets = self._datasets()
         if dataset_id is not None:
@@ -212,6 +237,10 @@ class NetCDFSeriesSource:
             )
         identifier, records, description = candidates[0]
         rule = self._rule(identifier, records[0], raw_name)
+        if require_land_mask and not description["land_only"]:
+            raise SeriesSelectionError(
+                "land_mask_unavailable", "This land-only Variable requires a land mask."
+            )
         mask_provider = None
         if description["land_only"]:
             mask_rule = rule.get("land_mask")
@@ -233,6 +262,9 @@ class NetCDFSeriesSource:
                 time_window=(window.lower, window.upper),
                 land_mask_provider=mask_provider,
                 on_file=on_file,
+                aggregation="none" if per_cell else "area-mean",
+                with_cell_bounds=per_cell,
+                max_series=float("inf") if per_cell else 10000,
                 statistic=aggregation,
                 cell_conversion=cell_conversion,
             )
@@ -243,6 +275,8 @@ class NetCDFSeriesSource:
                 "series_source_unavailable",
                 "The selected data cannot be prepared for this area and time period.",
             ) from None
+        if per_cell:
+            return extracted
         results = {}
         for name, result in extracted.items():
             try:

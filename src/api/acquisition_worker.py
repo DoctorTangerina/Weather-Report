@@ -18,6 +18,10 @@ def run(request: dict) -> dict:
         if "config_path" in request
         else NasaGridAcquisitionSource().prepare(request)
     )
+    if request.get("field_map"):
+        from data.data_gathering.field_map import get_field_map
+
+        return get_field_map(request, config, catalog)
     if "region_id" not in request:
         return get_area_series(
             request["rectangles"],

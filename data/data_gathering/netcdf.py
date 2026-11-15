@@ -105,6 +105,24 @@ def widths(variable, variables, latitude=False):
     return np.deg2rad(np.abs(high - low))
 
 
+def cell_bounds(variable, variables, index, latitude=False):
+    """Native bounds, or the midpoint edges of a regular coordinate axis."""
+    values = np.asarray(variable[:], dtype=float)
+    bounds = getattr(variable, "bounds", "")
+    if bounds in variables:
+        low, high = sorted(map(float, variables[bounds][index]))
+    elif len(values) > 1:
+        edges = np.r_[
+            values[0] - (values[1] - values[0]) / 2,
+            (values[:-1] + values[1:]) / 2,
+            values[-1] + (values[-1] - values[-2]) / 2,
+        ]
+        low, high = sorted(map(float, edges[index : index + 2]))
+    else:
+        raise ValueError("A single grid cell requires explicit native bounds.")
+    return [max(-90, low), min(90, high)] if latitude else [low, high]
+
+
 def geography(
     variables, area, aggregation, latitude=None, longitude=None, area_variable=None
 ):
@@ -286,12 +304,13 @@ def extract_many(
     latitude=None,
     longitude=None,
     area_variable=None,
-    max_series=10000,
+    max_series: float = 10000,
     time_window=None,
     land_mask_provider=None,
     on_file=None,
     statistic="mean",
     cell_conversion=None,
+    with_cell_bounds=False,
 ) -> dict:
     """Series for several named areas, opening each file once.
 
@@ -418,6 +437,7 @@ def extract_many(
                                 label,
                                 statistic,
                                 cell_conversion,
+                                with_cell_bounds,
                             )
                         except (ValueError, TypeError) as error:
                             # Conflicts and resource limits must never silently yield partial series.
@@ -469,6 +489,7 @@ def _read_field(
     label,
     statistic="mean",
     cell_conversion=None,
+    with_cell_bounds=False,
 ):
     """Add one field of one file to one area's output; returns the area's series count."""
     spatial = tuple(
@@ -498,6 +519,14 @@ def _read_field(
         )
     for indices in product(*choices):
         selection = dict(zip(remaining, indices))
+        cell_index = None
+        if aggregation == "none" and spatial:
+            cell_index = tuple(
+                int(np.flatnonzero(geo["indices"][dim] == selection[dim])[0])
+                for dim in geo["dims"]
+            )
+            if geo["inside"] is not None and not geo["inside"][cell_index]:
+                continue
         coordinates = {}
         coordinate_units = {}
         for dim, index in selection.items():
@@ -537,6 +566,18 @@ def _read_field(
                 "spatial_aggregation": aggregation if spatial else "none",
                 "observations": {},
             }
+        if with_cell_bounds and cell_index is not None:
+            _, lat = coordinate(available, "latitude")
+            _, lon = coordinate(available, "longitude")
+            assert lat is not None and lon is not None
+            south, north = cell_bounds(
+                lat, available, selection[lat.dimensions[0]], True
+            )
+            west, east = cell_bounds(lon, available, selection[lon.dimensions[0]])
+            # Keep antimeridian cells continuous, centred in [-180, 180).
+            centre = (west + east) / 2
+            shift = ((centre + 180) // 360) * 360
+            fields[key]["bbox"] = [west - shift, south, east - shift, north]
         if land is not None:
             inside = geo["inside"]
             fraction = float(np.mean(land if inside is None else land[inside]))
@@ -568,6 +609,8 @@ def _read_field(
             values = np.ma.array(
                 numeric, mask=np.ma.getmaskarray(raw) | ~np.isfinite(numeric)
             )
+            if cell_index is not None and land is not None and not land[cell_index]:
+                values = np.ma.masked
             if cell_conversion is not None:
                 values = cell_conversion(values, timestamp, field["units"])
             if aggregation != "none" and spatial:

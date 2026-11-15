@@ -37,6 +37,7 @@ async def acquire_series(
     keep_values: bool = False,
     rectangles: list[list[float]] | None = None,
     time_step: str = "monthly",
+    field_map: bool = False,
 ) -> dict[str, Any]:
     """A catalog Region's Series, or with `region` None a Selected area's.
 
@@ -71,6 +72,7 @@ async def acquire_series(
             "time_step": time_step,
             "aggregation": aggregation,
             "keep_values": keep_values,
+            "field_map": field_map,
             "workspace": workspace,
         }
         if source is not None:

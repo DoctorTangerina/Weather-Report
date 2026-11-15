@@ -261,7 +261,8 @@
             },
             {
               "$ref": "#/$defs/exploreSeriesResponse/properties/data"
-            }
+            },
+            { "$ref": "#/$defs/fieldMapResponse/properties/data" }
           ]
         },
         "error": {
@@ -363,6 +364,138 @@
           }
         }
       ]
+    },
+    "fieldMapResponse": {
+      "description": "#82 / BS-012: one frame per UTC Time step, one value per native cell in cells order. Null means no valid data. Minimum and maximum span all frames; both are null when every cell is missing. Cell bounds are west,south,east,north; antimeridian cells keep continuous longitudes.",
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "region_id": {
+              "$ref": "common.schema.json#/$defs/regionId"
+            },
+            "area": {
+              "$ref": "common.schema.json#/$defs/selectedArea"
+            },
+            "variable_id": {
+              "$ref": "common.schema.json#/$defs/variableId"
+            },
+            "aggregation": {
+              "type": "string",
+              "enum": [
+                "mean",
+                "median",
+                "minimum",
+                "maximum",
+                "root_mean_square",
+                "standard_deviation",
+                "mean_absolute_value"
+              ]
+            },
+            "time_step": {
+              "enum": [
+                "3-hourly",
+                "daily",
+                "monthly"
+              ]
+            },
+            "period": {
+              "$ref": "common.schema.json#/$defs/period"
+            },
+            "units": {
+              "type": "string"
+            },
+            "minimum": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "maximum": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "cells": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "bbox": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "bbox"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "timestamps": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "frames": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "required": [
+            "variable_id",
+            "aggregation",
+            "time_step",
+            "period",
+            "units",
+            "minimum",
+            "maximum",
+            "cells",
+            "timestamps",
+            "frames"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "region_id"
+              ]
+            },
+            {
+              "required": [
+                "area"
+              ]
+            }
+          ],
+          "additionalProperties": false
+        },
+        "notice": {
+          "$ref": "common.schema.json#/$defs/notice"
+        },
+        "provenance": {
+          "const": "cache"
+        }
+      },
+      "required": [
+        "data",
+        "notice",
+        "provenance"
+      ],
+      "additionalProperties": false
     },
     "errorResponse": {
       "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region. Explore My World refuses a malformed view with 422 (invalid_variable_count, duplicate_variable, invalid_aggregation, invalid_time_step, invalid_period, period_out_of_range, period_too_long, invalid_area, variable_not_available_for_area, variable_not_available_at_time_step); unknown job references return 404 job_not_found.",

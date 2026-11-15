@@ -1,13 +1,14 @@
 import { Component, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Globe from 'react-globe.gl'
+import { fieldColor } from './FieldMap.jsx'
 import { AREA_COLOR, withAlpha } from '../palette.js'
 import { rectangleFromCorners, unwrapped } from '../selectedArea.js'
 
 const FLIGHT_MS = 1600
 const polygonSideColor = ({ properties: { kind, color } }) =>
-  withAlpha(color, kind === 'catalog' ? 0.06 : 0.18)
+  kind === 'field' ? 'transparent' : withAlpha(color, kind === 'catalog' ? 0.06 : 0.18)
 const polygonStrokeColor = ({ properties: { kind, color } }) =>
-  kind === 'catalog' ? withAlpha(color, 0.6) : color
+  kind === 'field' ? 'transparent' : kind === 'catalog' ? withAlpha(color, 0.6) : color
 const polygonLabel = ({ properties }) => properties.name
 const ringColor = (ring) => (t) => withAlpha(ring.color, Math.max(0, 0.85 - t))
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -96,13 +97,14 @@ const NO_REGIONS = []
 // Catalog boxes stay faint until hovered; the others are always clearly visible.
 const CAP_ALPHA = { highlight: 0.42, area: 0.3, sketch: 0.2 }
 const ALTITUDE = { catalog: 0.006, highlight: 0.012, area: 0.016, sketch: 0.018 }
-const polygonAltitude = ({ properties: { kind } }) => ALTITUDE[kind]
+const polygonAltitude = ({ properties: { kind } }) => kind === 'field' ? 0.022 : ALTITUDE[kind]
 
 function RegionGlobe({
   highlights: requestedHighlights = [],
   regions = NO_REGIONS,
   onRegionClick,
   selectedArea = null,
+  fieldMap = null,
   onAreaClick,
   drawing = false,
   onDrawn,
@@ -160,7 +162,16 @@ function RegionGlobe({
   const sketchKey = sketched?.join() ?? ''
   const polygons = useMemo(() => {
     const highlighted = new Set(highlights.map(({ region }) => region.region_id))
+    const cells = fieldMap ? fieldMap.cells.flatMap((cell, index) => {
+      const value = fieldMap.frames[fieldMap.index][index]
+      if (value == null) return []
+      return [boxPolygon(cell.bbox, {
+        kind: 'field', color: fieldColor(value, fieldMap.minimum, fieldMap.maximum),
+        name: `${value} ${fieldMap.units}`,
+      })]
+    }) : []
     return [
+      ...cells,
       ...catalogPolygons.filter(({ properties }) => !highlighted.has(properties.regionId)),
       ...highlightLayers.map((layer) => layer.polygon),
       ...(selectedArea ?? []).map((rectangle) =>
@@ -170,7 +181,7 @@ function RegionGlobe({
         ? [boxPolygon(unwrapped(sketchKey.split(',').map(Number)), { color: AREA_COLOR, kind: 'sketch' })]
         : []),
     ]
-  }, [highlights, highlightLayers, catalogPolygons, selectedArea, sketchKey])
+  }, [highlights, highlightLayers, catalogPolygons, selectedArea, sketchKey, fieldMap])
   const labels = useMemo(() => {
     const regionLabels = highlightLayers.map((layer) => layer.label)
     if (!selectedArea) return regionLabels
@@ -184,8 +195,8 @@ function RegionGlobe({
   )
   const polygonCapColor = useCallback(
     ({ properties: { kind, color, regionId } }) =>
-      withAlpha(color, CAP_ALPHA[kind] ?? (regionId === hovered ? 0.4 : 0.12)),
-    [hovered],
+      fieldMap && kind !== 'field' ? 'transparent' : kind === 'field' ? color : withAlpha(color, CAP_ALPHA[kind] ?? (regionId === hovered ? 0.4 : 0.12)),
+    [hovered, fieldMap],
   )
 
   // A new Selected area may be on the far side, as typed edges often are: face it.
@@ -296,7 +307,7 @@ function RegionGlobe({
             polygonLabel={clickable ? polygonLabel : undefined}
             onPolygonHover={clickable ? hover : undefined}
             onPolygonClick={clickable ? click : undefined}
-            polygonsTransitionDuration={reducedMotion() ? 0 : 700}
+            polygonsTransitionDuration={fieldMap || reducedMotion() ? 0 : 700}
             htmlElementsData={labels}
             htmlElement={labelElement}
             htmlAltitude={0.02}
@@ -331,6 +342,7 @@ const sameJson = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 export default memo(RegionGlobe, (previous, next) =>
   sameJson(previous.highlights, next.highlights) &&
   previous.regions === next.regions &&
+  previous.fieldMap === next.fieldMap &&
   sameJson(previous.selectedArea, next.selectedArea) &&
   previous.drawing === next.drawing &&
   CALLBACKS.every((name) => Boolean(previous[name]) === Boolean(next[name])),

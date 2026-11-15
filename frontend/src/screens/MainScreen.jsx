@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import DiscoveryPanel from '../components/DiscoveryPanel.jsx'
 import ExploreMyWorld, { ExploreEntry } from '../components/ExploreMyWorld.jsx'
 import Explorer from '../components/Explorer.jsx'
+import FieldMap from '../components/FieldMap.jsx'
 import RegionGlobe from '../components/Globe.jsx'
 import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
 import SelectedAreaPanel from '../components/SelectedAreaPanel.jsx'
@@ -11,6 +12,7 @@ import { describeArea } from '../selectedArea.js'
 import useAvailableSeries from '../useAvailableSeries.js'
 import useComparison from '../useComparison.js'
 import useExploreView from '../useExploreView.js'
+import useFieldMap from '../useFieldMap.js'
 import useSeries from '../useSeries.js'
 import InvestigationScreen from './InvestigationScreen.jsx'
 
@@ -64,6 +66,10 @@ export default function MainScreen({
 
   const available = useAvailableSeries()
   const exploreView = useExploreView(catalog, exploredRegion, available, exploredArea)
+  const field = useFieldMap(
+    exploredArea ? { rectangles: exploredArea } : exploredRegion ? { regionId: exploredRegion.region_id } : null,
+    exploreView,
+  )
   const exploreHighlights = useMemo(
     () => (exploredRegion ? [{ region: exploredRegion, color: REGION_COLORS[0] }] : NONE),
     [exploredRegion],
@@ -185,6 +191,7 @@ export default function MainScreen({
 
       <section className="globe-panel" aria-label="Interactive Earth globe">
         <RegionGlobe
+          fieldMap={field.frame}
           highlights={phase === 'drawing' ? previousHighlights.current : globeHighlights}
           regions={pickable ? catalog.regions : undefined}
           onRegionClick={pickable ? onExplore : undefined}
@@ -288,6 +295,7 @@ export default function MainScreen({
             timestamp={timestamp}
             onBack={onCloseExplore}
           >
+            <FieldMap field={field} view={exploreView} catalog={catalog} />
             {areaPanel}
           </ExploreMyWorld>
         )}
