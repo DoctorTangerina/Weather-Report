@@ -147,15 +147,42 @@ def geography(variables, area, aggregation, latitude=None, longitude=None, area_
 def extract(records: list[dict], area, *, aggregation="area-mean", variables=None,
             time_coordinate=None, latitude=None, longitude=None, area_variable=None,
             max_series=10000, time_window=None, land_mask_provider=None, verbose=True) -> dict:
-    output = {"bbox": list(area.bbox), "aggregation": aggregation, "datasets": {}, "skipped": []}
-    total = 0
-    for record in records:
+    """Series for one area. See `extract_many`, which reads each file once for many."""
+    result = extract_many(
+        records, {"": area}, aggregation=aggregation, variables=variables,
+        time_coordinate=time_coordinate, latitude=latitude, longitude=longitude,
+        area_variable=area_variable, max_series=max_series, time_window=time_window,
+        land_mask_provider=land_mask_provider,
+        on_file=(lambda done, total, path: print(f"Read {path.name}", flush=True))
+        if verbose else None)[""]
+    if isinstance(result, Exception):
+        raise result
+    return result
+
+
+def extract_many(records: list[dict], areas: dict, *, aggregation="area-mean", variables=None,
+                 time_coordinate=None, latitude=None, longitude=None, area_variable=None,
+                 max_series=10000, time_window=None, land_mask_provider=None,
+                 on_file=None) -> dict:
+    """Series for several named areas, opening each file once.
+
+    Each area gets the result `extract` would give it alone, or, when `extract`
+    would have raised for it (a conflict, a limit, a land mask that cannot be
+    aligned, nothing readable), that exception as its value; the other areas are
+    unaffected. `on_file(done, total, path)` is called after each file.
+    """
+    outputs = {name: {"bbox": list(area.bbox), "aggregation": aggregation,
+                      "datasets": {}, "skipped": []} for name, area in areas.items()}
+    totals = dict.fromkeys(areas, 0)
+    failures: dict[str, Exception] = {}
+    for position, record in enumerate(records, 1):
         path = Path(record["file"])
         label = record.get("dataset") or "data"
         try:
             dataset = Dataset(path)
         except OSError as error:
-            output["skipped"].append({"file": str(path), "reason": f"Not a readable NetCDF/CF file: {error}"})
+            for output in outputs.values():
+                output["skipped"].append({"file": str(path), "reason": f"Not a readable NetCDF/CF file: {error}"})
             continue
         with dataset:
             for prefix, group in groups(dataset):
@@ -172,111 +199,138 @@ def extract(records: list[dict], area, *, aggregation="area-mean", variables=Non
                     timestamps = [date.isoformat() for date in dates]
                     if len(timestamps) != len(set(timestamps)):
                         raise ValueError("Duplicate timestamps in one time coordinate.")
-                    geo = geography(available, area, aggregation, latitude, longitude, area_variable)
                 except ValueError as error:
-                    output["skipped"].append({"file": str(path), "group": prefix, "reason": str(error)})
+                    for name, output in outputs.items():
+                        if name not in failures:
+                            output["skipped"].append({"file": str(path), "group": prefix, "reason": str(error)})
                     continue
-                excluded = {time_name}
-                if geo:
-                    excluded |= geo["names"]
-                excluded |= {getattr(v, "bounds", "") for v in available.values()}
-                for name, variable in group.variables.items():
-                    full_name = prefix + name
-                    if variables and name not in variables and full_name not in variables:
+                for name, area in areas.items():
+                    if name in failures:
                         continue
-                    if name in excluded or name in variable.dimensions:
-                        continue
-                    if np.dtype(variable.dtype).kind not in "iuf" or time.dimensions[0] not in variable.dimensions:
-                        continue
+                    output = outputs[name]
                     try:
-                        spatial = tuple(dim for dim in (geo["dims"] if geo else ()) if dim in variable.dimensions)
-                        if spatial and len(spatial) != len(geo["dims"]):
-                            raise ValueError("Field contains only part of the geographic coordinate axes.")
-                        land = land_mask_provider(record, available, geo) if land_mask_provider else None
-                        if land is not None and not spatial:
-                            raise ValueError("A land-only field requires geographic axes.")
-                        remaining = [dim for dim in variable.dimensions if dim != time.dimensions[0]
-                                     and (aggregation == "none" or dim not in spatial)]
-                        choices = []
-                        for dim in remaining:
-                            choices.append(geo["indices"][dim] if geo and dim in geo["indices"]
-                                           else range(variable.shape[variable.dimensions.index(dim)]))
-                        fields = output["datasets"].setdefault(label, {})
-                        if math.prod(len(choice) for choice in choices) > max_series:
-                            raise ValueError(f"Series limit {max_series} exceeded; select --variables or increase --max-series.")
-                        for indices in product(*choices):
-                            selection = dict(zip(remaining, indices))
-                            coordinates = {}
-                            coordinate_units = {}
-                            for dim, index in selection.items():
-                                coord = available.get(dim)
-                                value = (geo["coords"][dim][index] if geo and dim in geo["coords"] else
-                                         (coord[index] if coord is not None and coord.ndim == 1 else int(index)))
-                                if hasattr(value, "item"):
-                                    value = value.item()
-                                if isinstance(value, bytes):
-                                    value = value.decode("utf-8")
-                                coordinates[dim] = str(value)
-                                coordinate_units[dim] = getattr(coord, "units", "unknown")
-                            suffix = ",".join(f"{key}={value}" for key, value in coordinates.items())
-                            key = full_name + (f"[{suffix}]" if suffix else "")
-                            if key not in fields:
-                                if total >= max_series:
-                                    raise ValueError(f"Series limit {max_series} exceeded; select --variables or increase --max-series.")
-                                total += 1
-                                fields[key] = {"variable": full_name,
-                                    "description": getattr(variable, "long_name", getattr(variable, "standard_name", name)).replace("_", " "),
-                                    "units": getattr(variable, "units", "unknown"), "calendar": calendar,
-                                    "coordinates": coordinates, "coordinate_units": coordinate_units,
-                                    "spatial_aggregation": aggregation if spatial else "none",
-                                    "observations": {}}
-                            if land is not None:
-                                inside = geo["inside"]
-                                fraction = float(np.mean(land if inside is None else land[inside]))
-                                previous = fields[key].get("valid_land_fraction")
-                                if previous is not None and not np.isclose(previous, fraction):
-                                    raise ValueError("Land-mask coverage changed between files.")
-                                fields[key]["valid_land_fraction"] = fraction
-                            field = fields[key]
-                            if field["units"] != getattr(variable, "units", "unknown") or field["calendar"] != calendar:
-                                raise ValueError(f"Units or calendar changed between files for {key}.")
-                            for time_index, timestamp in enumerate(timestamps):
-                                if time_window is not None and not (time_window[0] <= timestamp < time_window[1]):
-                                    continue
-                                selectors = []
-                                for dim in variable.dimensions:
-                                    if dim == time.dimensions[0]:
-                                        selectors.append(time_index)
-                                    elif dim in selection:
-                                        selectors.append(selection[dim])
-                                    else:
-                                        selectors.append(geo["indices"][dim])
-                                raw = variable[tuple(selectors)]
-                                numeric = np.asarray(np.ma.getdata(raw), dtype=float)
-                                values = np.ma.array(numeric, mask=np.ma.getmaskarray(raw) | ~np.isfinite(numeric))
-                                if aggregation != "none" and spatial:
-                                    axes = [geo["dims"].index(dim) for dim in variable.dimensions if dim in spatial]
-                                    weights = np.transpose(geo["weights"], axes)
-                                    if geo["inside"] is not None:
-                                        inside = np.transpose(geo["inside"], axes)
-                                        values = np.ma.masked_where(~inside, values)
-                                    if land is not None:
-                                        values = np.ma.masked_where(~np.transpose(land, axes), values)
-                                    reduced = np.ma.average(values, weights=weights)
-                                else:
-                                    reduced = values.item() if not np.ma.is_masked(values) else np.ma.masked
-                                value = None if np.ma.is_masked(reduced) or not np.isfinite(reduced) else float(reduced)
-                                if timestamp in field["observations"]:
-                                    raise ValueError(f"Duplicate/overlapping timestamp {timestamp} for {key}; mosaic tiles before extraction.")
-                                field["observations"][timestamp] = value
-                    except (ValueError, TypeError) as error:
-                        # Conflicts and resource limits must never silently yield partial series.
-                        if hasattr(error, "code") or "Duplicate/overlapping" in str(error) or "Series limit" in str(error) or "changed between files" in str(error):
-                            raise
-                        output["skipped"].append({"file": str(path), "variable": full_name, "reason": str(error)})
-        if verbose:
-            print(f"Read {path.name}", flush=True)
-    if not any(output["datasets"].values()):
-        reasons = "; ".join(sorted({item["reason"] for item in output["skipped"]}))
-        raise ValueError(f"No readable numeric time series. {reasons}")
-    return output
+                        geo = geography(available, area, aggregation, latitude, longitude, area_variable)
+                    except ValueError as error:
+                        output["skipped"].append({"file": str(path), "group": prefix, "reason": str(error)})
+                        continue
+                    excluded = {time_name}
+                    if geo:
+                        excluded |= geo["names"]
+                    excluded |= {getattr(v, "bounds", "") for v in available.values()}
+                    for var_name, variable in group.variables.items():
+                        full_name = prefix + var_name
+                        if variables and var_name not in variables and full_name not in variables:
+                            continue
+                        if var_name in excluded or var_name in variable.dimensions:
+                            continue
+                        if np.dtype(variable.dtype).kind not in "iuf" or time.dimensions[0] not in variable.dimensions:
+                            continue
+                        try:
+                            totals[name] = _read_field(
+                                output, totals[name], record, available, geo, variable, full_name, var_name,
+                                time, calendar, timestamps, aggregation, max_series, time_window,
+                                land_mask_provider, label)
+                        except (ValueError, TypeError) as error:
+                            # Conflicts and resource limits must never silently yield partial series.
+                            if hasattr(error, "code") or "Duplicate/overlapping" in str(error) or "Series limit" in str(error) or "changed between files" in str(error):
+                                failures[name] = error
+                                break
+                            output["skipped"].append({"file": str(path), "variable": full_name, "reason": str(error)})
+        if on_file is not None:
+            on_file(position, len(records), path)
+    results = {}
+    for name, output in outputs.items():
+        if name in failures:
+            results[name] = failures[name]
+        elif not any(output["datasets"].values()):
+            reasons = "; ".join(sorted({item["reason"] for item in output["skipped"]}))
+            results[name] = ValueError(f"No readable numeric time series. {reasons}")
+        else:
+            results[name] = output
+    return results
+
+
+def _read_field(output, total, record, available, geo, variable, full_name, name, time, calendar,
+                timestamps, aggregation, max_series, time_window, land_mask_provider, label):
+    """Add one field of one file to one area's output; returns the area's series count."""
+    spatial = tuple(dim for dim in (geo["dims"] if geo else ()) if dim in variable.dimensions)
+    if spatial and len(spatial) != len(geo["dims"]):
+        raise ValueError("Field contains only part of the geographic coordinate axes.")
+    land = land_mask_provider(record, available, geo) if land_mask_provider else None
+    if land is not None and not spatial:
+        raise ValueError("A land-only field requires geographic axes.")
+    remaining = [dim for dim in variable.dimensions if dim != time.dimensions[0]
+                 and (aggregation == "none" or dim not in spatial)]
+    choices = []
+    for dim in remaining:
+        choices.append(geo["indices"][dim] if geo and dim in geo["indices"]
+                       else range(variable.shape[variable.dimensions.index(dim)]))
+    fields = output["datasets"].setdefault(label, {})
+    if math.prod(len(choice) for choice in choices) > max_series:
+        raise ValueError(f"Series limit {max_series} exceeded; select --variables or increase --max-series.")
+    for indices in product(*choices):
+        selection = dict(zip(remaining, indices))
+        coordinates = {}
+        coordinate_units = {}
+        for dim, index in selection.items():
+            coord = available.get(dim)
+            value = (geo["coords"][dim][index] if geo and dim in geo["coords"] else
+                     (coord[index] if coord is not None and coord.ndim == 1 else int(index)))
+            if hasattr(value, "item"):
+                value = value.item()
+            if isinstance(value, bytes):
+                value = value.decode("utf-8")
+            coordinates[dim] = str(value)
+            coordinate_units[dim] = getattr(coord, "units", "unknown")
+        suffix = ",".join(f"{key}={value}" for key, value in coordinates.items())
+        key = full_name + (f"[{suffix}]" if suffix else "")
+        if key not in fields:
+            if total >= max_series:
+                raise ValueError(f"Series limit {max_series} exceeded; select --variables or increase --max-series.")
+            total += 1
+            fields[key] = {"variable": full_name,
+                "description": getattr(variable, "long_name", getattr(variable, "standard_name", name)).replace("_", " "),
+                "units": getattr(variable, "units", "unknown"), "calendar": calendar,
+                "coordinates": coordinates, "coordinate_units": coordinate_units,
+                "spatial_aggregation": aggregation if spatial else "none",
+                "observations": {}}
+        if land is not None:
+            inside = geo["inside"]
+            fraction = float(np.mean(land if inside is None else land[inside]))
+            previous = fields[key].get("valid_land_fraction")
+            if previous is not None and not np.isclose(previous, fraction):
+                raise ValueError("Land-mask coverage changed between files.")
+            fields[key]["valid_land_fraction"] = fraction
+        field = fields[key]
+        if field["units"] != getattr(variable, "units", "unknown") or field["calendar"] != calendar:
+            raise ValueError(f"Units or calendar changed between files for {key}.")
+        for time_index, timestamp in enumerate(timestamps):
+            if time_window is not None and not (time_window[0] <= timestamp < time_window[1]):
+                continue
+            selectors = []
+            for dim in variable.dimensions:
+                if dim == time.dimensions[0]:
+                    selectors.append(time_index)
+                elif dim in selection:
+                    selectors.append(selection[dim])
+                else:
+                    selectors.append(geo["indices"][dim])
+            raw = variable[tuple(selectors)]
+            numeric = np.asarray(np.ma.getdata(raw), dtype=float)
+            values = np.ma.array(numeric, mask=np.ma.getmaskarray(raw) | ~np.isfinite(numeric))
+            if aggregation != "none" and spatial:
+                axes = [geo["dims"].index(dim) for dim in variable.dimensions if dim in spatial]
+                weights = np.transpose(geo["weights"], axes)
+                if geo["inside"] is not None:
+                    inside = np.transpose(geo["inside"], axes)
+                    values = np.ma.masked_where(~inside, values)
+                if land is not None:
+                    values = np.ma.masked_where(~np.transpose(land, axes), values)
+                reduced = np.ma.average(values, weights=weights)
+            else:
+                reduced = values.item() if not np.ma.is_masked(values) else np.ma.masked
+            value = None if np.ma.is_masked(reduced) or not np.isfinite(reduced) else float(reduced)
+            if timestamp in field["observations"]:
+                raise ValueError(f"Duplicate/overlapping timestamp {timestamp} for {key}; mosaic tiles before extraction.")
+            field["observations"][timestamp] = value
+    return total

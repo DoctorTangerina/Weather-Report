@@ -1,6 +1,7 @@
 """Serve selected fields from a trusted acquisition manifest, without fetching."""
 
 import threading
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -8,7 +9,7 @@ import numpy as np
 from netCDF4 import Dataset
 
 from .models import Bbox, Source
-from .netcdf import coordinate, extract, groups, inherited_variables, load_manifest
+from .netcdf import coordinate, extract_many, groups, inherited_variables, load_manifest
 from .selection import NativeSeries, SeriesSelectionError, TimeWindow
 
 # The underlying NetCDF/HDF libraries are not safe for simultaneous thread access.
@@ -34,6 +35,7 @@ class NetCDFSeriesSource:
         self.manifest = Path(manifest)
         self.rules = rules or {}
         self.root = root or self.manifest.parent
+        self._masks: dict = {}
 
     def _datasets(self) -> dict[str, list[dict]]:
         try:
@@ -90,10 +92,23 @@ class NetCDFSeriesSource:
 
     def select(self, area: Bbox, variable: str, window: TimeWindow,
                dataset_id: str | None = None) -> NativeSeries:
-        with _READ_LOCK:
-            return self._select(area, variable, window, dataset_id)
+        result = self.select_many({"": area}, variable, window, dataset_id)[""]
+        if isinstance(result, Exception):
+            raise result
+        return result
 
-    def _select(self, area, variable, window, dataset_id):
+    def select_many(self, areas: Mapping[str, Bbox], variable: str, window: TimeWindow,
+                    dataset_id: str | None = None, on_file=None) -> dict:
+        """Each named area's series, reading every file once.
+
+        A problem with the Variable or dataset itself is raised. A problem with
+        one area (nothing readable there, a mask that does not align) is that
+        area's value in the result, as the SeriesSelectionError `select` raises.
+        """
+        with _READ_LOCK:
+            return self._select_many(areas, variable, window, dataset_id, on_file)
+
+    def _select_many(self, areas, variable, window, dataset_id, on_file):
         datasets = self._datasets()
         if dataset_id is not None:
             datasets = {identifier: records for identifier, records in datasets.items()
@@ -118,12 +133,29 @@ class NetCDFSeriesSource:
             mask_provider = lambda record, available, geo: self._land_mask(mask_rule, available, geo)
         normalized = [{**record, "dataset": identifier} for record in records]
         try:
-            extracted = extract(normalized, _Area((area.west, area.south, area.east, area.north)),
-                                variables=[raw_name], time_window=(window.lower, window.upper),
-                                land_mask_provider=mask_provider, verbose=False)
+            extracted = extract_many(
+                normalized, {name: _Area((area.west, area.south, area.east, area.north))
+                             for name, area in areas.items()},
+                variables=[raw_name], time_window=(window.lower, window.upper),
+                land_mask_provider=mask_provider, on_file=on_file)
         except SeriesSelectionError:
             raise
         except (OSError, ValueError, KeyError):
+            raise SeriesSelectionError("series_source_unavailable", "The selected data cannot be prepared for this area and time period.") from None
+        results = {}
+        for name, result in extracted.items():
+            try:
+                results[name] = self._native_series(
+                    result, variable, raw_name, identifier, records, description)
+            except SeriesSelectionError as error:
+                results[name] = error
+        return results
+
+    @staticmethod
+    def _native_series(extracted, variable, raw_name, identifier, records, description):
+        if isinstance(extracted, SeriesSelectionError):
+            raise extracted
+        if isinstance(extracted, Exception):
             raise SeriesSelectionError("series_source_unavailable", "The selected data cannot be prepared for this area and time period.") from None
         if extracted["skipped"]:
             raise SeriesSelectionError("series_source_unavailable", "Some selected source files or fields could not be read; no partial series was returned.")
@@ -152,8 +184,14 @@ class NetCDFSeriesSource:
             if rule.get("file"):
                 path = Path(rule["file"])
                 path = path if path.is_absolute() else self.root / path
-                with Dataset(path) as mask_file:
-                    return self._external_mask(mask_file, rule, geo)
+                # The mask is static and the cells are the same in every file of
+                # a product, so it is read once per set of cells.
+                key = (str(path), rule["variable"], tuple(rule.get("land_values", [1])), geo["dims"],
+                       tuple(np.asarray(geo["indices"][dim]).tobytes() for dim in geo["dims"]))
+                if key not in self._masks:
+                    with Dataset(path) as mask_file:
+                        self._masks[key] = self._external_mask(mask_file, rule, geo)
+                return self._masks[key]
             return self._mask_values(available[rule["variable"]], geo["dims"], geo["indices"], rule)
         except (OSError, KeyError, ValueError, IndexError):
             raise SeriesSelectionError("land_mask_unavailable", "The configured land mask is missing or cannot be aligned with the selected cells.") from None

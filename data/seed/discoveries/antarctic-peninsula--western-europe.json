@@ -1,0 +1,245 @@
+{
+  "discovery_id": "antarctic-peninsula--western-europe",
+  "region_ids": [
+    "antarctic-peninsula",
+    "western-europe"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "antarctic-peninsula",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.5164462280676008,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.8793304014611778,
+            -0.15356205467402367
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.5164462280676008,
+              "p_value": 0.0001626355695824751,
+              "r_squared": 0.04667349208596286
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.5172681187662035,
+              "p_value": 0.028229223491291373
+            },
+            "robust": {
+              "slope_per_decade": -0.4973640435410176,
+              "p_value": 3.501326481905643e-05
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.48704876177221423
+            },
+            "mann_kendall": {
+              "tau": -0.14028985507246378,
+              "p_value": 0.0002904294869741825
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-09",
+              "slope_per_decade": -0.5035374983355326,
+              "p_value": 0.00017171448729677956
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.015188020030767338,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.2974963103967879,
+            "effective_sample_size": 162.4290606394971
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "western-europe",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.5159115080915567,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            0.2647715653548724,
+            0.7670514508282411
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.5159115080915567,
+              "p_value": 1.9849977603623934e-07,
+              "r_squared": 0.08690489636652012
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.5167325478179746,
+              "p_value": 0.0017719654748769528
+            },
+            "robust": {
+              "slope_per_decade": 0.5429797209314084,
+              "p_value": 2.142714074801157e-09
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.5382146127330997
+            },
+            "mann_kendall": {
+              "tau": 0.20593088071348944,
+              "p_value": 1.0422488020486301e-07
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2010-12",
+              "slope_per_decade": 0.5117471430069727,
+              "p_value": 1.483105210919417e-07
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0004146683424614291,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.266059462987285,
+            "effective_sample_size": 173.91139005769256
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Air temperature is rising in one of these places and falling in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "antarctic-peninsula",
+              "label": "Antarctic Peninsula"
+            },
+            {
+              "option_id": "western-europe",
+              "label": "Western Europe"
+            }
+          ],
+          "answer_option_id": "antarctic-peninsula",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "antarctic-peninsula",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "western-europe",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Antarctic Peninsula: -0.516 \u00b0C/decade (95% interval -0.879 to -0.154). Western Europe: 0.516 \u00b0C/decade (95% interval 0.265 to 0.767). Antarctic Peninsula is changing faster. Evidence label for Antarctic Peninsula: Strong evidence. Evidence label for Western Europe: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "antarctic-peninsula",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "western-europe",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

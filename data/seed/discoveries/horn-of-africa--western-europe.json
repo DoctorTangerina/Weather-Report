@@ -1,0 +1,397 @@
+{
+  "discovery_id": "horn-of-africa--western-europe",
+  "region_ids": [
+    "horn-of-africa",
+    "western-europe"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.05030431748667229,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.08843418393479303,
+            0.18904281890813762
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.05030431748667229,
+              "p_value": 0.21391580042828715,
+              "r_squared": 0.005178886413162606
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.050384373547486816,
+              "p_value": 0.4479961380499311
+            },
+            "robust": {
+              "slope_per_decade": 0.04218405569297597,
+              "p_value": 0.26018796958908597
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.04579077490516527
+            },
+            "mann_kendall": {
+              "tau": 0.040222965440356744,
+              "p_value": 0.29882328479384945
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2009-06",
+              "slope_per_decade": 0.052962870241420525,
+              "p_value": 0.18616669346133738
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.5898330862125173,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.4995636435991198,
+            "effective_sample_size": 100.11639556686849
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "western-europe",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.5159115080915567,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            0.2647715653548724,
+            0.7670514508282411
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.5159115080915567,
+              "p_value": 1.9849977603623934e-07,
+              "r_squared": 0.08690489636652012
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.5167325478179746,
+              "p_value": 0.0017719654748769528
+            },
+            "robust": {
+              "slope_per_decade": 0.5429797209314084,
+              "p_value": 2.142714074801157e-09
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.5382146127330997
+            },
+            "mann_kendall": {
+              "tau": 0.20593088071348944,
+              "p_value": 1.0422488020486301e-07
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2010-12",
+              "slope_per_decade": 0.5117471430069727,
+              "p_value": 1.483105210919417e-07
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0004146683424614291,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.266059462987285,
+            "effective_sample_size": 173.91139005769256
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "precipitation",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 11.972874148914736,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            6.916277684936922,
+            17.02947061289255
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 11.972874148914736,
+              "p_value": 4.075904652495514e-07,
+              "r_squared": 0.08263000291777825
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 11.991928202103141,
+              "p_value": 6.660392312594152e-05
+            },
+            "robust": {
+              "slope_per_decade": 7.891337584923026,
+              "p_value": 2.7678137154494915e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": 7.470496853053577
+            },
+            "mann_kendall": {
+              "tau": 0.17868450390189522,
+              "p_value": 3.922920212961596e-06
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2023-11",
+              "slope_per_decade": 10.878266767255754,
+              "p_value": 1.5389959134962962e-06
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 4.5589753419830444e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.1046851991231487,
+            "effective_sample_size": 243.14115955953244
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "western-europe",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 2.080893696327224,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -2.082808745972481,
+            6.244596138626929
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 2.080893696327224,
+              "p_value": 0.2658193716901963,
+              "r_squared": 0.004153339723045268
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 2.0842053037721975,
+              "p_value": 0.2967107851218945
+            },
+            "robust": {
+              "slope_per_decade": 2.3329410781286852,
+              "p_value": 0.19028929442854478
+            },
+            "theil_sen": {
+              "slope_per_decade": 2.2671462470130774
+            },
+            "mann_kendall": {
+              "tau": 0.04245261984392419,
+              "p_value": 0.27283721781106196
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2016-12",
+              "slope_per_decade": 2.258510117790381,
+              "p_value": 0.22275144931213617
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.4535831234704383,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.1235240607322547,
+            "effective_sample_size": 234.03395705558017
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 23.358369494917593,
+  "score_components": {
+    "opposite_sign": 0.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 3.358369494917592,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Air temperature seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "horn-of-africa",
+              "label": "Horn of Africa"
+            },
+            {
+              "option_id": "western-europe",
+              "label": "Western Europe"
+            }
+          ],
+          "answer_option_id": "western-europe",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "horn-of-africa",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "western-europe",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Horn of Africa: 0.05 \u00b0C/decade (95% interval -0.088 to 0.189). Western Europe: 0.516 \u00b0C/decade (95% interval 0.265 to 0.767). Western Europe is changing faster. Evidence label for Horn of Africa: Not enough evidence yet. Evidence label for Western Europe: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "western-europe",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "western-europe",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

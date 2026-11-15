@@ -1,0 +1,245 @@
+{
+  "discovery_id": "arabian-peninsula--eastern-china",
+  "region_ids": [
+    "arabian-peninsula",
+    "eastern-china"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 2.3848212183784647,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            1.4113075029332787,
+            3.3583349338236506
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 2.3848212183784647,
+              "p_value": 6.865321436307967e-09,
+              "r_squared": 0.10671278096144277
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 2.388616506775773,
+              "p_value": 7.065617778693068e-05
+            },
+            "robust": {
+              "slope_per_decade": 1.2965623525924213,
+              "p_value": 1.276908712551478e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": 1.151390297925308
+            },
+            "mann_kendall": {
+              "tau": 0.1940691192865106,
+              "p_value": 5.3640915014667e-07
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2023-01",
+              "slope_per_decade": 2.120525625126877,
+              "p_value": 9.087028556835505e-09
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.8556865462329033e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.20795644603107113,
+            "effective_sample_size": 196.70665028643486
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "eastern-china",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 9.695419046628562,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            4.334106176792668,
+            15.056731916464456
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 9.695419046628562,
+              "p_value": 3.133006396036014e-05,
+              "r_squared": 0.05660442451631593
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 9.71084867763446,
+              "p_value": 0.002993818635516538
+            },
+            "robust": {
+              "slope_per_decade": 7.942398883407929,
+              "p_value": 6.680424147299304e-05
+            },
+            "theil_sen": {
+              "slope_per_decade": 7.608595601067311
+            },
+            "mann_kendall": {
+              "tau": 0.13997770345596433,
+              "p_value": 0.0002996212089490406
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2020-07",
+              "slope_per_decade": 9.015052283310046,
+              "p_value": 6.190801605669634e-05
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0021309742609897015,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.16909075679727809,
+            "effective_sample_size": 213.21935145881986
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 2.023422138005038,
+  "score_components": {
+    "opposite_sign": 0.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 2.023422138005038,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Precipitation is rising in both of these places. Why would it change so much faster in one of them?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "arabian-peninsula",
+              "label": "Arabian Peninsula"
+            },
+            {
+              "option_id": "eastern-china",
+              "label": "Eastern China"
+            }
+          ],
+          "answer_option_id": "eastern-china",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "arabian-peninsula",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "eastern-china",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Arabian Peninsula: 2.385 mm/month/decade (95% interval 1.411 to 3.358). Eastern China: 9.695 mm/month/decade (95% interval 4.334 to 15.057). Eastern China is changing faster. Evidence label for Arabian Peninsula: Strong evidence. Evidence label for Eastern China: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "eastern-china",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

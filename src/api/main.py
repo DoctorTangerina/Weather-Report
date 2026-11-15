@@ -41,7 +41,7 @@ from .acquisition import AcquisitionUnavailable, acquire_series
 from .results import example_response, select_example, usable
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(ROOT / "data" / "stub")))
+DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(ROOT / "data" / "seed")))
 
 # The catalog is configuration rather than a result set, so it does not move
 # when DATA_DIR points at a different set of results.

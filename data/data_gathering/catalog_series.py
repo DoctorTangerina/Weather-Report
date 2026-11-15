@@ -71,13 +71,40 @@ def get_catalog_series(region_id: str, variable_id: str,
     has no land mask, or the file's units cannot be reported in catalog units.
     A series that is merely too incomplete is returned, flagged as excluded.
     """
+    result = get_catalog_series_many([region_id], variable_id, period,
+                                     catalog_path=catalog_path, config_path=config_path)[region_id]
+    if isinstance(result, SeriesSelectionError):
+        raise result
+    return result
+
+
+def get_catalog_series_many(region_ids: list[str], variable_id: str,
+                            period: Period | Mapping[str, str] = DEFAULT_PERIOD, *,
+                            catalog_path: Path = DEFAULT_CATALOG,
+                            config_path: Path = DEFAULT_CONFIG, on_file=None) -> dict:
+    """`get_catalog_series` for several Regions of one Variable, reading each file once.
+
+    Each Region's value is its series, or the SeriesSelectionError that
+    `get_catalog_series` would have raised for it. A problem with the Variable,
+    the period or the data as a whole is raised, as it would be for one Region.
+    `on_file(done, total, path)` is called after each file is read.
+    """
     catalog = _load_catalog(catalog_path)
-    region = _find(catalog["regions"], "region_id", region_id)
     variable = _find(catalog["variables"], "variable_id", variable_id)
-    if region is None or variable is None:
+    if variable is None:
         raise SeriesSelectionError("not_in_catalog", "Choose a Region and a Variable from the catalogs.")
-    if variable_id not in region["variable_ids"]:
-        raise SeriesSelectionError("variable_not_offered_for_region", "The catalog does not offer this Variable for this Region.")
+    results: dict = {}
+    regions = {}
+    for region_id in region_ids:
+        region = _find(catalog["regions"], "region_id", region_id)
+        if region is None:
+            results[region_id] = SeriesSelectionError("not_in_catalog", "Choose a Region and a Variable from the catalogs.")
+        elif variable_id not in region["variable_ids"]:
+            results[region_id] = SeriesSelectionError("variable_not_offered_for_region", "The catalog does not offer this Variable for this Region.")
+        else:
+            regions[region_id] = region
+    if not regions:
+        return results
     selected = period if isinstance(period, Period) else _period(period)
     months = _months(selected)
 
@@ -85,9 +112,22 @@ def get_catalog_series(region_id: str, variable_id: str,
     entry = (configuration.get("CATALOG_SERIES") or {}).get(variable_id, {})
     field = entry.get("variable", variable["source"]["variable"])
     window = TimeWindow.create(selected.start, selected.end)
-    native = open_source(config_path).select(
-        Bbox(**region["bbox"]), field, window, entry.get("dataset_id"))
+    natives = open_source(config_path).select_many(
+        {region_id: Bbox(**region["bbox"]) for region_id, region in regions.items()},
+        field, window, entry.get("dataset_id"), on_file)
 
+    for region_id, native in natives.items():
+        try:
+            if isinstance(native, SeriesSelectionError):
+                raise native
+            results[region_id] = _series(region_id, variable, native, entry, selected, window,
+                                         months, catalog["engine_version"])
+        except SeriesSelectionError as error:
+            results[region_id] = error
+    return {region_id: results[region_id] for region_id in region_ids}
+
+
+def _series(region_id, variable, native, entry, selected, window, months, engine_version) -> dict:
     land_only = bool(variable["land_only"] or native.land_only)
     if variable["land_only"] and not native.land_only:
         raise SeriesSelectionError("land_mask_unavailable", "This land-only Variable has no configured land mask in the acquired data.")
@@ -108,13 +148,13 @@ def get_catalog_series(region_id: str, variable_id: str,
         raise SeriesSelectionError("land_mask_unavailable", "This Variable requires verified land-mask metadata before its series can be returned.") from None
     return {
         "region_id": region_id,
-        "variable_id": variable_id,
+        "variable_id": variable["variable_id"],
         "period": {"start": selected.start, "end": selected.end},
         "units": variable["units"],
         "values": monthly if quality.included else [None] * len(monthly),
         "quality": {**asdict(quality), "exclusions": list(quality.exclusions)},
         "source": dict(variable["source"]),
-        "engine_version": catalog["engine_version"],
+        "engine_version": engine_version,
     }
 
 
@@ -180,30 +220,43 @@ def _units(text: str) -> object:
 def build_series_files(region_ids: list[str], variable_ids: list[str],
                        period: Period | Mapping[str, str], output_dir: Path, *,
                        catalog_path: Path = DEFAULT_CATALOG,
-                       config_path: Path = DEFAULT_CONFIG) -> list[dict]:
+                       config_path: Path = DEFAULT_CONFIG,
+                       progress: Callable[[str], None] | None = None) -> list[dict]:
     """Write one series file per Region and Variable and report each outcome.
 
     Files are named `<region>__<variable>.json`, like the committed stub set.
-    A series the data cannot provide is reported and skipped, not fatal.
+    A series the data cannot provide is reported and skipped, not fatal. Each
+    Variable's files are read once for all its Regions. `progress`, if given, is
+    called with a line of text as each file is read and as each series is
+    finished. The report is ordered by Region, then Variable.
     """
     output_dir = Path(output_dir)
-    report = []
-    for region_id in region_ids:
-        for variable_id in variable_ids:
+    say = progress or (lambda text: None)
+    rows: dict[tuple[str, str], dict] = {}
+    for variable_id in variable_ids:
+        say(f"{variable_id}: reading the files for {len(region_ids)} Regions")
+        try:
+            results = get_catalog_series_many(
+                region_ids, variable_id, period, catalog_path=catalog_path,
+                config_path=config_path,
+                on_file=lambda done, total, path, v=variable_id: (
+                    say(f"{v}: file {done}/{total}") if done in (1, total) or done % 25 == 0 else None))
+        except SeriesSelectionError as error:
+            results = dict.fromkeys(region_ids, error)
+        for region_id in region_ids:
             row = {"region_id": region_id, "variable_id": variable_id}
-            try:
-                series = get_catalog_series(region_id, variable_id, period,
-                                            catalog_path=catalog_path, config_path=config_path)
-            except SeriesSelectionError as error:
-                report.append({**row, "status": error.code})
-                continue
-            output_dir.mkdir(parents=True, exist_ok=True)
-            (output_dir / f"{region_id}__{variable_id}.json").write_text(
-                json.dumps(series, indent=2, allow_nan=False) + "\n", encoding="utf-8")
-            quality = series["quality"]
-            report.append({**row, "status": "included" if quality["included"]
+            result = results[region_id]
+            if isinstance(result, SeriesSelectionError):
+                row["status"] = result.code
+            else:
+                output_dir.mkdir(parents=True, exist_ok=True)
+                (output_dir / f"{region_id}__{variable_id}.json").write_text(
+                    json.dumps(result, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+                quality = result["quality"]
+                row.update(status="included" if quality["included"]
                            else "excluded: " + ", ".join(quality["exclusions"]),
-                           "missing_fraction": quality["missing_fraction"],
-                           "valid_land_fraction": quality["valid_land_fraction"]})
-    return report
-
+                           missing_fraction=quality["missing_fraction"],
+                           valid_land_fraction=quality["valid_land_fraction"])
+            rows[region_id, variable_id] = row
+            say(f"{region_id} {variable_id}: {row['status']}")
+    return [rows[region_id, variable_id] for region_id in region_ids for variable_id in variable_ids]

@@ -1,0 +1,414 @@
+{
+  "discovery_id": "arabian-peninsula--sahel",
+  "region_ids": [
+    "arabian-peninsula",
+    "sahel"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.30987413692679927,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            0.16344813068593947,
+            0.4563001431676591
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.30987413692679927,
+              "p_value": 2.621115580856786e-07,
+              "r_squared": 0.08525472215239878
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.31036728153128307,
+              "p_value": 0.00034896583684417937
+            },
+            "robust": {
+              "slope_per_decade": 0.3340879484736433,
+              "p_value": 2.0878320950822857e-10
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.3262770388428665
+            },
+            "mann_kendall": {
+              "tau": 0.2188628762541806,
+              "p_value": 1.574575313012217e-08
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2001-12",
+              "slope_per_decade": 0.3286562284708084,
+              "p_value": 2.92570127768077e-08
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0002705483192734049,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.2288307337792268,
+            "effective_sample_size": 188.26903779881917
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.20447317968014822,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.40415434909646974,
+            -0.004792010263826724
+          ],
+          "direction": "falling",
+          "evidence_label": "Some evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.20447317968014822,
+              "p_value": 0.002854591794940824,
+              "r_squared": 0.029466726514822097
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.20479858549271618,
+              "p_value": 0.03790501059302652
+            },
+            "robust": {
+              "slope_per_decade": -0.21552026498137905,
+              "p_value": 0.00041133076991028625
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.20431623840677637
+            },
+            "mann_kendall": {
+              "tau": -0.11727982162764772,
+              "p_value": 0.0024508829882422412
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-12",
+              "slope_per_decade": -0.19814034762586097,
+              "p_value": 0.003267178022035009
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.08374933895337394,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.3761282001870735,
+            "effective_sample_size": 136.0058895082848
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "precipitation",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 2.3848212183784647,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            1.4113075029332787,
+            3.3583349338236506
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 2.3848212183784647,
+              "p_value": 6.865321436307967e-09,
+              "r_squared": 0.10671278096144277
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 2.388616506775773,
+              "p_value": 7.065617778693068e-05
+            },
+            "robust": {
+              "slope_per_decade": 1.2965623525924213,
+              "p_value": 1.276908712551478e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": 1.151390297925308
+            },
+            "mann_kendall": {
+              "tau": 0.1940691192865106,
+              "p_value": 5.3640915014667e-07
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2023-01",
+              "slope_per_decade": 2.120525625126877,
+              "p_value": 9.087028556835505e-09
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.8556865462329033e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.20795644603107113,
+            "effective_sample_size": 196.70665028643486
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 10.814711515468218,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            5.840092136515305,
+            15.78933089442113
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 10.814711515468218,
+              "p_value": 1.3961298110602825e-14,
+              "r_squared": 0.18054687087874358
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 10.831922427891548,
+              "p_value": 7.207046483469588e-07
+            },
+            "robust": {
+              "slope_per_decade": 4.455578408500535,
+              "p_value": 1.3955248148514243e-08
+            },
+            "theil_sen": {
+              "slope_per_decade": 2.347067498039511
+            },
+            "mann_kendall": {
+              "tau": 0.2568561872909699,
+              "p_value": 3.2538105255045655e-11
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2024-08",
+              "slope_per_decade": 10.080666376405583,
+              "p_value": 4.214411691098671e-14
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0002705483192734049,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5567609767029273,
+            "effective_sample_size": 85.41562190924346
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [
+    {
+      "series": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "temperature"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "temperature"
+        }
+      ],
+      "correlation": 0.3102691069674352,
+      "p_value": 4.90505922179511e-07,
+      "adjusted_p_value": 3.7063853744689304e-05,
+      "significant_after_correction": true
+    }
+  ],
+  "score": 127.18104215999576,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 2.1810421599957515,
+    "mirror": 5.0
+  },
+  "evidence_label": "Some evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Air temperature is rising in one of these places and falling in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "arabian-peninsula",
+              "label": "Arabian Peninsula"
+            },
+            {
+              "option_id": "sahel",
+              "label": "Sahel"
+            }
+          ],
+          "answer_option_id": "arabian-peninsula",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "arabian-peninsula",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "sahel",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Arabian Peninsula: 0.31 \u00b0C/decade (95% interval 0.163 to 0.456). Sahel: -0.204 \u00b0C/decade (95% interval -0.404 to -0.005). Arabian Peninsula is changing faster. Evidence label for Arabian Peninsula: Strong evidence. Evidence label for Sahel: Some evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Some evidence.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}
