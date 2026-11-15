@@ -1,5 +1,6 @@
 """BS-009 (#13): live acquisition and fallback at the agreed HTTP seam."""
 
+import pytest
 from fastapi.testclient import TestClient
 
 from api import main
@@ -74,9 +75,6 @@ def test_bs009_live_success_is_reused_after_api_store_restart(
         second = client.get("/api/series", params=params)
     assert second.json() == {"data": payload, "notice": None, "provenance": "cache"}
     assert "server-only-test-token" not in second.text
-
-
-import pytest
 
 
 @pytest.mark.parametrize(

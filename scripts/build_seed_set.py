@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
-from engine import (
+from engine import (  # noqa: E402
     Period,
     Series,
     compute_seed_set,

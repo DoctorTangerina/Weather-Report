@@ -6,7 +6,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api import main
-from data.data_gathering.tests.test_catalog_series import make_setup
+
+# The acquisition fixtures read NetCDF files. netCDF4 ships with the `api`
+# extra; without it, skip this file with a reason instead of aborting the run.
+pytest.importorskip("netCDF4", reason="needs netCDF4: pip install -e '.[api,dev]'")
+
+from data.data_gathering.tests.test_catalog_series import make_setup  # noqa: E402
 from engine import ENGINE_VERSION, JsonResultStore, load_catalog
 
 

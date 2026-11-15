@@ -227,3 +227,33 @@ def test_method_citation_names_its_authors_year_and_venue(catalog):
     citation = catalog.method_citation
     for part in ("Acker", "2009", "SeaWiFS", "EARSeL eProceedings"):
         assert part in citation, part
+
+
+def test_the_engine_cites_the_same_method_paper_as_the_catalog(catalog):
+    """The engine builds Trends without the catalog, so it keeps its own copy of
+    the citation. A stale copy reached all 264 seed-set Discoveries once."""
+    from engine.trend import METHOD_CITATION
+
+    assert METHOD_CITATION == catalog.method_citation
+
+
+def test_every_stored_result_cites_the_catalog_method_paper(catalog):
+    data = ROOT / "data"
+    for path in [*data.glob("seed/**/*.json"), *data.glob("stub/**/*.json")]:
+        text = path.read_text(encoding="utf-8")
+        if '"method_citation"' not in text:
+            continue
+        for found in _citations(json.loads(text)):
+            assert found == catalog.method_citation, path.relative_to(ROOT)
+
+
+def _citations(node):
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "method_citation":
+                yield value
+            else:
+                yield from _citations(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _citations(item)

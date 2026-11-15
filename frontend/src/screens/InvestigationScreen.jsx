@@ -11,20 +11,23 @@ const EVIDENCE_CAVEAT = {
     'Evidence label: Not enough evidence yet. The data cannot yet tell this difference apart from chance.',
 }
 
-export default function InvestigationScreen({ discovery, catalog, highlights = [], onBack, stepIndex, onStepChange, loading, responses, substituted, error, timestamp }) {
+export default function InvestigationScreen({ discovery, catalog, highlights = [], onBack, stepIndex, onStepChange, loading, responses = [], substituted = false, error, timestamp }) {
   const [guess, setGuess] = useState(null)
 
   const [predict, check, reason] = discovery.narrative.investigation.steps
   const caveat = EVIDENCE_CAVEAT[discovery.evidence_label]
 
-  // The service could not compute these series and served other preloaded ones
-  // (#13): they cannot answer this investigation, so show them as examples only.
-  if (substituted) {
+  // #13: when the live fetch fails, the API may return different stored series.
+  // Those cannot answer this investigation, so it does not start (nor while the
+  // series are still loading, or after an error).
+  if (loading || error || substituted) {
     return (
       <section>
         <button className="link" onClick={onBack}>← Back</button>
-        <h2>Preloaded examples</h2>
-        <p role="alert" className="notice">These examples cannot answer the original investigation.</p>
+        <h2>{substituted ? 'Preloaded examples' : 'Become a Detective'}</h2>
+        {loading && <p className="muted" role="status">Loading the series…</p>}
+        {error && <p className="error" role="alert">{error.message}</p>}
+        {substituted && <p role="alert" className="notice">These examples cannot answer the original investigation.</p>}
         <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
       </section>
     )
@@ -77,10 +80,8 @@ export default function InvestigationScreen({ discovery, catalog, highlights = [
           </p>
           <p>{check.comparison}</p>
 
-          {error && <p className="error" role="alert">{error.message}</p>}
-          {loading && <p className="muted" role="status">Loading the series…</p>}
           <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
-          {!loading && !error && <p className="muted">Each chart has its own vertical scale. Use the rates above to compare how fast the Regions are changing.</p>}
+          <p className="muted">Each chart has its own vertical scale. Use the rates above to compare how fast the Regions are changing.</p>
 
           <button onClick={() => onStepChange(2)}>Why might this happen?</button>
         </div>

@@ -31,6 +31,8 @@ class ResultStore(Protocol):
 
     def all_series(self) -> list[dict[str, Any]]: ...
 
+    def available_series(self) -> list[dict[str, Any]]: ...
+
     def save_series(self, payload: dict[str, Any]) -> None: ...
 
     def available_series(self) -> list[dict[str, Any]]: ...
@@ -71,6 +73,18 @@ class JsonResultStore:
 
     def all_series(self) -> list[dict[str, Any]]:
         return list(self._series.values())
+
+    def available_series(self) -> list[dict[str, Any]]:
+        """Which Region-Variable series this store holds, without their values."""
+        return [
+            {
+                "region_id": region_id,
+                "variable_id": variable_id,
+                "period": {"start": start, "end": end},
+            }
+            for region_id, variable_id, start, end, version in sorted(self._series)
+            if version == self._engine_version
+        ]
 
     def save_series(self, payload: dict[str, Any]) -> None:
         """Publish a complete cache entry atomically, then update this process."""

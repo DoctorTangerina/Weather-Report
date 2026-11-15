@@ -19,8 +19,9 @@ export default function Explorer({
   highlights,
   trends,
 }) {
-  // Until the seed set (#12) lands, only a few Regions have stored series. Mark
-  // the rest for the chosen Variable instead of letting a student hit a blank.
+
+  // Not every Region has a stored series for every Variable. Mark the missing
+  // ones for the chosen Variable instead of letting a student hit a blank.
   const label = (item) =>
     variable && !hasData(item.region_id, variable.variable_id)
       ? `${item.name} (no data yet)`

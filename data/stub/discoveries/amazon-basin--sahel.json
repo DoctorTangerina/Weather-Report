@@ -73,7 +73,7 @@
             "variable": "synthetic",
             "url": null
           },
-          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
           "engine_version": "0.1.0"
         },
         {
@@ -136,7 +136,7 @@
             "variable": "synthetic",
             "url": null
           },
-          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
           "engine_version": "0.1.0"
         }
       ]
@@ -205,7 +205,7 @@
             "variable": "synthetic",
             "url": null
           },
-          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
           "engine_version": "0.1.0"
         },
         {
@@ -268,7 +268,7 @@
             "variable": "synthetic",
             "url": null
           },
-          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
           "engine_version": "0.1.0"
         }
       ]
@@ -387,7 +387,7 @@
         }
       ],
       "statistics_summary": "Both series cover 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave the rate and its 95% interval. The fit was corrected for serial correlation and for testing 96 series at a false-discovery rate of 0.05.",
-      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
     }
   },
   "engine_version": "0.1.0"

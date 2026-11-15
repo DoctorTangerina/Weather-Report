@@ -68,10 +68,7 @@ PERIOD = Period(start="2000-01", end="2024-12")
 MONTHS = 300
 FAMILY_SIZE = 96
 
-METHOD_CITATION = (
-    "Time-series analysis of remotely sensed SeaWiFS chlorophyll in "
-    "river-influenced coastal regions (see docs/challenge-brief.md)."
-)
+METHOD_CITATION = load_catalog(ROOT / "data" / "catalog.json").method_citation
 
 STUB_SOURCE = Source(
     provider="Synthetic (stub)",

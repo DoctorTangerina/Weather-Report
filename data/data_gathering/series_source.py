@@ -130,7 +130,8 @@ class NetCDFSeriesSource:
             mask_rule = rule.get("land_mask")
             if not isinstance(mask_rule, dict) or "variable" not in mask_rule:
                 raise SeriesSelectionError("land_mask_unavailable", "This land-only Variable needs a configured land mask before it can be returned.")
-            mask_provider = lambda record, available, geo: self._land_mask(mask_rule, available, geo)
+            def mask_provider(record, available, geo):
+                return self._land_mask(mask_rule, available, geo)
         normalized = [{**record, "dataset": identifier} for record in records]
         try:
             extracted = extract_many(

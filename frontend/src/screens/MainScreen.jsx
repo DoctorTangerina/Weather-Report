@@ -85,7 +85,10 @@ export default function MainScreen({
     [exploring, region, secondRegion],
   )
 
-  const discoverySeries = useSeries(refs, showing || investigating ? discovery.period : undefined)
+  const discoverySeries = useSeries(
+    refs,
+    showing || investigating ? discovery.period : undefined,
+  )
   // Wait for the list of stored series before comparing, so the first request
   // is the data-backed default pair rather than whatever the catalog lists first.
   const comparing = exploring && available.settled
@@ -96,12 +99,19 @@ export default function MainScreen({
   )
   const { loading: seriesLoading, series, notice: seriesNotice, error: seriesError } =
     exploring ? comparison : discoverySeries
-  const displayedHighlights = (showing || investigating) && discoverySeries.substituted
-    ? [...new Set(series.map((item) => item.region_id))].map((id, index) => ({
-      region: catalog.regions.find((item) => item.region_id === id),
-      color: REGION_COLORS[index % REGION_COLORS.length],
-    })).filter((item) => item.region)
-    : highlights
+  // #13: when the API substitutes stored examples for the requested series, the
+  // globe shows the Regions actually charted, not the ones that were asked for.
+  const displayedHighlights =
+    (showing || investigating) && discoverySeries.substituted
+      ? [...new Set(series.map((item) => item.region_id))]
+          .map((id, index) => ({
+            region: catalog.regions.find((item) => item.region_id === id),
+            color: REGION_COLORS[index % REGION_COLORS.length],
+          }))
+          .filter((item) => item.region)
+      : highlights
+  // Notices for a Discovery's series are shown beside each chart (SeriesResults),
+  // so only the Explorer's notice goes in the banner.
   const banner = notice ?? (exploring ? seriesNotice : null)
   const timelineKey =
     discovery && !exploring
