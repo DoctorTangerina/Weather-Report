@@ -412,6 +412,21 @@ button.experience-quiet:hover { box-shadow: 0 6px 18px #16202a14; }
 .explore-period input:focus-visible, .explore-variable input:focus-visible { outline: 3px solid #47b5d7; outline-offset: 2px; }
 .explore .notice { margin: 0.75rem 0 0; }
 .explore-charts { margin-top: 0.5rem; }
+
+/* Selected areas (#79): drawn in their own colour, never a Region's */
+.globe-draw { cursor: crosshair; touch-action: none; }
+.area-panel { margin-top: 1.25rem; }
+.area-panel h4 { margin: 0 0 0.25rem; font-size: 0.92rem; }
+.area-panel .actions { align-items: center; }
+.area-edges { margin-top: 0.75rem; font-size: 0.88rem; }
+.area-edges summary { cursor: pointer; color: var(--accent); }
+.area-edges form { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: 0.5rem; align-items: end; margin-top: 0.5rem; }
+.area-edges label { display: grid; gap: 0.2rem; font-weight: 600; font-size: 0.82rem; }
+.area-edges input { min-width: 0; padding: 0.4rem; border: 1px solid #aab8c4; border-radius: 0.3rem; font: inherit; }
+.area-edges form button { grid-column: 1 / -1; justify-self: start; }
+.area-summary { margin-top: 0.9rem; padding: 0.75rem; border: 1px solid #e7c3dd; border-radius: 0.4rem; background: #fdf4fa; }
+.area-summary p { margin: 0 0 0.6rem; }
+.area-swatch { display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.4rem; border-radius: 2px; background: #d65db1; }
 /* With no 12-month mean drawn over it, the monthly line is the chart. */
 .explore .chart-monthly { stroke-width: 1.6; opacity: 1; stroke-linejoin: round; }
 

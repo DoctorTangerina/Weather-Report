@@ -24,6 +24,10 @@ readiness, runs the browser tests, and stops the servers it started:
 npm run test:integration
 ```
 
+`npm run test:areas` runs the Selected-area suite (`integration-areas/`, #79) the
+same way, with `tests/explore_area_app.py` serving synthetic global grids in
+place of NASA.
+
 The runner uses API port **8765** and frontend port **4174**, keeping the normal
 development ports separate. Those test ports must be free; the suite refuses to
 reuse existing servers so it cannot silently test the wrong configuration.

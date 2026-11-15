@@ -4,8 +4,10 @@ import ExploreMyWorld, { ExploreEntry } from '../components/ExploreMyWorld.jsx'
 import Explorer from '../components/Explorer.jsx'
 import RegionGlobe from '../components/Globe.jsx'
 import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
+import SelectedAreaPanel from '../components/SelectedAreaPanel.jsx'
 import Timeline from '../components/Timeline.jsx'
-import { REGION_COLORS } from '../palette.js'
+import { AREA_COLOR, REGION_COLORS } from '../palette.js'
+import { describeArea } from '../selectedArea.js'
 import useAvailableSeries from '../useAvailableSeries.js'
 import useComparison from '../useComparison.js'
 import useExploreView from '../useExploreView.js'
@@ -37,6 +39,9 @@ export default function MainScreen({
   const [secondRegionId, setSecondRegionId] = useState('')
   const [variableId, setVariableId] = useState('')
   const [investigationStep, setInvestigationStep] = useState(0)
+  // At most one Selected area, kept only in memory: a reload clears it (#79).
+  const [selectedArea, setSelectedArea] = useState(null)
+  const [drawingArea, setDrawingArea] = useState(false)
   const previousHighlights = useRef(NONE)
 
   const exploring = phase === 'welcome' && Boolean(catalog)
@@ -44,6 +49,10 @@ export default function MainScreen({
   const investigating = phase === 'investigation' && Boolean(discovery)
   const exploredRegion =
     phase === 'explore' ? catalog?.regions.find((item) => item.region_id === exploreRegionId) : null
+  // onExplore(null) opens the Selected area rather than a Region.
+  const exploredArea =
+    phase === 'explore' && exploreRegionId === null && catalog ? selectedArea : null
+  const exploringPlace = Boolean(exploredRegion || exploredArea)
 
   // Every investigation starts at Predict, however the previous one ended.
   useEffect(() => {
@@ -51,7 +60,7 @@ export default function MainScreen({
   }, [investigating, discovery?.discovery_id])
 
   const available = useAvailableSeries()
-  const exploreView = useExploreView(catalog, exploredRegion, available)
+  const exploreView = useExploreView(catalog, exploredRegion, available, exploredArea)
   const exploreHighlights = useMemo(
     () => (exploredRegion ? [{ region: exploredRegion, color: REGION_COLORS[0] }] : NONE),
     [exploredRegion],
@@ -124,24 +133,35 @@ export default function MainScreen({
   const globeHighlights =
     showing || investigating ? displayedHighlights : exploredRegion ? exploreHighlights : explored
   // Catalog Regions are clickable where a student is choosing what to look at.
-  const pickable = exploring || Boolean(exploredRegion)
+  const pickable = exploring || exploringPlace
   useEffect(() => {
     if (phase !== 'drawing') previousHighlights.current = globeHighlights
   }, [phase, globeHighlights])
   // Notices for a Discovery's series are shown beside each chart (SeriesResults),
   // so only the Explorer's notice goes in the banner.
   const banner = notice ?? (exploring ? seriesNotice : null)
-  const timelineKey = exploredRegion
-    ? `explore/${exploredRegion.region_id}/${exploreView.chosen}/${exploreView.start}/${exploreView.end}`
+  const timelineKey = exploringPlace
+    ? `explore/${exploredRegion?.region_id ?? describeArea(exploredArea)}/${exploreView.chosen}/${exploreView.start}/${exploreView.end}`
     : discovery && !exploring
       ? `${phase}/${discovery.discovery_id}`
       : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
 
   // Before the student predicts, nothing may hint at the answer: the timeline
   // stays empty until the Check step shows the charts (BS-006).
-  const timelineSeries = exploredRegion
+  const timelineSeries = exploringPlace
     ? exploreView.loading ? NONE : exploreSeries
     : seriesLoading || (investigating && investigationStep !== 1) ? NONE : series
+
+  const areaPanel = (
+    <SelectedAreaPanel
+      area={selectedArea}
+      drawing={drawingArea}
+      onDraw={() => setDrawingArea(true)}
+      onStopDrawing={() => setDrawingArea(false)}
+      onArea={(rectangle) => setSelectedArea([rectangle])}
+      onExplore={exploredArea ? undefined : () => onExplore(null)}
+    />
+  )
 
   return (
     <div className="main-screen">
@@ -162,9 +182,19 @@ export default function MainScreen({
           highlights={phase === 'drawing' ? previousHighlights.current : globeHighlights}
           regions={pickable ? catalog.regions : undefined}
           onRegionClick={pickable ? onExplore : undefined}
+          selectedArea={pickable ? selectedArea : null}
+          onAreaClick={pickable ? () => onExplore(null) : undefined}
+          drawing={pickable && drawingArea}
+          onDrawn={(rectangle) => {
+            setSelectedArea([rectangle])
+            setDrawingArea(false)
+          }}
+          onDrawCancel={() => setDrawingArea(false)}
         />
         <p className="globe-hint">
-          {pickable && 'Click a Region to explore it · '}Drag to turn · Scroll or pinch to zoom
+          {pickable && drawingArea
+            ? 'Drag from one corner to the opposite corner · Escape to stop'
+            : `${pickable ? 'Click a Region to explore it · ' : ''}Drag to turn · Scroll or pinch to zoom`}
         </p>
       </section>
 
@@ -199,7 +229,9 @@ export default function MainScreen({
               onSurprise={onSurprise}
               onDetective={() => onDetective([region, secondRegion].filter(Boolean).map((item) => item.region_id))}
             />
-            <ExploreEntry catalog={catalog} onExplore={onExplore} />
+            <ExploreEntry catalog={catalog} onExplore={onExplore}>
+              {areaPanel}
+            </ExploreEntry>
             <Explorer
               catalog={catalog}
               region={region}
@@ -219,15 +251,22 @@ export default function MainScreen({
             />
           </>
         )}
-        {exploredRegion && (
+        {exploringPlace && (
           <ExploreMyWorld
             catalog={catalog}
-            region={exploredRegion}
+            title={exploredRegion?.name ?? 'Selected area'}
+            description={
+              exploredRegion?.description ??
+              `${describeArea(exploredArea)}. It lasts until you reload the page.`
+            }
+            noun={exploredRegion ? 'Region' : 'area'}
             view={exploreView}
-            color={REGION_COLORS[0]}
+            color={exploredRegion ? REGION_COLORS[0] : AREA_COLOR}
             timestamp={timestamp}
             onBack={onCloseExplore}
-          />
+          >
+            {areaPanel}
+          </ExploreMyWorld>
         )}
         {phase === 'drawing' && <Drawing />}
         {phase === 'complete' && <SessionComplete seen={seen} onNewSession={onNewSession} />}
@@ -264,11 +303,11 @@ export default function MainScreen({
         )}
       </aside>
 
-      {(showing || exploring || investigating || exploredRegion || phase === 'drawing') && (
+      {(showing || exploring || investigating || exploringPlace || phase === 'drawing') && (
         <Timeline
           key={timelineKey}
           series={timelineSeries}
-          loading={exploredRegion ? exploreView.loading : seriesLoading}
+          loading={exploringPlace ? exploreView.loading : seriesLoading}
           onTimestampChange={setTimestamp}
         />
       )}

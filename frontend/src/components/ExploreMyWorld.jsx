@@ -1,13 +1,14 @@
 import { FIRST_MONTH, MAX_VARIABLES } from '../useExploreView.js'
 import Chart from './Chart.jsx'
 
-const EXCLUSIONS = {
-  too_many_missing_months: 'more than one month in five has no value',
-  insufficient_land_fraction: 'less than half of the Region is valid land',
-}
+const exclusion = (code, noun) =>
+  ({
+    too_many_missing_months: 'more than one month in five has no value',
+    insufficient_land_fraction: `less than half of the ${noun} is valid land`,
+  })[code] ?? code
 
 // The keyboard route into Explore My World, beside clicking a Region on the globe.
-export function ExploreEntry({ catalog, onExplore }) {
+export function ExploreEntry({ catalog, onExplore, children }) {
   return (
     <section className="explore-entry" aria-labelledby="explore-entry-heading">
       <h3 id="explore-entry-heading">Explore My World</h3>
@@ -30,11 +31,24 @@ export function ExploreEntry({ catalog, onExplore }) {
           ))}
         </select>
       </div>
+      {children}
     </section>
   )
 }
 
-export default function ExploreMyWorld({ catalog, region, view, color, timestamp, onBack }) {
+// The same view for a catalog Region and a Selected area (BS-005); `noun` names
+// which one it is in the text ("Region" or "area").
+export default function ExploreMyWorld({
+  catalog,
+  title,
+  description,
+  noun,
+  view,
+  color,
+  timestamp,
+  onBack,
+  children,
+}) {
   const name = (variableId) =>
     catalog.variables.find((item) => item.variable_id === variableId)?.name ?? variableId
 
@@ -42,8 +56,8 @@ export default function ExploreMyWorld({ catalog, region, view, color, timestamp
     <section className="explore" aria-labelledby="explore-view-heading">
       <button className="link" onClick={onBack}>← Back</button>
       <p className="eyebrow">Explore My World</p>
-      <h2 id="explore-view-heading">{region.name}</h2>
-      <p className="muted">{region.description}</p>
+      <h2 id="explore-view-heading">{title}</h2>
+      <p className="muted">{description}</p>
 
       <fieldset className="explore-choices">
         <legend>Variables, up to {MAX_VARIABLES}</legend>
@@ -99,7 +113,7 @@ export default function ExploreMyWorld({ catalog, region, view, color, timestamp
         <p className="chart-note">{view.range}</p>
       )}
       <p className="chart-note">
-        Monthly values. Each is the mean over the Region, weighted by the area of each grid cell.
+        Monthly values. Each is the mean over the {noun}, weighted by the area of each grid cell.
       </p>
 
       {view.chosen.length === 0 && <p role="status">Choose at least one Variable.</p>}
@@ -108,7 +122,7 @@ export default function ExploreMyWorld({ catalog, region, view, color, timestamp
           {view.error.code === 'acquisition_failed'
             ? view.error.message
             : view.error.code === 'result_not_available'
-            ? `There is no stored data yet for ${region.name} over this period.`
+            ? `There is no stored data yet for ${title} over this period.`
             : `The Series could not be loaded: ${view.error.message}`}
         </p>
       )}
@@ -135,11 +149,12 @@ export default function ExploreMyWorld({ catalog, region, view, color, timestamp
             ) : (
               <p key={series.variable_id} className="notice">
                 {name(series.variable_id)} is excluded by the Quality gate for this period:{' '}
-                {series.quality.exclusions.map((code) => EXCLUSIONS[code] ?? code).join('; ')}.
+                {series.quality.exclusions.map((code) => exclusion(code, noun)).join('; ')}.
               </p>
             ),
           )}
       </div>
+      {children}
     </section>
   )
 }
