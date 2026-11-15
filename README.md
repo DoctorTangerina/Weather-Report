@@ -109,9 +109,9 @@ fixtures still do.
 | `GET /api/catalog` | `catalogResponse` |
 | `GET /api/series?region_id=&variable_id=&period_start=&period_end=` | `seriesResponse` |
 | `GET /api/comparison?region_a=&region_b=&variable_id=&period_start=&period_end=` | `comparisonResponse`: two computed Trends and their monthly series, in requested Region order |
-| `GET /api/explore/series?region_id=&variable_id=…&aggregation=&time_step=&period_start=&period_end=` | `exploreSeriesResponse` (200) or `exploreJobResponse` (202): Explore My World, one Series per Variable (1–5, `variable_id` repeated) for a catalog Region, or for a Selected area given as `rectangle=west,south,east,north` (repeatable) instead of `region_id`, over 2000-01 to the latest month. Only monthly means are answered so far; other Aggregations and Time steps return 501 `not_available_yet` |
+| `GET /api/explore/series?region_id=&variable_id=…&aggregation=&time_step=&period_start=&period_end=` | `exploreSeriesResponse` (200) or `exploreJobResponse` (202): Explore My World, one Series per Variable (1–5, `variable_id` repeated) for a catalog Region, or for a Selected area given as `rectangle=west,south,east,north` (repeatable) instead of `region_id`, over 2000-01 to the latest month, at a `time_step` of `3-hourly` (at most 1 year), `daily` (at most 10 years) or `monthly`. A Variable without data at the Time step is refused with 422 `variable_not_available_at_time_step` |
 | `GET /api/explore/jobs/{id}` | `exploreJobResponse`: status, progress, result or failure |
-| `GET /api/explore/options` | `exploreOptionsResponse`: latest requestable month, and the Variables a Selected area can have |
+| `GET /api/explore/options` | `exploreOptionsResponse`: latest requestable month, the Variables a Selected area can have, and each Time step's Variables and period cap |
 | `GET /api/discoveries` | `discoveryListResponse`, highest score first |
 | `GET /api/discoveries/{discovery_id}` | `discoveryResponse` |
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |
@@ -257,9 +257,22 @@ Jobs use `EARTHDATA_TOKEN`, `WEATHER_REPORT_LIVE_TIMEOUT_SECONDS` and
 `WEATHER_REPORT_CACHE_DIR` as described above. Completed Series persist in the
 existing cache without expiry; an identical request returns them without
 acquiring again. Job references live in one API process and do not survive a
-restart; run one worker (or use sticky routing). Daily/3-hourly Time steps and
-other Aggregations remain follow-up work. Discoveries and comparisons use their
-existing seed-only paths.
+restart; run one worker (or use sticky routing). Discoveries and comparisons
+use their existing seed-only paths.
+
+A daily or 3-hourly Time step (#80) is always built by a job, since the seed set
+is monthly. The job asks NASA for the native hourly (MERRA-2) or 3-hourly
+(GLDAS) grids of the period, combines each native time step's cells with the
+Aggregation, then each UTC day or 3-hour interval's values with the same
+Aggregation. A Series holds one value per Time step from the first day of its
+start month; precipitation is the total that fell in each (`mm/day`, `mm/3h`).
+The Quality gate counts missing Time steps (`too_many_missing_time_steps`) with
+the same one-in-five limit; monthly Series keep `too_many_missing_months`.
+Results are cached per Time step under `WEATHER_REPORT_CACHE_DIR/explore/<time
+step>/<aggregation>` (and `areas/<time step>/<aggregation>`). Vegetation index
+has no sub-monthly product, so `/api/explore/options` lists the Variables of
+each Time step and the view offers only those.
 
 Run the browser checks with the real API and synthetic acquisition grids:
-`cd frontend && npx playwright test --config playwright.jobs.config.js`.
+`cd frontend && npx playwright test --config playwright.jobs.config.js`, and for
+Time steps `--config playwright.time-steps.config.js`.

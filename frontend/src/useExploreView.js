@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
 import { DEFAULT_AGGREGATION } from './aggregations.js'
 import { getExploreOptions } from './api.js'
+import {
+  DEFAULT_TIME_STEP,
+  UTC_NOTE,
+  describeLimits,
+  periodLimitProblem,
+  timeStepOf,
+} from './timeSteps.js'
 import useExploreSeries from './useExploreSeries.js'
 
 export const FIRST_MONTH = '2000-01'
@@ -13,10 +20,12 @@ function addMonths(month, count) {
 }
 
 // One Explore My World view: a catalog Region (#75) or a Selected area (#79), up
-// to five Variables, one Aggregation (#78) and one period, the same for every
-// chart. A Region offers the Variables with stored data; a Selected area offers
-// those the API can fetch for any area. The API supplies the last requestable
-// month; a Region's initial period uses the seed set.
+// to five Variables, one Aggregation (#78), one Time step (#80) and one period,
+// the same for every chart. Monthly, a Region offers the Variables with stored
+// data and a Selected area those the API can fetch for any area; below a month,
+// only the Variables the API has data for at that Time step. The API supplies
+// the last requestable month and the caps; a Region's initial period uses the
+// seed set.
 export default function useExploreView(catalog, region, available, area = null) {
   const [options, setOptions] = useState(null)
   useEffect(() => {
@@ -35,12 +44,16 @@ export default function useExploreView(catalog, region, available, area = null) 
     : area
       ? catalog.variables
       : catalog.variables.filter((item) => region?.variable_ids.includes(item.variable_id))
-  const offered = candidates.filter((item) =>
-    area
-      ? options?.area_variable_ids.includes(item.variable_id)
-      : available.has(regionId, item.variable_id),
-  )
-  const unavailable = candidates.filter((item) => !offered.includes(item))
+  const steps = options?.time_steps ?? null
+  const offeredAt = (timeStep) =>
+    candidates.filter((item) => {
+      if (area && !options?.area_variable_ids.includes(item.variable_id)) return false
+      if (timeStep !== 'monthly') {
+        const step = steps?.find((entry) => entry.time_step === timeStep)
+        return Boolean(step?.variable_ids.includes(item.variable_id))
+      }
+      return area || available.has(regionId, item.variable_id)
+    })
 
   // Choices belong to one place; opening another starts from its defaults. Every
   // Selected-area Series is fetched from NASA, so its first period is one year.
@@ -50,12 +63,31 @@ export default function useExploreView(catalog, region, available, area = null) 
       ? choice
       : {
           placeKey,
-          chosen: offered.slice(0, 1).map((item) => item.variable_id),
+          chosen: offeredAt(DEFAULT_TIME_STEP).slice(0, 1).map((item) => item.variable_id),
           start: area && latest ? addMonths(latest, -11) : FIRST_MONTH,
           end: (area ? latest : available.latest) ?? '',
           aggregation: DEFAULT_AGGREGATION,
+          timeStep: DEFAULT_TIME_STEP,
+          removed: null,
         }
   const update = (change) => setChoice({ ...current, ...change })
+  const offered = offeredAt(current.timeStep)
+  const unavailable = candidates.filter((item) => !offered.includes(item))
+
+  // A Variable without data at the new Time step leaves the view, with a note (Q33).
+  const setTimeStep = (timeStep) => {
+    const next = offeredAt(timeStep).map((item) => item.variable_id)
+    const lost = candidates.filter(
+      (item) => current.chosen.includes(item.variable_id) && !next.includes(item.variable_id),
+    )
+    update({
+      timeStep,
+      chosen: current.chosen.filter((id) => next.includes(id)),
+      removed: lost.length
+        ? `${lost.map((item) => item.name).join(', ')} ${lost.length > 1 ? 'were' : 'was'} removed: ${lost.length > 1 ? 'they have' : 'it has'} no ${timeStep} data.`
+        : null,
+    })
+  }
 
   const toggle = (variableId) => {
     if (current.chosen.includes(variableId)) {
@@ -75,6 +107,8 @@ export default function useExploreView(catalog, region, available, area = null) 
     periodError = range
   } else if (current.start > current.end) {
     periodError = 'The period must start before it ends.'
+  } else {
+    periodError = periodLimitProblem(steps, current.timeStep, current.start, current.end)
   }
 
   // Charts follow the catalog's order, whatever order the Variables were chosen in.
@@ -87,6 +121,7 @@ export default function useExploreView(catalog, region, available, area = null) 
     chosen,
     periodError ? null : { start: current.start, end: current.end },
     current.aggregation,
+    current.timeStep,
   )
 
   return {
@@ -100,6 +135,12 @@ export default function useExploreView(catalog, region, available, area = null) 
     setEnd: (end) => update({ end }),
     aggregation: current.aggregation,
     setAggregation: (aggregation) => update({ aggregation }),
+    timeStep: current.timeStep,
+    timeStepLabel: timeStepOf(current.timeStep).label,
+    setTimeStep,
+    removed: current.removed,
+    utcNote: UTC_NOTE,
+    limits: describeLimits(steps),
     latest,
     range,
     periodError,
