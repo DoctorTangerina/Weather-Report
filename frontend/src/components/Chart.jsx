@@ -1,5 +1,5 @@
 import { formatNumber } from '../format.js'
-import { seriesIndexAt } from '../timeline.js'
+import { seriesIndexAt, seriesInRange } from '../timeline.js'
 
 const WIDTH = 520
 const HEIGHT = 170
@@ -58,7 +58,8 @@ function timeTicks(period, length) {
 
 // `smoothed` adds a 12-month mean drawn by the browser. Explore My World turns it
 // off: there every value on screen comes from the API (#75).
-export default function Chart({ series, label, timestamp, color, smoothed = true }) {
+export default function Chart({ series, label, timestamp, color, timeRange, smoothed = true }) {
+  series = seriesInRange(series, timeRange)
   const present = series.values.filter((value) => value !== null)
   if (present.length === 0) return <p className="muted">No data for {label}.</p>
 

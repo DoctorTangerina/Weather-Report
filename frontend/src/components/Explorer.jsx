@@ -15,9 +15,11 @@ export default function Explorer({
   error = null,
   series,
   seriesLoading,
+  timeRange,
   timestamp,
   highlights,
   trends,
+  disabled = false,
 }) {
 
   // Not every Region has a stored series for every Variable. Mark the missing
@@ -35,6 +37,7 @@ export default function Explorer({
         <label htmlFor="explore-region">First Region</label>
         <select
           id="explore-region"
+          disabled={disabled}
           value={region?.region_id ?? ''}
           onChange={(event) => onRegion(event.target.value)}
         >
@@ -48,6 +51,7 @@ export default function Explorer({
         <label htmlFor="explore-second-region">Second Region</label>
         <select
           id="explore-second-region"
+          disabled={disabled}
           value={secondRegion?.region_id ?? ''}
           onChange={(event) => onSecondRegion(event.target.value)}
         >
@@ -60,7 +64,7 @@ export default function Explorer({
         <select
           id="explore-variable"
           value={variable?.variable_id ?? ''}
-          disabled={variables.length === 0}
+          disabled={disabled || variables.length === 0}
           onChange={(event) => onVariable(event.target.value)}
         >
           {variables.map((item) => (
@@ -93,7 +97,7 @@ export default function Explorer({
           <Chart
             key={`${item.region_id}-${item.variable_id}`}
             series={item}
-            timestamp={timestamp}
+            timestamp={timestamp} timeRange={timeRange}
             color={highlights.find((h) => h.region.region_id === item.region_id)?.color}
             label={catalog.regions.find((r) => r.region_id === item.region_id)?.name ?? item.region_id}
           />
