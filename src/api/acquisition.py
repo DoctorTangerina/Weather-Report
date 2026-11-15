@@ -5,12 +5,21 @@ import json
 import os
 import sys
 import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
 from engine.contracts import Period, Region, Variable
 
 from .grid_source import GridAcquisitionSource
+
+# netCDF4 preparation in injected sources must not run concurrently in this process.
+_PREPARE_LOCK = threading.Lock()
+
+
+def _prepare(source: GridAcquisitionSource, request: dict) -> Path:
+    with _PREPARE_LOCK:
+        return source.prepare(request)
 
 
 class AcquisitionUnavailable(Exception):
@@ -47,7 +56,16 @@ async def acquire_series(
             "workspace": workspace,
         }
         if source is not None:
-            request["config_path"] = str(source.prepare(request))
+            preparation = asyncio.create_task(
+                asyncio.to_thread(_prepare, source, request)
+            )
+            try:
+                config = await asyncio.shield(preparation)
+            except asyncio.CancelledError:
+                # Let preparation release its files before cleaning the workspace.
+                await asyncio.gather(preparation, return_exceptions=True)
+                raise
+            request["config_path"] = str(config)
         process = await asyncio.create_subprocess_exec(
             sys.executable,
             "-m",

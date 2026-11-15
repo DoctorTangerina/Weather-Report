@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getExploreSeries } from './api.js'
+import { ApiError, getExploreJob, getExploreSeries } from './api.js'
 
 const EMPTY = { loading: false, series: [], error: null }
 
@@ -20,15 +20,36 @@ export default function useExploreSeries(regionId, variableIds, period) {
     }
     let cancelled = false
     setState({ ...EMPTY, loading: true, key })
-    getExploreSeries(regionId, variableIds, period)
-      .then(({ data }) => {
-        if (!cancelled) setState({ ...EMPTY, series: data.series, key })
-      })
+    let timer
+    let wake
+    const wait = () => new Promise((resolve) => {
+      wake = resolve
+      timer = setTimeout(resolve, 300)
+    })
+    const load = async () => {
+      let { data } = await getExploreSeries(regionId, variableIds, period)
+      while (!cancelled && data.job) {
+        const job = data.job
+        if (job.status === 'failed') throw new ApiError(job.error.code, job.error.message)
+        if (job.status === 'succeeded') {
+          data = job.result
+          break
+        }
+        setState({ ...EMPTY, loading: true, progress: job.progress, key })
+        await wait()
+        if (cancelled) return
+        ;({ data } = await getExploreJob(job.url))
+      }
+      if (!cancelled) setState({ ...EMPTY, series: data.series, key })
+    }
+    load()
       .catch((error) => {
         if (!cancelled) setState({ ...EMPTY, error, key })
       })
     return () => {
       cancelled = true
+      clearTimeout(timer)
+      wake?.()
     }
     // `key` encodes every argument, so it is the only dependency needed.
   }, [key])
