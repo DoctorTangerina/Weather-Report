@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from itertools import pairwise
 
 from .errors import ProcessingError
+from .resampling import resample_series
 from .scaling import scale_values
 from .units import compound, conversion
 
@@ -232,7 +233,7 @@ def process_series(request: Mapping) -> dict:
     """Execute {series: {name: payload}, operations: [{id, expression, ...}]}.
 
     Each output id becomes a named input for subsequent operations. Inputs must
-    already share timestamps/calendar; alignment and resampling are separate work.
+    share timestamps/calendar for arithmetic; explicit resampling can prepare them.
     Results and recipes are JSON-compatible and no supplied object is modified.
     """
     if not isinstance(request, Mapping):
@@ -261,7 +262,7 @@ def process_series(request: Mapping) -> dict:
                 operation=index,
             )
         method = step.get("operation", "arithmetic")
-        if method not in ("arithmetic", "minmax", "zscore"):
+        if method not in ("arithmetic", "minmax", "zscore", "resample"):
             raise ProcessingError(
                 "invalid_operation", "Unsupported operation.", operation=index
             )
@@ -270,6 +271,16 @@ def process_series(request: Mapping) -> dict:
             if method == "arithmetic"
             else {"id", "operation", "input", "ddof"}
         )
+        if method == "resample":
+            allowed = {
+                "id",
+                "operation",
+                "input",
+                "source_frequency",
+                "frequency",
+                "aggregation",
+                "timezone",
+            }
         if method == "minmax":
             allowed.add("range")
         if set(step) - allowed:
@@ -297,7 +308,7 @@ def process_series(request: Mapping) -> dict:
             if not _name(step.get("input")):
                 raise ProcessingError(
                     "invalid_operation",
-                    "Scaling requires one named input.",
+                    "This operation requires one named input.",
                     operation=index,
                 )
             if method == "minmax" and "ddof" in step:
@@ -335,6 +346,7 @@ def process_series(request: Mapping) -> dict:
                 inputs=names,
             )
         step_warnings = []
+        resampled = None
         if method == "arithmetic":
             result = _evaluate(
                 tree.body,
@@ -344,6 +356,15 @@ def process_series(request: Mapping) -> dict:
                 step.get("acknowledge_unit_difference", False),
                 step_warnings,
             )
+        elif method == "resample":
+            resampled = resample_series(
+                first,
+                source_frequency=step.get("source_frequency", first.get("frequency")),
+                frequency=step.get("frequency"),
+                aggregation=step.get("aggregation"),
+                timezone=step.get("timezone", "UTC"),
+            )
+            result = _Value(resampled["values"], first["units"])
         else:
             result = _Value(
                 scale_values(
@@ -377,7 +398,9 @@ def process_series(request: Mapping) -> dict:
             "recipe": {"operations": copy.deepcopy(recipe)},
             "warnings": step_warnings,
         }
-        if method != "arithmetic":
+        if resampled is not None:
+            output.update(resampled)
+        if method in ("minmax", "zscore"):
             output["scaling"] = {"method": method}
             if method == "minmax" and "range" in step:
                 output["scaling"]["range"] = list(step["range"])

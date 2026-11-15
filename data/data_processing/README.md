@@ -1,6 +1,6 @@
 # Manual data processing
 
-Public Python methods for issue #46's arithmetic (#47) and scaling (#50). Everything in this
+Public Python methods for issue #46's arithmetic, scaling and simple resampling. Everything in this
 package is independent of the API and automatic engine. It performs no downloads
 or file reads, needs no Earthdata token, and adds no third-party dependencies.
 
@@ -101,6 +101,60 @@ response = process_series(
   method and, for Z-score, `ddof`. Inputs, provenance and ordered instructions are
   recorded in the same way as arithmetic results.
 
+## Resampling
+
+Select one input series, its current frequency, the target frequency and an
+aggregation method explicitly:
+
+```python
+response = process_series(
+    {
+        "series": {"A": hourly_series},
+        "operations": [
+            {
+                "id": "daily",
+                "operation": "resample",
+                "input": "A",
+                "source_frequency": "hour",
+                "frequency": "day",
+                "aggregation": "mean",
+            }
+        ],
+    }
+)
+daily_series = response["series"]["daily"]
+```
+
+For hourly values `[1, 5, 9]` within one day, the daily result is `5` with `mean`,
+`15` with `sum`, `1` with `min`, `9` with `max`, and `5` with `median`.
+
+- Supported frequencies: `second`, `minute`, `hour`, `day`, `month`, `year` (plural
+  spellings also work). The target must be the same or coarser; upsampling is
+  rejected. Declare the real source frequency; multiple observations in a single
+  declared source bucket produce `source_frequency_mismatch`.
+- Aggregations: `mean` (`average`/`avg`), `sum`, `min` (`minimum`), `max`
+  (`maximum`), `median`. An aggregation choice is required.
+- Buckets include their start and exclude their end. Output labels identify the
+  start as an ISO timestamp including its UTC offset. `timezone` optionally
+  chooses an IANA zone such as `America/Sao_Paulo`; the default is `UTC`.
+- Day, month and year boundaries are calendar boundaries in the chosen zone.
+  Only Gregorian calendars are supported by this simple resampling operation.
+- The output spans the first through last observation's buckets, including empty
+  buckets between them. It does not extrapolate to dates outside those bounds.
+- Missing values are ignored within a bucket; the aggregation uses valid values
+  that are present, without requiring a complete native bucket. Empty and
+  all-missing buckets return `None`, including for `sum`; no zero filling occurs.
+- Units and source quality assessments remain unchanged. Summing a rate such as
+  `mm/day` does not silently turn it into an accumulated rainfall quantity.
+- Results include `frequency` and `resampling` metadata: source/target frequency,
+  aggregation, time zone, sample counts and valid-value counts per bucket.
+  Recorded instructions support replay, and output can feed scaling or arithmetic.
+  A further resampling step may omit `source_frequency` if the input already has
+  that frequency metadata. Explicit conflicting declarations are rejected.
+
+Resample different inputs separately to a common timeline before combining them.
+This operation does not implicitly align differing coverage periods or fill gaps.
+
 ## Input requirements
 
 Each used input needs nonempty, equal-length `timestamps` and `values` lists,
@@ -109,13 +163,13 @@ NaN and infinity are rejected. Optional `quality` metadata must indicate
 `included: true` when supplied. Acquisition remains responsible for assessing
 source quality; this method never downloads, fills gaps or improves its result.
 
-Used inputs must already have the same calendar and matching, ordered, distinct
-timestamps. Standard-calendar ISO dates/times (and YYYY-MM) are compared as exact
+Inputs used together in arithmetic must have the same calendar and matching,
+ordered, distinct timestamps. Standard-calendar ISO dates/times (and YYYY-MM) are compared as exact
 UTC instants; date-only and timezone-naive input timestamps mean UTC. The first
 referenced input's timestamp labels are retained in the output. Nonstandard
 calendars require matching timestamp labels and calendar identifiers. Different
-resolutions or timelines raise `unaligned_series`; resampling/alignment belong
-to separate processing work.
+resolutions or timelines raise `unaligned_series`; use explicit resampling where
+appropriate, rather than expecting automatic alignment or repair.
 
 ## Units and zero denominators
 
@@ -171,4 +225,4 @@ From the repository root with the project's local environment:
 ```
 
 Tests exercise the public method and preview with deterministic fixtures. No API,
-engine, correlation, resampling or missing-value repair is implemented here.
+engine, correlation or missing-value repair is implemented here.
