@@ -8,8 +8,9 @@ series are generated from an explicit slope, so every Trend here reports the
 slope it was built from: no statistics are computed. Ticket #12 replaces this
 with the seed set computed from real data.
 
-`data/stub/catalog.json` is the one file this script reads rather than writes: it
-is maintained by hand, and the series and discoveries are generated against it.
+The catalog in `data/catalog.json` is the one file this script reads rather than
+writes: the series and discoveries are generated against it, and every series
+takes its units from it.
 
 Because the fixtures are built through `engine.contracts`, the committed JSON
 cannot drift from the Python contract objects.
@@ -67,10 +68,7 @@ PERIOD = Period(start="2000-01", end="2024-12")
 MONTHS = 300
 FAMILY_SIZE = 96
 
-METHOD_CITATION = (
-    "Time-series analysis of remotely sensed SeaWiFS chlorophyll in "
-    "river-influenced coastal regions (see docs/challenge-brief.md)."
-)
+METHOD_CITATION = load_catalog(ROOT / "data" / "catalog.json").method_citation
 
 STUB_SOURCE = Source(
     provider="Synthetic (stub)",
@@ -139,10 +137,12 @@ class SeriesSpec:
 
 
 SPECS = (
-    SeriesSpec("amazon-basin", "temperature", "K", 299.1, 1.4, 0.28, 0.35, 11, STRONG),
-    SeriesSpec("sahel", "temperature", "K", 301.4, 5.8, 0.42, 0.52, 12, STRONG),
-    SeriesSpec("central-india", "temperature", "K", 298.2, 6.1, 0.19, 0.61, 13, SOME),
-    SeriesSpec("greenland-coast", "temperature", "K", 272.6, 9.3, 0.05, 1.21, 14, NONE),
+    SeriesSpec("amazon-basin", "temperature", "°C", 25.95, 1.4, 0.28, 0.35, 11, STRONG),
+    SeriesSpec("sahel", "temperature", "°C", 28.25, 5.8, 0.42, 0.52, 12, STRONG),
+    SeriesSpec("central-india", "temperature", "°C", 25.05, 6.1, 0.19, 0.61, 13, SOME),
+    SeriesSpec(
+        "greenland-coast", "temperature", "°C", -0.55, 9.3, 0.05, 1.21, 14, NONE
+    ),
     SeriesSpec(
         "amazon-basin",
         "precipitation",
@@ -466,9 +466,16 @@ def write(path: Path, payload: object) -> None:
 
 def main() -> None:
     out = ROOT / "data" / "stub"
-    catalog = load_catalog(out / "catalog.json")
+    catalog = load_catalog(ROOT / "data" / "catalog.json")
     regions = {region.region_id: region for region in catalog.regions}
     variables = {variable.variable_id: variable for variable in catalog.variables}
+    for spec in SPECS:
+        expected = variables[spec.variable_id].units
+        if spec.units != expected:
+            raise SystemExit(
+                f"{spec.region_id}/{spec.variable_id} is in {spec.units}, "
+                f"but the catalog shows it in {expected}"
+            )
 
     trends: dict[tuple[str, str], Trend] = {}
     for spec in SPECS:

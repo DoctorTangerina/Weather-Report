@@ -1,0 +1,245 @@
+{
+  "discovery_id": "congo-basin--siberian-arctic",
+  "region_ids": [
+    "congo-basin",
+    "siberian-arctic"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "congo-basin",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.20456373311089973,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.5557946510931577,
+            0.14666718487135824
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.20456373311089973,
+              "p_value": 0.00015505788581271843,
+              "r_squared": 0.04696121734014877
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.20488928303338452,
+              "p_value": 0.18463714733536998
+            },
+            "robust": {
+              "slope_per_decade": -0.21162482255135057,
+              "p_value": 5.24675006144036e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.1720639480619882
+            },
+            "mann_kendall": {
+              "tau": -0.12878483835005575,
+              "p_value": 0.0008793918476677827
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2007-01",
+              "slope_per_decade": -0.19559663695040913,
+              "p_value": 0.00021410854897670702
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.35874913429229033,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.8228203493059468,
+            "effective_sample_size": 29.16024896718687
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.7473858091593341,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            0.23167565342196872,
+            1.2630959648966993
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.7473858091593341,
+              "p_value": 0.0013192000649806174,
+              "r_squared": 0.03407937488635952
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.7485752252329343,
+              "p_value": 0.013692510052941816
+            },
+            "robust": {
+              "slope_per_decade": 0.7102054683748705,
+              "p_value": 0.0003877704105674845
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.7205680931324259
+            },
+            "mann_kendall": {
+              "tau": 0.12931995540691194,
+              "p_value": 0.0008367666111171322
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2007-02",
+              "slope_per_decade": 0.7166529879500452,
+              "p_value": 0.001786715510118543
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.013873543655745403,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.12644790155842656,
+            "effective_sample_size": 232.6478030363477
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Air temperature seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "congo-basin",
+              "label": "Congo Basin"
+            },
+            {
+              "option_id": "siberian-arctic",
+              "label": "Siberian Arctic"
+            }
+          ],
+          "answer_option_id": "siberian-arctic",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "congo-basin",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "siberian-arctic",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Congo Basin: -0.205 \u00b0C/decade (95% interval -0.556 to 0.147). Siberian Arctic: 0.747 \u00b0C/decade (95% interval 0.232 to 1.263). Siberian Arctic is changing faster. Evidence label for Congo Basin: Not enough evidence yet. Evidence label for Siberian Arctic: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "congo-basin",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

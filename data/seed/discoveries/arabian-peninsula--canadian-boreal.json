@@ -1,0 +1,397 @@
+{
+  "discovery_id": "arabian-peninsula--canadian-boreal",
+  "region_ids": [
+    "arabian-peninsula",
+    "canadian-boreal"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 2.3848212183784647,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            1.4113075029332787,
+            3.3583349338236506
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 2.3848212183784647,
+              "p_value": 6.865321436307967e-09,
+              "r_squared": 0.10671278096144277
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 2.388616506775773,
+              "p_value": 7.065617778693068e-05
+            },
+            "robust": {
+              "slope_per_decade": 1.2965623525924213,
+              "p_value": 1.276908712551478e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": 1.151390297925308
+            },
+            "mann_kendall": {
+              "tau": 0.1940691192865106,
+              "p_value": 5.3640915014667e-07
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2023-01",
+              "slope_per_decade": 2.120525625126877,
+              "p_value": 9.087028556835505e-09
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.8556865462329033e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.20795644603107113,
+            "effective_sample_size": 196.70665028643486
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -1.0787579969892334,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -3.0718673317700453,
+            0.9143513377915786
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -1.0787579969892334,
+              "p_value": 0.2210792464166754,
+              "r_squared": 0.005020460534752828
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -1.080474770421963,
+              "p_value": 0.3537463160060503
+            },
+            "robust": {
+              "slope_per_decade": -0.7642217937546824,
+              "p_value": 0.3143434762107106
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.5794854087234529
+            },
+            "mann_kendall": {
+              "tau": -0.02613154960981048,
+              "p_value": 0.4996894090724384
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2007-09",
+              "slope_per_decade": -0.9613478968162106,
+              "p_value": 0.26665572061472426
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.41631439938914006,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.13861335395956806,
+            "effective_sample_size": 226.95675657893776
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "soil-moisture",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.13316927626959124,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -0.20710887432435732,
+            0.4734474268635398
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.13316927626959124,
+              "p_value": 0.265150711878197,
+              "r_squared": 0.004164952664600558
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.13338120654143393,
+              "p_value": 0.3734498532042218
+            },
+            "robust": {
+              "slope_per_decade": 0.1725244041607503,
+              "p_value": 0.05395834734604827
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.1612034675297923
+            },
+            "mann_kendall": {
+              "tau": 0.06907469342251951,
+              "p_value": 0.07439102411517905
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2023-01",
+              "slope_per_decade": 0.09099027269025395,
+              "p_value": 0.43485853223123955
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.558408508483738,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.3511627978354917,
+            "effective_sample_size": 144.06195978839546
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -1.8290855582069874,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -2.3997099109233995,
+            -1.2584612054905753
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -1.8290855582069874,
+              "p_value": 4.9776891766348295e-26,
+              "r_squared": 0.3121889593037385
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -1.8319964293210333,
+              "p_value": 1.1927338288100112e-06
+            },
+            "robust": {
+              "slope_per_decade": -1.8581162258626196,
+              "p_value": 3.75749303235601e-31
+            },
+            "theil_sen": {
+              "slope_per_decade": -1.8663101828855004
+            },
+            "mann_kendall": {
+              "tau": -0.3824749163879599,
+              "p_value": 5.117092535984848e-23
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2010-04",
+              "slope_per_decade": -1.8374208895937263,
+              "p_value": 9.345651445104759e-27
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.9725234824316446e-07,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5384583938940662,
+            "effective_sample_size": 90.00079714948357
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 120.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Precipitation seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "arabian-peninsula",
+              "label": "Arabian Peninsula"
+            },
+            {
+              "option_id": "canadian-boreal",
+              "label": "Canadian Boreal Forest"
+            }
+          ],
+          "answer_option_id": "arabian-peninsula",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "arabian-peninsula",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "canadian-boreal",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Arabian Peninsula: 2.385 mm/month/decade (95% interval 1.411 to 3.358). Canadian Boreal Forest: -1.079 mm/month/decade (95% interval -3.072 to 0.914). Arabian Peninsula is changing faster. Evidence label for Arabian Peninsula: Strong evidence. Evidence label for Canadian Boreal Forest: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

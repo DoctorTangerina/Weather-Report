@@ -1,0 +1,245 @@
+{
+  "discovery_id": "australian-outback--congo-basin",
+  "region_ids": [
+    "australian-outback",
+    "congo-basin"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "australian-outback",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -6.513880814120212,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -9.964414996252476,
+            -3.0633466319879465
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -6.513880814120212,
+              "p_value": 3.2639772420350124e-05,
+              "r_squared": 0.05635762334938033
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -6.52424723323992,
+              "p_value": 0.010706498236304877
+            },
+            "robust": {
+              "slope_per_decade": -3.9582253542336363,
+              "p_value": 0.0003782076919560426
+            },
+            "theil_sen": {
+              "slope_per_decade": -3.54757524765343
+            },
+            "mann_kendall": {
+              "tau": -0.13355629877369007,
+              "p_value": 0.0005610804489249254
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2011-03",
+              "slope_per_decade": -6.430893429178354,
+              "p_value": 1.7978844823708687e-05
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0012710349637320548,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.12528913091060728,
+            "effective_sample_size": 233.19629908312328
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "congo-basin",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 7.4051189278788705,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            1.6049596089234415,
+            13.2052782468343
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 7.4051189278788705,
+              "p_value": 0.0020749713347414634,
+              "r_squared": 0.031369534752082553
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 7.416903694691111,
+              "p_value": 0.052064713451631925
+            },
+            "robust": {
+              "slope_per_decade": 5.13980154099428,
+              "p_value": 0.014773144632763554
+            },
+            "theil_sen": {
+              "slope_per_decade": 5.19287927670395
+            },
+            "mann_kendall": {
+              "tau": 0.0865551839464883,
+              "p_value": 0.02536996192414698
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2022-11",
+              "slope_per_decade": 6.633111098617286,
+              "p_value": 0.0048053619146633956
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.029840978553658703,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.20705114511240388,
+            "effective_sample_size": 197.07918544257407
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Precipitation is rising in one of these places and falling in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "australian-outback",
+              "label": "Australian Outback"
+            },
+            {
+              "option_id": "congo-basin",
+              "label": "Congo Basin"
+            }
+          ],
+          "answer_option_id": "congo-basin",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "australian-outback",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "congo-basin",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Australian Outback: -6.514 mm/month/decade (95% interval -9.964 to -3.063). Congo Basin: 7.405 mm/month/decade (95% interval 1.605 to 13.205). Congo Basin is changing faster. Evidence label for Australian Outback: Strong evidence. Evidence label for Congo Basin: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "australian-outback",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "congo-basin",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

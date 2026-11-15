@@ -1,0 +1,397 @@
+{
+  "discovery_id": "central-india--southern-africa",
+  "region_ids": [
+    "central-india",
+    "southern-africa"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "soil-moisture",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "central-india",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.26459099617749865,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -0.23862383424920003,
+            0.7678058266041974
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.26459099617749865,
+              "p_value": 0.10875688602394944,
+              "r_squared": 0.008608734166627444
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.2650120755985004,
+              "p_value": 0.2957429450690626
+            },
+            "robust": {
+              "slope_per_decade": 0.23646306571575024,
+              "p_value": 0.12249299632680198
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.2123009020885595
+            },
+            "mann_kendall": {
+              "tau": 0.046510590858416946,
+              "p_value": 0.22960785270805006
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2002-07",
+              "slope_per_decade": 0.22703681546396634,
+              "p_value": 0.1647414478350372
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.4260377875885316,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.40986212307788705,
+            "effective_sample_size": 125.57352962297671
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -2.062893410565628,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -2.6664810649865647,
+            -1.4593057561446914
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -2.062893410565628,
+              "p_value": 2.428317380086777e-32,
+              "r_squared": 0.3757285455663043
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -2.066176371722489,
+              "p_value": 1.957234489901609e-06
+            },
+            "robust": {
+              "slope_per_decade": -1.9002768869584947,
+              "p_value": 1.1860438128432524e-32
+            },
+            "theil_sen": {
+              "slope_per_decade": -1.9301974386454346
+            },
+            "mann_kendall": {
+              "tau": -0.43268673355629883,
+              "p_value": 5.325974762541639e-29
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2024-02",
+              "slope_per_decade": -2.008443440893745,
+              "p_value": 6.411295945442391e-32
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 1.4685975507890005e-07,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.589328076251566,
+            "effective_sample_size": 77.51802725029648
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "central-india",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.1438831932710085,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.36330254715305865,
+            0.07553616061104163
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.1438831932710085,
+              "p_value": 0.04701281413523671,
+              "r_squared": 0.013172695545300156
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.14411217404733723,
+              "p_value": 0.1364897686092859
+            },
+            "robust": {
+              "slope_per_decade": -0.1115716492010327,
+              "p_value": 0.06841265764773137
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.12055383420464097
+            },
+            "mann_kendall": {
+              "tau": -0.07304347826086957,
+              "p_value": 0.05919870730920707
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2001-06",
+              "slope_per_decade": -0.16330543133404582,
+              "p_value": 0.022926761508732657
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.3036728558318588,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.4050728642003257,
+            "effective_sample_size": 127.0241176008194
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.2377035867900774,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.028091266068039272,
+            0.5034984396481941
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.2377035867900774,
+              "p_value": 0.0009489152891673369,
+              "r_squared": 0.0360553247905362
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.2380818766417419,
+              "p_value": 0.1601737366552228
+            },
+            "robust": {
+              "slope_per_decade": 0.22920285274578986,
+              "p_value": 0.0008134555617682037
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.24237364409938245
+            },
+            "mann_kendall": {
+              "tau": 0.12414715719063546,
+              "p_value": 0.0013425577713606122
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2024-02",
+              "slope_per_decade": 0.21743706422277584,
+              "p_value": 0.0022355137777648666
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.14012432316694012,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5578267571297238,
+            "effective_sample_size": 85.15194148128026
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 120.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Soil moisture seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think soil moisture is changing faster?",
+          "options": [
+            {
+              "option_id": "central-india",
+              "label": "Central India"
+            },
+            {
+              "option_id": "southern-africa",
+              "label": "Southern Africa"
+            }
+          ],
+          "answer_option_id": "southern-africa",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "central-india",
+              "variable_id": "soil-moisture"
+            },
+            {
+              "region_id": "southern-africa",
+              "variable_id": "soil-moisture"
+            }
+          ],
+          "comparison": "Central India: 0.265 mm/decade (95% interval -0.239 to 0.768). Southern Africa: -2.063 mm/decade (95% interval -2.666 to -1.459). Southern Africa is changing faster. Evidence label for Central India: Not enough evidence yet. Evidence label for Southern Africa: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make soil moisture change this way?",
+          "possible_causes": [
+            {
+              "text": "Less rain means less water soaks into the soil.",
+              "kind": "context"
+            },
+            {
+              "text": "Hotter air pulls more water out of the soil through evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Farming and irrigation change how much water the soil holds.",
+              "kind": "context"
+            },
+            {
+              "text": "Melting snow and ice add water to the soil in spring.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "central-india",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "central-india",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

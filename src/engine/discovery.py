@@ -37,7 +37,6 @@ from .contracts import (
     ReasonStep,
     Region,
     ScoreComponents,
-    Series,
     SeriesRef,
     Trend,
     Variable,
@@ -61,6 +60,10 @@ MULTI_VARIABLE_SCORE = 20.0
 # The same tier as a multi-Variable contrast, as the spec ranks them together.
 SURPRISING_PAIR_SCORE = 20.0
 MAGNITUDE_GAP_CAP = 10.0
+# Added once for each Mirror between the pair that is significant after
+# correction (ADR 0003). The smallest tier: a Mirror adds to a Discovery that
+# already has a Contrast and never makes one.
+MIRROR_SCORE = 5.0
 
 # How many of the highest-scoring eligible Candidates the Surprise Me! draw
 # considers. The spec left the number open. Five keeps the headline genuinely
@@ -82,7 +85,7 @@ def find_candidate_discoveries(
     catalog: Catalog,
     mirrors: Sequence[Mirror] = (),
 ) -> list[Discovery]:
-    """Ticket #7. Mirrors are optional because ticket #8 may be cut.
+    """Tickets #7 and #8. Mirrors are optional because ticket #8 may be cut.
 
     Every pair of Regions is compared on every Variable both have a Trend for.
     A Variable contrasts when the two Trends run in opposite directions
@@ -93,13 +96,17 @@ def find_candidate_discoveries(
     contrast is one Candidate Discovery, however many Variables contrast. A pair
     of Regions close together is also a surprising pair, which raises its score.
 
+    `mirrors` come from `find_mirrors`. A Mirror joins the Candidate for the two
+    Regions it lies between and raises its score; it never makes a Candidate on
+    its own, since a Discovery is built around a Contrast. A Mirror that is not
+    significant after correction is left out.
+
     `trends` should come from `rate_evidence`, which settles the Evidence
     labels. A contrast with a Trend that has "Not enough evidence yet" is kept,
     and so labeled, only when the pair has no contrast that rests on evidence;
     otherwise it would pull the whole Candidate down.
 
-    The result is ordered from highest score to lowest. Mirrors are not used
-    yet (ticket #8).
+    The result is ordered from highest score to lowest.
     """
     periods = {trend.period for trend in trends}
     if len(periods) > 1:
@@ -108,6 +115,12 @@ def find_candidate_discoveries(
     by_region: dict[str, dict[str, Trend]] = defaultdict(dict)
     for trend in trends:
         by_region[trend.region_id][trend.variable_id] = trend
+
+    mirrors_by_pair: dict[tuple[str, str], list[Mirror]] = defaultdict(list)
+    for mirror in mirrors:
+        if mirror.significant_after_correction:
+            regions = sorted({ref.region_id for ref in mirror.series})
+            mirrors_by_pair[tuple(regions)].append(mirror)
 
     candidates = []
     for first, second in combinations(sorted(by_region), 2):
@@ -118,14 +131,17 @@ def find_candidate_discoveries(
             continue
         period = contrasts[0].trends[0].period
         label = _weakest_label(contrasts)
-        components = _score_components(contrasts, _are_close(catalog, first, second))
+        pair_mirrors = mirrors_by_pair[first, second]
+        components = _score_components(
+            contrasts, _are_close(catalog, first, second), len(pair_mirrors)
+        )
         candidates.append(
             Discovery(
                 discovery_id=f"{first}--{second}",
                 region_ids=(first, second),
                 period=period,
                 contrasts=tuple(contrasts),
-                mirrors=(),
+                mirrors=tuple(pair_mirrors),
                 score=sum(dataclasses.astuple(components)),
                 score_components=components,
                 evidence_label=label,
@@ -210,14 +226,14 @@ def _gap_score(contrast: Contrast) -> float:
 
 
 def _score_components(
-    contrasts: Sequence[Contrast], close_together: bool
+    contrasts: Sequence[Contrast], close_together: bool, mirror_count: int
 ) -> ScoreComponents:
     """What a Candidate scores, in the order the spec fixes and no more.
 
     Opposite signs outrank everything (`OPPOSITE_SIGN_SCORE` is above the sum of
     every other component can reach), then a contrast on several Variables, then
     how far apart the rates are. A surprising pair earns the multi-Variable tier.
-    The Mirror component stays zero until ticket #8.
+    Each Mirror adds `MIRROR_SCORE` on top.
     """
     opposite = any(c.kind == "opposite_sign" for c in contrasts)
     gaps = [_gap_score(c) for c in contrasts if c.kind == "magnitude_gap"]
@@ -226,13 +242,8 @@ def _score_components(
         multi_variable=MULTI_VARIABLE_SCORE if len(contrasts) > 1 else 0.0,
         surprising_pair=SURPRISING_PAIR_SCORE if close_together else 0.0,
         magnitude_gap=max(gaps, default=0.0),
-        mirror=0.0,
+        mirror=MIRROR_SCORE * mirror_count,
     )
-
-
-def find_mirrors(series: Sequence[Series], q: float) -> list[Mirror]:
-    """Ticket #8."""
-    raise NotImplementedError("mirrors: ticket #8")
 
 
 def select_surprise(

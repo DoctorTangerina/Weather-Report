@@ -1,0 +1,549 @@
+{
+  "discovery_id": "canadian-boreal--sahel",
+  "region_ids": [
+    "canadian-boreal",
+    "sahel"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -1.0787579969892334,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -3.0718673317700453,
+            0.9143513377915786
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -1.0787579969892334,
+              "p_value": 0.2210792464166754,
+              "r_squared": 0.005020460534752828
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -1.080474770421963,
+              "p_value": 0.3537463160060503
+            },
+            "robust": {
+              "slope_per_decade": -0.7642217937546824,
+              "p_value": 0.3143434762107106
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.5794854087234529
+            },
+            "mann_kendall": {
+              "tau": -0.02613154960981048,
+              "p_value": 0.4996894090724384
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2007-09",
+              "slope_per_decade": -0.9613478968162106,
+              "p_value": 0.26665572061472426
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.41631439938914006,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.13861335395956806,
+            "effective_sample_size": 226.95675657893776
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 10.814711515468218,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            5.840092136515305,
+            15.78933089442113
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 10.814711515468218,
+              "p_value": 1.3961298110602825e-14,
+              "r_squared": 0.18054687087874358
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 10.831922427891548,
+              "p_value": 7.207046483469588e-07
+            },
+            "robust": {
+              "slope_per_decade": 4.455578408500535,
+              "p_value": 1.3955248148514243e-08
+            },
+            "theil_sen": {
+              "slope_per_decade": 2.347067498039511
+            },
+            "mann_kendall": {
+              "tau": 0.2568561872909699,
+              "p_value": 3.2538105255045655e-11
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2024-08",
+              "slope_per_decade": 10.080666376405583,
+              "p_value": 4.214411691098671e-14
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0002705483192734049,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5567609767029273,
+            "effective_sample_size": 85.41562190924346
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.06342939621140586,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.3782824717671824,
+            0.5051412641899942
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.06342939621140586,
+              "p_value": 0.7170544718291498,
+              "r_squared": 0.0004413555956798414
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.06353033998430778,
+              "p_value": 0.8273043017338675
+            },
+            "robust": {
+              "slope_per_decade": 0.047153571782643344,
+              "p_value": 0.7566938368274296
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.04818483811406457
+            },
+            "mann_kendall": {
+              "tau": 0.011103678929765886,
+              "p_value": 0.7742591219299406
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2013-12",
+              "slope_per_decade": 0.07040780660770916,
+              "p_value": 0.682065069382221
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.811527554399329,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.24212924721129597,
+            "effective_sample_size": 183.04152031445992
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.20447317968014822,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.40415434909646974,
+            -0.004792010263826724
+          ],
+          "direction": "falling",
+          "evidence_label": "Some evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.20447317968014822,
+              "p_value": 0.002854591794940824,
+              "r_squared": 0.029466726514822097
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.20479858549271618,
+              "p_value": 0.03790501059302652
+            },
+            "robust": {
+              "slope_per_decade": -0.21552026498137905,
+              "p_value": 0.00041133076991028625
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.20431623840677637
+            },
+            "mann_kendall": {
+              "tau": -0.11727982162764772,
+              "p_value": 0.0024508829882422412
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-12",
+              "slope_per_decade": -0.19814034762586097,
+              "p_value": 0.003267178022035009
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.08374933895337394,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.3761282001870735,
+            "effective_sample_size": 136.0058895082848
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "soil-moisture",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -1.8290855582069874,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -2.3997099109233995,
+            -1.2584612054905753
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -1.8290855582069874,
+              "p_value": 4.9776891766348295e-26,
+              "r_squared": 0.3121889593037385
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -1.8319964293210333,
+              "p_value": 1.1927338288100112e-06
+            },
+            "robust": {
+              "slope_per_decade": -1.8581162258626196,
+              "p_value": 3.75749303235601e-31
+            },
+            "theil_sen": {
+              "slope_per_decade": -1.8663101828855004
+            },
+            "mann_kendall": {
+              "tau": -0.3824749163879599,
+              "p_value": 5.117092535984848e-23
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2010-04",
+              "slope_per_decade": -1.8374208895937263,
+              "p_value": 9.345651445104759e-27
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.9725234824316446e-07,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5384583938940662,
+            "effective_sample_size": 90.00079714948357
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.05401929704191524,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -0.32279399433821543,
+            0.21475540025438497
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.05401929704191524,
+              "p_value": 0.4497194223747819,
+              "r_squared": 0.001918687917890401
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.0541052652519066,
+              "p_value": 0.6865530335372398
+            },
+            "robust": {
+              "slope_per_decade": -0.15127029113409415,
+              "p_value": 0.004626264541664604
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.14582505904465304
+            },
+            "mann_kendall": {
+              "tau": -0.10211817168338909,
+              "p_value": 0.008346676767130473
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2022-04",
+              "slope_per_decade": -0.07918911497457606,
+              "p_value": 0.25377128160578427
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.7658204548307439,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5636312574698823,
+            "effective_sample_size": 83.72218330481721
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 125.08150388460791,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 5.081503884607905,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Precipitation seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "canadian-boreal",
+              "label": "Canadian Boreal Forest"
+            },
+            {
+              "option_id": "sahel",
+              "label": "Sahel"
+            }
+          ],
+          "answer_option_id": "sahel",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "canadian-boreal",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "sahel",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Canadian Boreal Forest: -1.079 mm/month/decade (95% interval -3.072 to 0.914). Sahel: 10.815 mm/month/decade (95% interval 5.84 to 15.789). Sahel is changing faster. Evidence label for Canadian Boreal Forest: Not enough evidence yet. Evidence label for Sahel: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

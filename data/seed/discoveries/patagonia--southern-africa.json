@@ -1,0 +1,245 @@
+{
+  "discovery_id": "patagonia--southern-africa",
+  "region_ids": [
+    "patagonia",
+    "southern-africa"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "patagonia",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -4.228423480623099,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -6.827565205729108,
+            -1.62928175551709
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -4.228423480623099,
+              "p_value": 0.0010011556118451775,
+              "r_squared": 0.035733678742161455
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -4.235152742528025,
+              "p_value": 0.0062545221734161705
+            },
+            "robust": {
+              "slope_per_decade": -3.5535109651567156,
+              "p_value": 0.0015410008115104383
+            },
+            "theil_sen": {
+              "slope_per_decade": -3.573885900218185
+            },
+            "mann_kendall": {
+              "tau": -0.11736900780379042,
+              "p_value": 0.0024322574780404746
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2017-03",
+              "slope_per_decade": -4.427106171533019,
+              "p_value": 0.0004085182421083027
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.005999959596488267,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.03693428395821842,
+            "effective_sample_size": 278.62876103359315
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 1.6056832898151334,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -3.5518065162774963,
+            6.763173095907764
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 1.6056832898151334,
+              "p_value": 0.45983059068824933,
+              "r_squared": 0.0018346379730847376
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 1.608238630698769,
+              "p_value": 0.5564309215007414
+            },
+            "robust": {
+              "slope_per_decade": -0.08376274881660045,
+              "p_value": 0.9507333079229449
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.108310072718855
+            },
+            "mann_kendall": {
+              "tau": -0.005663322185061316,
+              "p_value": 0.8836974000413588
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2018-02",
+              "slope_per_decade": 1.2318979090669149,
+              "p_value": 0.5619139913626193
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.6390112141949389,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.18489484571097545,
+            "effective_sample_size": 206.37404844138766
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Precipitation seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "patagonia",
+              "label": "Patagonia"
+            },
+            {
+              "option_id": "southern-africa",
+              "label": "Southern Africa"
+            }
+          ],
+          "answer_option_id": "patagonia",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "patagonia",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "southern-africa",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Patagonia: -4.228 mm/month/decade (95% interval -6.828 to -1.629). Southern Africa: 1.606 mm/month/decade (95% interval -3.552 to 6.763). Patagonia is changing faster. Evidence label for Patagonia: Strong evidence. Evidence label for Southern Africa: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "patagonia",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

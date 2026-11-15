@@ -1,10 +1,6 @@
 import { useState } from 'react'
-import Chart from '../components/Chart.jsx'
 import Evidence from '../components/Evidence.jsx'
-
-function regionName(catalog, regionId) {
-  return catalog.regions.find((region) => region.region_id === regionId)?.name ?? regionId
-}
+import SeriesResults from '../components/SeriesResults.jsx'
 
 // When the evidence is not strong, the feedback says so in the student's own
 // terms, so a matching guess is never read as a settled answer (#10, Q7).
@@ -15,12 +11,27 @@ const EVIDENCE_CAVEAT = {
     'Evidence label: Not enough evidence yet. The data cannot yet tell this difference apart from chance.',
 }
 
-export default function InvestigationScreen({ discovery, catalog, highlights = [], onBack, stepIndex, onStepChange, loading, series, error, timestamp }) {
+export default function InvestigationScreen({ discovery, catalog, highlights = [], onBack, stepIndex, onStepChange, loading, responses = [], substituted = false, error, timestamp }) {
   const [guess, setGuess] = useState(null)
 
   const [predict, check, reason] = discovery.narrative.investigation.steps
   const caveat = EVIDENCE_CAVEAT[discovery.evidence_label]
-  const colorOf = (regionId) => highlights.find((h) => h.region.region_id === regionId)?.color
+
+  // #13: when the live fetch fails, the API may return different stored series.
+  // Those cannot answer this investigation, so it does not start (nor while the
+  // series are still loading, or after an error).
+  if (loading || error || substituted) {
+    return (
+      <section>
+        <button className="link" onClick={onBack}>← Back</button>
+        <h2>{substituted ? 'Preloaded examples' : 'Become a Detective'}</h2>
+        {loading && <p className="muted" role="status">Loading the series…</p>}
+        {error && <p className="error" role="alert">{error.message}</p>}
+        {substituted && <p role="alert" className="notice">These examples cannot answer the original investigation.</p>}
+        <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
+      </section>
+    )
+  }
 
   return (
     <section>
@@ -69,18 +80,8 @@ export default function InvestigationScreen({ discovery, catalog, highlights = [
           </p>
           <p>{check.comparison}</p>
 
-          {error && <p className="error" role="alert">{error.message}</p>}
-          {loading && <p className="muted" role="status">Loading the series…</p>}
-          {series.map((item) => (
-            <Chart
-              key={`${item.region_id}-${item.variable_id}`}
-              series={item}
-              timestamp={timestamp}
-              color={colorOf(item.region_id)}
-              label={regionName(catalog, item.region_id)}
-            />
-          ))}
-          {!loading && !error && <p className="muted">Each chart has its own vertical scale. Use the rates above to compare how fast the Regions are changing.</p>}
+          <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
+          <p className="muted">Each chart has its own vertical scale. Use the rates above to compare how fast the Regions are changing.</p>
 
           <button onClick={() => onStepChange(2)}>Why might this happen?</button>
         </div>

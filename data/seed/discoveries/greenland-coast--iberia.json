@@ -1,0 +1,414 @@
+{
+  "discovery_id": "greenland-coast--iberia",
+  "region_ids": [
+    "greenland-coast",
+    "iberia"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "greenland-coast",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -4.163400672211485,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -10.315702584798938,
+            1.9889012403759674
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -4.163400672211485,
+              "p_value": 0.13146889126284136,
+              "r_squared": 0.0076181208230891384
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -4.170026454531308,
+              "p_value": 0.25390266806165623
+            },
+            "robust": {
+              "slope_per_decade": -4.140294504522998,
+              "p_value": 0.10210808740673424
+            },
+            "theil_sen": {
+              "slope_per_decade": -4.11275877892294
+            },
+            "mann_kendall": {
+              "tau": -0.05658862876254181,
+              "p_value": 0.14382739154752447
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2008-11",
+              "slope_per_decade": -3.871567315420501,
+              "p_value": 0.15206907662234634
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.28989319449379714,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.12541203322242045,
+            "effective_sample_size": 233.13807058025228
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "iberia",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.9959758872327753,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -3.7619313952179785,
+            5.7538831696835295
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.9959758872327753,
+              "p_value": 0.6013010069975698,
+              "r_squared": 0.0009173528118109148
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.9975609183033426,
+              "p_value": 0.63197087293819
+            },
+            "robust": {
+              "slope_per_decade": 1.4899825873772488,
+              "p_value": 0.3543565943122353
+            },
+            "theil_sen": {
+              "slope_per_decade": 1.2033538227546599
+            },
+            "mann_kendall": {
+              "tau": 0.02715719063545151,
+              "p_value": 0.4830092164598885
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2018-03",
+              "slope_per_decade": 0.6340703480789978,
+              "p_value": 0.7324826117628624
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.7658204548307439,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.23204251131142534,
+            "effective_sample_size": 186.99618275455518
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "greenland-coast",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.15035860368690498,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.6074123806714955,
+            0.3066951732976855
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.15035860368690498,
+              "p_value": 0.32673389776125566,
+              "r_squared": 0.003227713341849687
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.15059788965920842,
+              "p_value": 0.6139958413390384
+            },
+            "robust": {
+              "slope_per_decade": -0.1203986204750587,
+              "p_value": 0.371195147809307
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.11032109650219872
+            },
+            "mann_kendall": {
+              "tau": -0.030501672240802677,
+              "p_value": 0.4307792486078319
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2011-04",
+              "slope_per_decade": -0.155539143278863,
+              "p_value": 0.30110172810573527
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.6245715102699856,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.38987259769786814,
+            "effective_sample_size": 131.69424377012476
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "iberia",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.5595512132543503,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            0.3332943978861931,
+            0.7858080286225075
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.5595512132543503,
+              "p_value": 2.012566326125669e-09,
+              "r_squared": 0.11385680615176451
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.5604417027430343,
+              "p_value": 0.00011834325577812238
+            },
+            "robust": {
+              "slope_per_decade": 0.5661210572040275,
+              "p_value": 3.8081479540129035e-10
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.5595111644343301
+            },
+            "mann_kendall": {
+              "tau": 0.216098104793757,
+              "p_value": 2.380160186019208e-08
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2013-05",
+              "slope_per_decade": 0.5612124047042502,
+              "p_value": 1.2832390969939207e-09
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.8556865462329033e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.2332348107604076,
+            "effective_sample_size": 186.5253516725192
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [
+    {
+      "series": [
+        {
+          "region_id": "greenland-coast",
+          "variable_id": "precipitation"
+        },
+        {
+          "region_id": "iberia",
+          "variable_id": "temperature"
+        }
+      ],
+      "correlation": -0.3295888760168094,
+      "p_value": 1.355154670223722e-08,
+      "adjusted_p_value": 1.7246126276847155e-06,
+      "significant_after_correction": true
+    }
+  ],
+  "score": 125.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 5.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Precipitation seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "greenland-coast",
+              "label": "Greenland Coast"
+            },
+            {
+              "option_id": "iberia",
+              "label": "Iberia"
+            }
+          ],
+          "answer_option_id": "greenland-coast",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "greenland-coast",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "iberia",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Greenland Coast: -4.163 mm/month/decade (95% interval -10.316 to 1.989). Iberia: 0.996 mm/month/decade (95% interval -3.762 to 5.754). Greenland Coast is changing faster. Evidence label for Greenland Coast: Not enough evidence yet. Evidence label for Iberia: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "greenland-coast",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "iberia",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "greenland-coast",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "iberia",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

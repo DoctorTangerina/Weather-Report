@@ -11,7 +11,11 @@ belongs to the caller (ticket #13).
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -25,7 +29,11 @@ class ResultStore(Protocol):
         self, region_id: str, variable_id: str, period: Period
     ) -> dict[str, Any] | None: ...
 
+    def all_series(self) -> list[dict[str, Any]]: ...
+
     def available_series(self) -> list[dict[str, Any]]: ...
+
+    def save_series(self, payload: dict[str, Any]) -> None: ...
 
     def discoveries(self) -> list[dict[str, Any]]: ...
 
@@ -46,6 +54,12 @@ class JsonResultStore:
         key = (region_id, variable_id, period.start, period.end, self._engine_version)
         return self._series.get(key)
 
+    def discoveries(self) -> list[dict[str, Any]]:
+        return list(self._discoveries)
+
+    def all_series(self) -> list[dict[str, Any]]:
+        return list(self._series.values())
+
     def available_series(self) -> list[dict[str, Any]]:
         """Which Region-Variable series this store holds, without their values."""
         return [
@@ -58,8 +72,26 @@ class JsonResultStore:
             if version == self._engine_version
         ]
 
-    def discoveries(self) -> list[dict[str, Any]]:
-        return list(self._discoveries)
+    def save_series(self, payload: dict[str, Any]) -> None:
+        """Publish a complete cache entry atomically, then update this process."""
+        key = _series_key(payload)
+        directory = self._root / "series"
+        directory.mkdir(parents=True, exist_ok=True)
+        filename = hashlib.sha256(json.dumps(key).encode()).hexdigest() + ".json"
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=directory, delete=False
+            ) as handle:
+                temporary = Path(handle.name)
+                json.dump(payload, handle, allow_nan=False)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, directory / filename)
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+        self._series[key] = payload
 
     def discovery(self, discovery_id: str) -> dict[str, Any] | None:
         return next(
@@ -68,8 +100,11 @@ class JsonResultStore:
 
     def _load(self) -> None:
         for path in sorted(self._root.glob("series/*.json")):
-            payload = _read(path)
-            self._series[_series_key(payload)] = payload
+            try:
+                payload = _read(path)
+                self._series[_series_key(payload)] = payload
+            except (OSError, ValueError, KeyError, TypeError):
+                logging.getLogger(__name__).warning("Skipping unreadable series entry")
         for path in sorted(self._root.glob("discoveries/*.json")):
             self._discoveries.append(_read(path))
         self._discoveries.sort(key=lambda d: d["score"], reverse=True)

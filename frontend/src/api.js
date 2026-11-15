@@ -24,8 +24,14 @@ export const getComparison = (regionA, regionB, variableId) =>
 
 export const getAvailableSeries = () => request('/api/series/available')
 
-export const getSeries = (regionId, variableId) =>
-  request(`/api/series?region_id=${encodeURIComponent(regionId)}&variable_id=${encodeURIComponent(variableId)}`)
+export const getSeries = (regionId, variableId, period) => {
+  const params = new URLSearchParams({ region_id: regionId, variable_id: variableId })
+  if (period) {
+    params.set('period_start', period.start)
+    params.set('period_end', period.end)
+  }
+  return request(`/api/series?${params}`)
+}
 
 export const surpriseMe = (session) =>
   request('/api/discoveries/surprise', {

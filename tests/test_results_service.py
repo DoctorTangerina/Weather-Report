@@ -76,7 +76,15 @@ def test_http_returns_the_exact_result_for_each_key_component(
     validator_for("responses.schema.json", "#/$defs/seriesResponse").validate(
         response.json()
     )
-    assert response.json() == {"data": expected, "notice": None}
+    if expected["engine_version"] != ENGINE_VERSION:
+        assert response.json()["data"]["engine_version"] == ENGINE_VERSION
+        assert response.json()["notice"]["code"] == "live_data_unavailable"
+        return
+    assert response.json() == {
+        "data": expected,
+        "notice": None,
+        "provenance": "preloaded",
+    }
 
 
 @pytest.mark.parametrize(
@@ -110,11 +118,15 @@ def test_http_cache_miss_does_not_return_a_result_with_a_different_key(
             },
         )
 
-    assert response.status_code == 404
-    validator_for("responses.schema.json", "#/$defs/errorResponse").validate(
+    assert response.status_code == 200
+    validator_for("responses.schema.json", "#/$defs/seriesResponse").validate(
         response.json()
     )
-    assert response.json()["error"]["code"] == "result_not_available"
+    assert response.json()["notice"]["code"] == "live_data_unavailable"
+    assert response.json()["provenance"] == "preloaded"
+    # A different stored key is now an explicit example, never an exact cache hit.
+    if "engine_version" not in change:
+        assert "different" in response.json()["notice"]["message"]
 
 
 @pytest.mark.parametrize(

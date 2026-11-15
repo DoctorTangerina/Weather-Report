@@ -1,0 +1,245 @@
+{
+  "discovery_id": "eastern-china--northeast-brazil",
+  "region_ids": [
+    "eastern-china",
+    "northeast-brazil"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "eastern-china",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 9.695419046628562,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            4.334106176792668,
+            15.056731916464456
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 9.695419046628562,
+              "p_value": 3.133006396036014e-05,
+              "r_squared": 0.05660442451631593
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 9.71084867763446,
+              "p_value": 0.002993818635516538
+            },
+            "robust": {
+              "slope_per_decade": 7.942398883407929,
+              "p_value": 6.680424147299304e-05
+            },
+            "theil_sen": {
+              "slope_per_decade": 7.608595601067311
+            },
+            "mann_kendall": {
+              "tau": 0.13997770345596433,
+              "p_value": 0.0002996212089490406
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2020-07",
+              "slope_per_decade": 9.015052283310046,
+              "p_value": 6.190801605669634e-05
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0021309742609897015,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.16909075679727809,
+            "effective_sample_size": 213.21935145881986
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "northeast-brazil",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -7.968331309117558,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -14.655749436708,
+            -1.2809131815271169
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -7.968331309117558,
+              "p_value": 0.006759576695054165,
+              "r_squared": 0.024356402740948396
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -7.9810123919300775,
+              "p_value": 0.041195575980418814
+            },
+            "robust": {
+              "slope_per_decade": -4.421821380336283,
+              "p_value": 0.01791379747735064
+            },
+            "theil_sen": {
+              "slope_per_decade": -4.650613391139057
+            },
+            "mann_kendall": {
+              "tau": -0.10060200668896321,
+              "p_value": 0.009361782747998044
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2004-01",
+              "slope_per_decade": -6.493956827060079,
+              "p_value": 0.014752398075256232
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.04123444052313551,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.14860650304534323,
+            "effective_sample_size": 222.37210777511504
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Precipitation is rising in one of these places and falling in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "eastern-china",
+              "label": "Eastern China"
+            },
+            {
+              "option_id": "northeast-brazil",
+              "label": "Northeast Brazil"
+            }
+          ],
+          "answer_option_id": "eastern-china",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "eastern-china",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "northeast-brazil",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Eastern China: 9.695 mm/month/decade (95% interval 4.334 to 15.057). Northeast Brazil: -7.968 mm/month/decade (95% interval -14.656 to -1.281). Eastern China is changing faster. Evidence label for Eastern China: Strong evidence. Evidence label for Northeast Brazil: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "eastern-china",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "northeast-brazil",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}
