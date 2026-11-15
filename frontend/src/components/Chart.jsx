@@ -35,19 +35,30 @@ function path(values, x, y) {
   return d
 }
 
-function yearTicks(period, length) {
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+// Ticks depend only on the period, so charts of one period share their axis.
+// Long periods mark every fifth or second January; up to two years, every quarter.
+function timeTicks(period, length) {
   const startYear = Number(period.start.slice(0, 4))
   const startMonth = Number(period.start.slice(5, 7))
+  const years = length / 12
   const ticks = []
   for (let index = 0; index < length; index += 1) {
     const month = (startMonth - 1 + index) % 12
     const year = startYear + Math.floor((startMonth - 1 + index) / 12)
-    if (month === 0 && year % 5 === 0) ticks.push({ index, year })
+    if (years <= 2) {
+      if (month % 3 === 0) ticks.push({ index, text: month === 0 ? `${MONTHS[0]} ${year}` : MONTHS[month] })
+    } else if (month === 0 && year % (years > 12 ? 5 : years > 4 ? 2 : 1) === 0) {
+      ticks.push({ index, text: String(year) })
+    }
   }
   return ticks
 }
 
-export default function Chart({ series, label, timestamp, color }) {
+// `smoothed` adds a 12-month mean drawn by the browser. Explore My World turns it
+// off: there every value on screen comes from the API (#75).
+export default function Chart({ series, label, timestamp, color, smoothed = true }) {
   const present = series.values.filter((value) => value !== null)
   if (present.length === 0) return <p className="muted">No data for {label}.</p>
 
@@ -71,7 +82,7 @@ export default function Chart({ series, label, timestamp, color }) {
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
-        aria-label={`${label}, monthly values in ${series.units} from ${series.period.start} to ${series.period.end}, with a 12-month average`}
+        aria-label={`${label}, monthly values in ${series.units} from ${series.period.start} to ${series.period.end}${smoothed ? ', with a 12-month average' : ''}`}
       >
         <line
           className="chart-axis"
@@ -86,13 +97,13 @@ export default function Chart({ series, label, timestamp, color }) {
         <text className="chart-tick" x={PAD.left - 6} y={PAD.top + PLOT_H} textAnchor="end">
           {formatNumber(min)}
         </text>
-        {yearTicks(series.period, series.values.length).map(({ index, year }) => (
-          <text key={year} className="chart-tick" x={x(index)} y={HEIGHT - 4} textAnchor="middle">
-            {year}
+        {timeTicks(series.period, series.values.length).map(({ index, text }) => (
+          <text key={index} className="chart-tick chart-time" x={x(index)} y={HEIGHT - 4} textAnchor="middle">
+            {text}
           </text>
         ))}
         <path className="chart-monthly" d={path(series.values, x, y)} />
-        <path className="chart-mean" d={path(yearlyMean(series.values), x, y)} />
+        {smoothed && <path className="chart-mean" d={path(yearlyMean(series.values), x, y)} />}
         {selectedIndex >= 0 && (
           <line
             className="chart-cursor"

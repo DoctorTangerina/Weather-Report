@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import DiscoveryPanel from '../components/DiscoveryPanel.jsx'
+import ExploreMyWorld, { ExploreEntry } from '../components/ExploreMyWorld.jsx'
 import Explorer from '../components/Explorer.jsx'
 import RegionGlobe from '../components/Globe.jsx'
 import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
@@ -7,6 +8,7 @@ import Timeline from '../components/Timeline.jsx'
 import { REGION_COLORS } from '../palette.js'
 import useAvailableSeries from '../useAvailableSeries.js'
 import useComparison from '../useComparison.js'
+import useExploreView from '../useExploreView.js'
 import useSeries from '../useSeries.js'
 import InvestigationScreen from './InvestigationScreen.jsx'
 
@@ -26,6 +28,9 @@ export default function MainScreen({
   onBack,
   onNewSession,
   onRetry,
+  exploreRegionId,
+  onExplore,
+  onCloseExplore,
 }) {
   const [timestamp, setTimestamp] = useState(null)
   const [regionId, setRegionId] = useState('')
@@ -37,6 +42,8 @@ export default function MainScreen({
   const exploring = phase === 'welcome' && Boolean(catalog)
   const showing = phase === 'discovery' && Boolean(discovery)
   const investigating = phase === 'investigation' && Boolean(discovery)
+  const exploredRegion =
+    phase === 'explore' ? catalog?.regions.find((item) => item.region_id === exploreRegionId) : null
 
   // Every investigation starts at Predict, however the previous one ended.
   useEffect(() => {
@@ -44,6 +51,15 @@ export default function MainScreen({
   }, [investigating, discovery?.discovery_id])
 
   const available = useAvailableSeries()
+  const exploreView = useExploreView(catalog, exploredRegion, available)
+  const exploreHighlights = useMemo(
+    () => (exploredRegion ? [{ region: exploredRegion, color: REGION_COLORS[0] }] : NONE),
+    [exploredRegion],
+  )
+  const exploreSeries = useMemo(
+    () => exploreView.series.filter((item) => item.quality.included),
+    [exploreView.series],
+  )
   const region = catalog?.regions.find((item) => item.region_id === regionId)
   const otherRegions =
     catalog?.regions.filter((item) => item.region_id !== region?.region_id) ?? NONE
@@ -105,22 +121,27 @@ export default function MainScreen({
           }))
           .filter((item) => item.region)
       : highlights
-  const globeHighlights = showing || investigating ? displayedHighlights : explored
+  const globeHighlights =
+    showing || investigating ? displayedHighlights : exploredRegion ? exploreHighlights : explored
+  // Catalog Regions are clickable where a student is choosing what to look at.
+  const pickable = exploring || Boolean(exploredRegion)
   useEffect(() => {
     if (phase !== 'drawing') previousHighlights.current = globeHighlights
   }, [phase, globeHighlights])
   // Notices for a Discovery's series are shown beside each chart (SeriesResults),
   // so only the Explorer's notice goes in the banner.
   const banner = notice ?? (exploring ? seriesNotice : null)
-  const timelineKey =
-    discovery && !exploring
+  const timelineKey = exploredRegion
+    ? `explore/${exploredRegion.region_id}/${exploreView.chosen}/${exploreView.start}/${exploreView.end}`
+    : discovery && !exploring
       ? `${phase}/${discovery.discovery_id}`
       : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
 
   // Before the student predicts, nothing may hint at the answer: the timeline
   // stays empty until the Check step shows the charts (BS-006).
-  const timelineSeries =
-    seriesLoading || (investigating && investigationStep !== 1) ? NONE : series
+  const timelineSeries = exploredRegion
+    ? exploreView.loading ? NONE : exploreSeries
+    : seriesLoading || (investigating && investigationStep !== 1) ? NONE : series
 
   return (
     <div className="main-screen">
@@ -137,15 +158,21 @@ export default function MainScreen({
       </header>
 
       <section className="globe-panel" aria-label="Interactive Earth globe">
-        <RegionGlobe highlights={phase === 'drawing' ? previousHighlights.current : globeHighlights} />
-        <p className="globe-hint">Drag to explore · Scroll or pinch to zoom</p>
+        <RegionGlobe
+          highlights={phase === 'drawing' ? previousHighlights.current : globeHighlights}
+          regions={pickable ? catalog.regions : undefined}
+          onRegionClick={pickable ? onExplore : undefined}
+        />
+        <p className="globe-hint">
+          {pickable && 'Click a Region to explore it · '}Drag to turn · Scroll or pinch to zoom
+        </p>
       </section>
 
       <aside
         className="sidebar"
         tabIndex={0}
         aria-label={investigating ? 'Become a Detective' : undefined}
-        aria-busy={phase === 'loading' || phase === 'drawing' || seriesLoading}
+        aria-busy={phase === 'loading' || phase === 'drawing' || seriesLoading || exploreView.loading}
       >
         {banner && (
           <p className="notice" role="status">
@@ -172,6 +199,7 @@ export default function MainScreen({
               onSurprise={onSurprise}
               onDetective={() => onDetective([region, secondRegion].filter(Boolean).map((item) => item.region_id))}
             />
+            <ExploreEntry catalog={catalog} onExplore={onExplore} />
             <Explorer
               catalog={catalog}
               region={region}
@@ -190,6 +218,16 @@ export default function MainScreen({
               trends={comparison.trends}
             />
           </>
+        )}
+        {exploredRegion && (
+          <ExploreMyWorld
+            catalog={catalog}
+            region={exploredRegion}
+            view={exploreView}
+            color={REGION_COLORS[0]}
+            timestamp={timestamp}
+            onBack={onCloseExplore}
+          />
         )}
         {phase === 'drawing' && <Drawing />}
         {phase === 'complete' && <SessionComplete seen={seen} onNewSession={onNewSession} />}
@@ -226,11 +264,11 @@ export default function MainScreen({
         )}
       </aside>
 
-      {(showing || exploring || investigating || phase === 'drawing') && (
+      {(showing || exploring || investigating || exploredRegion || phase === 'drawing') && (
         <Timeline
           key={timelineKey}
           series={timelineSeries}
-          loading={seriesLoading}
+          loading={exploredRegion ? exploreView.loading : seriesLoading}
           onTimestampChange={setTimestamp}
         />
       )}

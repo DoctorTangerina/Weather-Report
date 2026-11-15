@@ -7,7 +7,7 @@ const key = (regionId, variableId) => `${regionId}/${variableId}`
 // fetched, every pair is treated as possibly available, so nothing is ever
 // marked missing by mistake.
 export default function useAvailableSeries() {
-  const [state, setState] = useState({ settled: false, pairs: null })
+  const [state, setState] = useState({ settled: false, pairs: null, latest: null })
 
   useEffect(() => {
     let cancelled = false
@@ -15,11 +15,12 @@ export default function useAvailableSeries() {
       .then(({ data }) => {
         if (!cancelled) {
           const pairs = new Set(data.map((s) => key(s.region_id, s.variable_id)))
-          setState({ settled: true, pairs })
+          const latest = data.reduce((last, s) => (s.period.end > last ? s.period.end : last), '')
+          setState({ settled: true, pairs, latest: latest || null })
         }
       })
       .catch(() => {
-        if (!cancelled) setState({ settled: true, pairs: null })
+        if (!cancelled) setState({ settled: true, pairs: null, latest: null })
       })
     return () => {
       cancelled = true
@@ -46,5 +47,6 @@ export default function useAvailableSeries() {
     return null
   }
 
-  return { settled: state.settled, has, defaultPair }
+  // The last month any stored series reaches: where Explore My World periods end.
+  return { settled: state.settled, has, defaultPair, latest: state.latest }
 }

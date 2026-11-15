@@ -1,8 +1,9 @@
 # Browser end-to-end suite (#74)
 
 These tests run the React app against FastAPI and the committed seed set. They
-do not intercept API responses. The suite covers manual Region selection and
-Surprise Me! → Become a Detective → Check the data → How do we know?.
+do not intercept API responses. The suite covers manual Region selection,
+Surprise Me! → Become a Detective → Check the data → How do we know?, and
+Explore My World for a catalog Region (`integration/explore.spec.js`, #75).
 
 ## Setup and run
 
