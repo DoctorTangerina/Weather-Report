@@ -152,6 +152,29 @@ def test_a_3_hourly_source_series_resamples_to_daily_means(client):
     assert data["series"]["daily"]["values"] == pytest.approx([3.5] * 31)
 
 
+def test_a_monthly_source_series_is_processed_too(client):
+    series = source_series([float(month) for month in range(1, 13)])
+    data = process(
+        client,
+        {"t": {"time_step": "monthly", "aggregation": "mean", "series": series}},
+        [{"id": "scaled", "operation": "minmax", "input": "t"}],
+    ).json()["data"]
+    scaled = data["series"]["scaled"]
+    assert [stamp[:7] for stamp in scaled["timestamps"]] == [
+        f"2010-{month:02d}" for month in range(1, 13)
+    ]
+    assert scaled["values"] == pytest.approx([n / 11 for n in range(12)])
+    assert scaled["time_step"] == "monthly"
+
+
+def test_a_resampled_derived_series_reports_its_sample_counts(client):
+    data = process(client, {"temperature": daily_input()}).json()["data"]
+    resampling = data["series"]["monthly"]["resampling"]
+    assert resampling["sample_counts"][:3] == [31, 28, 31]
+    assert resampling["valid_counts"][:3] == [31, 28, 31]
+    assert data["warnings"] == []
+
+
 def test_the_view_aggregation_travels_into_resampling(client):
     # #48: a daily maximum Series is combined over time by maximum too.
     values = [float(day.day) for day in days_in(2010)]
