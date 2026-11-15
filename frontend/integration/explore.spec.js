@@ -104,10 +104,20 @@ test('a period starting before 2000-01 is refused without a request', async ({ p
 })
 
 test('Variables without data are not offered, and Back returns to the welcome', async ({ page }) => {
+  // The seed set holds every Series the catalog lists, so this test removes one
+  // from the real API's answer: the Amazon Basin's vegetation index.
+  await page.route('**/api/series/available', async (route) => {
+    const response = await route.fetch()
+    const body = await response.json()
+    body.data = body.data.filter(
+      (series) => !(series.region_id === 'amazon-basin' && series.variable_id === 'vegetation-index'),
+    )
+    await route.fulfill({ response, json: body })
+  })
   await openFromSidebar(page, 'amazon-basin')
   await expect(page.getByRole('checkbox')).toHaveCount(3)
   await expect(page.getByRole('checkbox', { name: /vegetation/i })).toHaveCount(0)
-  await expect(page.locator('.explore')).toContainText('No data yet for vegetation index')
+  await expect(page.locator('.explore')).toContainText('No data yet for vegetation index (ndvi).')
   await page.getByRole('button', { name: '← Back' }).click()
   await expect(page.locator('.welcome')).toBeVisible()
 })
