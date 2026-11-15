@@ -173,12 +173,48 @@ class Trend:
     method_citation: str
     engine_version: str
 
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> Trend:
+        methods = payload["methods"]
+        return cls(
+            region_id=payload["region_id"],
+            variable_id=payload["variable_id"],
+            period=Period(**payload["period"]),
+            rate_per_decade=payload["rate_per_decade"],
+            units_per_decade=payload["units_per_decade"],
+            confidence_interval_95=tuple(payload["confidence_interval_95"]),
+            direction=payload["direction"],
+            evidence_label=payload["evidence_label"],
+            methods=TrendMethods(
+                least_squares=LeastSquaresFit(**methods["least_squares"]),
+                annual_anomaly=Fit(**methods["annual_anomaly"]),
+                robust=Fit(**methods["robust"]),
+                theil_sen=TheilSenFit(**methods["theil_sen"]),
+                mann_kendall=MannKendallTest(**methods["mann_kendall"]),
+                outlier_check=OutlierCheck(**methods["outlier_check"]),
+            ),
+            multiple_comparisons=MultipleComparisons(**payload["multiple_comparisons"]),
+            autocorrelation=Autocorrelation(**payload["autocorrelation"]),
+            source=Source(**payload["source"]),
+            method_citation=payload["method_citation"],
+            engine_version=payload["engine_version"],
+        )
+
 
 @dataclass(frozen=True)
 class Contrast:
     variable_id: str
     kind: ContrastKind
     trends: tuple[Trend, Trend]
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> Contrast:
+        first, second = payload["trends"]
+        return cls(
+            variable_id=payload["variable_id"],
+            kind=payload["kind"],
+            trends=(Trend.from_dict(first), Trend.from_dict(second)),
+        )
 
 
 @dataclass(frozen=True)
@@ -188,6 +224,17 @@ class Mirror:
     p_value: float
     adjusted_p_value: float
     significant_after_correction: bool
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> Mirror:
+        first, second = payload["series"]
+        return cls(
+            series=(SeriesRef(**first), SeriesRef(**second)),
+            correlation=payload["correlation"],
+            p_value=payload["p_value"],
+            adjusted_p_value=payload["adjusted_p_value"],
+            significant_after_correction=payload["significant_after_correction"],
+        )
 
 
 @dataclass(frozen=True)
@@ -259,6 +306,49 @@ class Narrative:
     investigation: Investigation
     how_do_we_know: HowDoWeKnow
 
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> Narrative:
+        predict, check, reason = payload["investigation"]["steps"]
+        evidence = payload["how_do_we_know"]
+        return cls(
+            question=payload["question"],
+            investigation=Investigation(
+                steps=(
+                    PredictStep(
+                        question=predict["question"],
+                        options=tuple(
+                            PredictOption(**option) for option in predict["options"]
+                        ),
+                        answer_option_id=predict["answer_option_id"],
+                    ),
+                    CheckStep(
+                        series=tuple(SeriesRef(**ref) for ref in check["series"]),
+                        comparison=check["comparison"],
+                    ),
+                    ReasonStep(
+                        prompt=reason["prompt"],
+                        possible_causes=tuple(
+                            PossibleCause(text=cause["text"])
+                            for cause in reason["possible_causes"]
+                        ),
+                    ),
+                )
+            ),
+            how_do_we_know=HowDoWeKnow(
+                period=Period(**evidence["period"]),
+                sources=tuple(
+                    EvidenceSource(
+                        region_id=entry["region_id"],
+                        variable_id=entry["variable_id"],
+                        source=Source(**entry["source"]),
+                    )
+                    for entry in evidence["sources"]
+                ),
+                statistics_summary=evidence["statistics_summary"],
+                method_citation=evidence["method_citation"],
+            ),
+        )
+
 
 @dataclass(frozen=True)
 class Discovery:
@@ -273,6 +363,25 @@ class Discovery:
     headline_eligible: bool
     narrative: Narrative
     engine_version: str
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> Discovery:
+        first, second = payload["region_ids"]
+        return cls(
+            discovery_id=payload["discovery_id"],
+            region_ids=(first, second),
+            period=Period(**payload["period"]),
+            contrasts=tuple(
+                Contrast.from_dict(contrast) for contrast in payload["contrasts"]
+            ),
+            mirrors=tuple(Mirror.from_dict(mirror) for mirror in payload["mirrors"]),
+            score=payload["score"],
+            score_components=ScoreComponents(**payload["score_components"]),
+            evidence_label=payload["evidence_label"],
+            headline_eligible=payload["headline_eligible"],
+            narrative=Narrative.from_dict(payload["narrative"]),
+            engine_version=payload["engine_version"],
+        )
 
 
 @dataclass(frozen=True)

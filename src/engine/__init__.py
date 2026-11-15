@@ -17,11 +17,12 @@ from .discovery import (
     select_surprise,
 )
 from .store import JsonResultStore, ResultStore
-from .trend import estimate_trend, rate_evidence
+from .trend import FALSE_DISCOVERY_RATE, estimate_trend, rate_evidence
 from .version import ENGINE_VERSION
 
 __all__ = [
     "ENGINE_VERSION",
+    "FALSE_DISCOVERY_RATE",
     "Catalog",
     "Discovery",
     "JsonResultStore",

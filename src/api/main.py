@@ -19,10 +19,19 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from engine import ENGINE_VERSION, JsonResultStore, Period, applies_to, load_catalog
-from engine.contracts import as_dict
+from engine import (
+    ENGINE_VERSION,
+    JsonResultStore,
+    Period,
+    Series,
+    applies_to,
+    estimate_trend,
+    load_catalog,
+    rate_evidence,
+    select_surprise,
+)
+from engine.contracts import Discovery, as_dict
 from engine.discovery import SessionHistory
-from engine.stub import select_first_eligible
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "stub"
 DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(DEFAULT_DATA_DIR)))
@@ -101,6 +110,46 @@ def get_series(
     return ok(payload)
 
 
+@app.get("/api/comparison")
+def compare_regions(
+    region_a: str,
+    region_b: str,
+    variable_id: str,
+    period_start: str = "2000-01",
+    period_end: str = "2024-12",
+) -> Any:
+    """Analyze any catalog pair, whether or not it forms a Discovery.
+
+    The two requested Trends form the multiple-comparison family for this
+    analysis. Statistics and Evidence labels are computed by the engine.
+    """
+    for region_id in (region_a, region_b):
+        rejection = reject_outside_catalog(region_id, variable_id)
+        if rejection is not None:
+            return rejection
+
+    period = Period(period_start, period_end)
+    series = []
+    for region_id in (region_a, region_b):
+        item = store.series(region_id, variable_id, period)
+        if item is None:
+            return error(
+                404,
+                "result_not_available",
+                "No stored series for this pair and period.",
+            )
+        series.append(item)
+    try:
+        trends = rate_evidence(
+            [estimate_trend(Series.from_dict(item)) for item in series]
+        )
+    except ValueError:
+        return error(
+            404, "result_not_available", "Not enough data to analyze this pair."
+        )
+    return ok({"trends": [as_dict(trend) for trend in trends], "series": series})
+
+
 @app.get("/api/discoveries")
 def list_discoveries() -> dict[str, Any]:
     return ok(store.discoveries())
@@ -122,11 +171,12 @@ def surprise(request: SurpriseRequest) -> Any:
         shown_discovery_ids=tuple(request.shown_discovery_ids),
         shown_region_ids=tuple(request.shown_region_ids),
     )
-    payload = select_first_eligible(store.discoveries(), history)
-    if payload is None:
+    candidates = [Discovery.from_dict(payload) for payload in store.discoveries()]
+    chosen = select_surprise(candidates, history)
+    if chosen is None:
         return error(
             404,
             "no_discovery_left_in_session",
-            "Every Region in the catalog has already been shown in this session.",
+            "Every Discovery worth headlining has already been shown in this session.",
         )
-    return ok(payload)
+    return ok(as_dict(chosen))
