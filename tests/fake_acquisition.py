@@ -20,6 +20,7 @@ class FakeGridAcquisitionSource:
     longitudes: list[float]
     values: list[list[list[float | None]]]
     units: str
+    land_mask: list[list[int]] | None = None
 
     def prepare(self, request: dict, *, fetch: bool = False) -> Path:
         directory = Path(request["workspace"])
@@ -53,6 +54,9 @@ class FakeGridAcquisitionSource:
                 [[-9999 if cell is None else cell for cell in row] for row in grid]
                 for grid in self.values
             ]
+            if self.land_mask is not None:
+                mask = data.createVariable("land", "i1", ("lat", "lon"))
+                mask[:] = self.land_mask
         manifest = directory / "manifest.json"
         manifest.write_text(
             json.dumps(
@@ -72,6 +76,16 @@ class FakeGridAcquisitionSource:
             json.dumps(
                 {
                     "SERIES_MANIFEST": str(manifest),
+                    "VARIABLE_RULES": {
+                        "TEST": {
+                            field_name: {
+                                "land_only": True,
+                                "land_mask": {"variable": "land"},
+                            }
+                        }
+                    }
+                    if self.land_mask is not None
+                    else {},
                     "CATALOG_SERIES": {
                         request["variable_id"]: {
                             "dataset_id": "TEST",

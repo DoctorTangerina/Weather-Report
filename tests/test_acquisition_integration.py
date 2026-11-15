@@ -31,7 +31,17 @@ def test_http_integrates_real_data_layer_and_persists(
         main, "live_store", JsonResultStore(tmp_path / "cache", ENGINE_VERSION)
     )
     monkeypatch.setenv("WEATHER_REPORT_CATALOG", str(paths["catalog_path"]))
-    monkeypatch.setenv("WEATHER_REPORT_ACQUISITION_CONFIG", str(paths["config_path"]))
+
+    # Inject the fixture's acquired grids; production never opens offline downloads.
+    class AcquiredFixture:
+        def prepare(self, request, *, fetch=False):
+            return paths["config_path"]
+
+    monkeypatch.setattr(
+        main.app,
+        "dependency_overrides",
+        {main.get_acquisition_source: lambda: AcquiredFixture()},
+    )
     monkeypatch.setenv("EARTHDATA_TOKEN", "synthetic-test-token")
     params = {
         "region_id": "test-region",

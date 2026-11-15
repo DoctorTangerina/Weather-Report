@@ -43,6 +43,7 @@ async def acquire_series(
                 region.bbox.north,
             ],
             "dataset": variable.source.dataset,
+            "time_step": "monthly",
             "workspace": workspace,
         }
         if source is not None:

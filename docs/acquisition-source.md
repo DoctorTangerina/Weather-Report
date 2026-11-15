@@ -1,25 +1,57 @@
 # Gridded acquisition source
 
 `api.grid_source.GridAcquisitionSource.prepare(request, fetch=False)` returns a
-path to a data-gathering configuration. That configuration identifies raw
-NetCDF files through `SERIES_MANIFEST` and declares `CATALOG_SERIES` field names,
-unit conversions and `VARIABLE_RULES` such as land masks. It supplies grids,
-not precomputed Series. The existing data layer performs spatial selection,
-area weighting, monthly reduction, conversion and the Quality gate.
+path to a data-gathering configuration. It identifies raw NetCDF grids through
+`SERIES_MANIFEST`, plus field names, unit conversions and land-mask rules in
+`CATALOG_SERIES` and `VARIABLE_RULES`. Reduction stays in the shared data layer.
 
-The request carries `region_id`, `variable_id`, `bbox` (west, south, east, north),
-`dataset`, `period` (inclusive start/end) and `workspace`. New files belong in
-that workspace; the API owns and removes it. Timestamps and geographic axes
-remain in the NetCDF files, so the boundary does not impose a native frequency
-or grid extent.
+The request carries `region_id` (an identifier for the consumer), `variable_id`,
+`bbox` (west, south, east, north), `dataset`, inclusive `period.start/end`,
+`time_step` and `workspace`. New files belong in that workspace; the API owns
+and removes it. The source also accepts `rectangles`, a list of bounding boxes,
+for Selected areas. Crossing boxes split at the antimeridian. Returned grids
+retain native timestamps, cell centres, bounds and units. Consumers of joined
+rectangles must select the union of cells, counting overlapping cells once.
 
-The live worker uses `MonthlyGridAcquisitionSource`: first the configured files,
-then `fetch=True` to download when the data layer reports unavailable files,
-fields or datasets. Downloading and reduction stay in the cancellable worker.
-This preserves the existing monthly behavior. NASA subsetting, new requested
-Time steps and Selected areas belong to later tickets under ADR 0004.
+## NASA source
 
-For HTTP tests, override the FastAPI dependency before opening the test client:
+The live worker uses `api.nasa_source.NasaGridAcquisitionSource`. It searches
+CMR for the requested product, period and extent, discovers each granule's
+current cloud OPeNDAP service, reads coordinate metadata, and downloads only
+the requested field and indexed cells/timestamps via DAP4 NetCDF responses.
+It never reads the offline downloads or acquisition config. Those files remain
+inputs to the offline seed build. There is no full-file download fallback.
+
+| Variable | Monthly product | Sub-monthly product | Field |
+| --- | --- | --- | --- |
+| Temperature | M2TMNXSLV 5.12.4 | M2T1NXSLV 5.12.4 (hourly) | T2M |
+| Precipitation | M2TMNXFLX 5.12.4 | M2T1NXFLX 5.12.4 (hourly) | PRECTOTCORR |
+| Soil moisture | GLDAS_NOAH025_M 2.1 | GLDAS_NOAH025_3H 2.1 (3-hourly) | SoilMoi0_10cm_inst |
+
+`time_step="monthly"` selects monthly products. `"daily"` or `"3-hourly"`
+selects the native sub-monthly products; acquisition does not resample them.
+The consumer performs Aggregation, conversion and temporal reduction. The
+config retains the existing monthly conversions for the current Series endpoint.
+GLDAS's valid-cell footprint supplies the land mask; missing cells remain masked.
+Cell bounds preserve native cell areas even for one-cell subsets. An extent
+without any cell centre returns `series_source_unavailable`.
+
+The token uses the existing `data.data_gathering.download.load_token` loader
+(exported `EARTHDATA_TOKEN`, then the existing `.env` configuration). The HTTP
+route keeps its existing server environment credential check, cancellable worker,
+results cache and fallback responses. Results have no expiry or size cap.
+Sub-monthly HTTP requests, jobs and Selected area reduction are subsequent
+Explore My World tickets; this ticket implements their acquisition source.
+
+The OPeNDAP form follows the [NASA cloud access tutorial](https://github.com/nasa/gesdisc-tutorials)
+and [DAP4 constraint expressions](https://pydap.github.io/pydap/en/notebooks/MERRA2.html).
+Collection and service URLs are discovered from CMR rather than obsolete archive
+hosts. GLDAS 2.1 is selected explicitly because its coverage starts in 2000 and
+continues to the present; 2.0 ends in 2014.
+
+## HTTP tests
+
+Override the FastAPI dependency before opening the test client:
 
 ```python
 from api import main
@@ -36,10 +68,7 @@ main.app.dependency_overrides[main.get_acquisition_source] = lambda: source
 # Use TestClient(main.app); restore dependency_overrides in fixture teardown.
 ```
 
-The fake writes actual NetCDF grids into the API workspace. Values are ordered
-as time × latitude × longitude; `None` represents a missing cell. Cell bounds
-are one degree wide. Supply hourly, 3-hourly or monthly ISO timestamps and any
-longitude/latitude coordinates. No token or acquisition configuration is needed.
-Injected grids are prepared locally before launching the same reduction worker;
-if they are unavailable, the API uses its existing fallback rather than NASA.
-The existing HTTP endpoint still returns monthly Series.
+The fake writes actual NetCDF grids, with optional `land_mask` for land-only
+Variables. No token is needed. Injected files go through the same reduction
+worker; unavailable injected grids never fall through to NASA. The current HTTP
+endpoint still returns monthly Series. Automated tests never query NASA.
