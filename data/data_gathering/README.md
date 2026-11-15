@@ -169,7 +169,8 @@ Which acquired dataset holds each Variable is set in `config.json`:
   engine, so run from the repository root with `pip install -e .` or
   `PYTHONPATH=src`.
 - `VARIABLE_RULES`: land-only fields and their land mask, by collection id.
-  Soil moisture uses the official GLDAS land mask, which is not committed:
+  The vegetation index's mask is written by its acquisition (below). Soil
+  moisture uses the official GLDAS land mask, which is not committed:
 
 ```sh
 mkdir -p data/data_gathering/downloads/masks
@@ -196,18 +197,28 @@ python -m data.data_gathering.build_series \
 
 Acquire a product first (each run adds to `acquisition-manifest.json`; it no
 longer replaces products acquired earlier). Full 2000-2024 files are large
-(about 15 GB each for MERRA-2 temperature and precipitation, 7 GB for GLDAS):
+(about 15 GB each for MERRA-2 temperature and precipitation, 7 GB for GLDAS,
+about 29 GB of HDF4 for MOD13C2):
 
 ```sh
 python data/data_gathering/datasets.py --keyword M2TMNXSLV --select C1276812859-GES_DISC --download   # temperature
 python data/data_gathering/datasets.py --keyword M2TMNXFLX --select C1276812868-GES_DISC --download   # precipitation
 python data/data_gathering/datasets.py --keyword GLDAS_NOAH025_M --select C1342986036-GES_DISC --download   # soil moisture
+python data/data_gathering/datasets.py --keyword MOD13C2 --select C2565788914-LPCLOUD --download   # vegetation index
 ```
 
-Not yet supported: the vegetation index. The catalog sources it from MODIS
-MOD13A3 through AppEEARS (see `docs/catalog-sources.md`), which this package does
-not call yet, so `vegetation-index` series report `variable_not_available`
-(tracked in #41).
+The vegetation index comes from MODIS MOD13C2 (see `docs/catalog-sources.md`),
+whose granules are HDF4, which the extractor cannot read. Acquisition handles
+this (`mod13c2.py`, which needs `pyhdf`):
+
+- Each granule is converted to a NetCDF-4 file beside it, holding its NDVI with
+  CF time and coordinates. The manifest records that file, and the `.hdf` as
+  `source_file`. The `.hdf` is not read again unless the `.nc` is deleted.
+- `downloads/masks/MOD13C2_landmask_005d.nc` is created, or added to, from the
+  granules' VI Quality Land/Water flag. A cell is land if any acquired granule
+  flags it "Land"; coastlines and inland water are not land. Acquire whole
+  years, so that land in polar night (no data, flagged as ocean) is counted from
+  its summer months.
 
 ## Callable method and quality gate
 

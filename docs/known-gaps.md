@@ -15,7 +15,7 @@ State of the repo at `4044420` (2026-11-15). Each gap was checked in the repo or
 
 | Gap | Detail |
 | --- | --- |
-| Vegetation index (NDVI) has no data | The catalog lists `vegetation-index`, but the seed set has no series for it and `data/data_gathering/config.json` has no `CATALOG_SERIES` entry for it, so live fetch cannot supply it either. Tracked in #41. |
+| Vegetation index (NDVI) not in the seed set | Updated by #41: the gathering package now acquires MOD13C2, converts its HDF4 granules and builds `vegetation-index` series, and `config.json` has its `CATALOG_SERIES` entry. But the seed set still has no series for it: the 2000–2024 granules (about 29 GB) have not been acquired for a seed rebuild. |
 | 4 Region-Variable pairs missing from the seed | Soil moisture for `greenland-coast`, `antarctic-peninsula`, `equatorial-pacific` and `north-atlantic`. The seed has 71 series, not 75. |
 | One period only | Every seed series covers 2000-01 to 2024-12. The UI has no period control. |
 | Seed contains many weak results | Of 264 Discoveries, 177 are "Not enough evidence yet"; only the 87 rated Strong (69) or Some (18) evidence are eligible as Surprise Me! headlines. |
