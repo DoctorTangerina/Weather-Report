@@ -40,6 +40,7 @@ def test_a_stored_series_is_returned(client, validator_for):
     validator_for(RESPONSES, "#/$defs/seriesResponse").validate(response.json())
     assert response.json()["data"]["region_id"] == "sahel"
     assert response.json()["notice"] is None
+    assert response.json()["provenance"] == "preloaded"
 
 
 def test_a_region_outside_the_catalog_is_rejected(client, validator_for):
@@ -60,7 +61,7 @@ def test_a_variable_outside_the_catalog_is_rejected(client):
     assert response.json()["error"]["code"] == "variable_not_in_catalog"
 
 
-def test_a_period_with_no_stored_result_is_reported_as_unavailable(client):
+def test_a_period_with_no_stored_result_returns_a_labelled_example(client):
     response = client.get(
         "/api/series",
         params={
@@ -70,8 +71,9 @@ def test_a_period_with_no_stored_result_is_reported_as_unavailable(client):
             "period_end": "2019-12",
         },
     )
-    assert response.status_code == 404
-    assert response.json()["error"]["code"] == "result_not_available"
+    assert response.status_code == 200
+    assert response.json()["notice"]["code"] == "live_data_unavailable"
+    assert response.json()["provenance"] == "preloaded"
 
 
 def test_discoveries_are_listed_highest_scoring_first(client, validator_for):
