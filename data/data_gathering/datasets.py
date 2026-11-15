@@ -221,6 +221,26 @@ def file_url(granule: dict) -> str:
     return min(urls, key=lambda url: ("earthdata.nasa.gov" not in url, url))
 
 
+def size_matches(size: int, granule_size) -> bool | None:
+    """Whether a file's size in bytes agrees with CMR's granule_size, or None if unknown.
+
+    CMR reports granule_size in MiB, to the provider's precision: GES DISC gives
+    full precision, LP DAAC rounds to 4 decimals (about 100 bytes). So the sizes
+    agree within half a unit of the last decimal reported, and never less than
+    half a byte.
+    """
+    text = str(granule_size).strip()
+    try:
+        reported = float(text)
+    except ValueError:
+        return None
+    if not math.isfinite(reported):
+        return None
+    decimals = len(text.partition(".")[2]) if re.fullmatch(r"\d+\.\d+", text) else 0
+    tolerance = max(0.5 * 10.0**-decimals * 1024**2, 0.5)
+    return abs(size - reported * 1024**2) <= tolerance
+
+
 def acquire(
     results: list[dict],
     areas: list[SearchArea],
@@ -228,30 +248,39 @@ def acquire(
     end: str,
     destination: Path,
 ) -> Path:
-    """Download explicitly selected collections, reusing complete existing files."""
+    """Download explicitly selected collections, reusing complete existing files.
+
+    MOD13C2 granules are HDF4, which the reader cannot open: each is converted to
+    a NetCDF-4 file beside it, which the manifest records, and the static land
+    mask is updated from them.
+    """
     if __package__:
+        from . import mod13c2
         from .download import download, load_token
     else:
+        import mod13c2
         from download import download, load_token
 
     token = load_token()
+
+    def relative(item):
+        return Path(os.path.relpath(item.resolve(), destination.resolve())).as_posix()
+
     records = []
     for dataset in results:
         granules = cmr_entries(
             "granules", granule_query(dataset["collection_id"], areas, start, end)
         )
         count = 0
+        converted = []
         for granule in granules:
             count += 1
             url = file_url(granule)
             filename = Path(unquote(urlsplit(url).path)).name
             path = destination / filename
-            try:
-                expected = round(float(granule["granule_size"]) * 1024**2)
-            except (KeyError, TypeError, ValueError, OverflowError):
-                expected = None
+            reported = granule.get("granule_size")
             if path.exists():
-                if expected is None or path.stat().st_size != expected:
+                if not size_matches(path.stat().st_size, reported):
                     raise ValueError(
                         f"Cannot verify existing file: {path}; choose another output directory."
                     )
@@ -259,20 +288,24 @@ def acquire(
             else:
                 print(f"Downloading {filename}", flush=True)
                 download(url, path, token)
-                if expected is not None and path.stat().st_size != expected:
+                if size_matches(path.stat().st_size, reported) is False:
                     raise ValueError(
                         f"Downloaded size differs from NASA metadata: {path}"
                     )
+            readable, source = path, {}
+            if mod13c2.is_granule(path):
+                readable = mod13c2.readable_copy(path)
+                source = {"source_file": relative(path)}
+                converted.append(path)
             records.append(
                 {
                     "collection_id": dataset["collection_id"],
                     "dataset": dataset["short_name"],
                     "granule_id": granule["id"],
                     "url": url,
-                    "file": Path(
-                        os.path.relpath(path.resolve(), destination.resolve())
-                    ).as_posix(),
-                    "bytes": path.stat().st_size,
+                    "file": relative(readable),
+                    **source,
+                    "bytes": readable.stat().st_size,
                     "start": granule.get("time_start"),
                     "end": granule.get("time_end"),
                 }
@@ -281,6 +314,8 @@ def acquire(
             raise ValueError(
                 f"No source files match the selected dates/box for {dataset['short_name']}."
             )
+        if converted:
+            mod13c2.update_land_mask(destination / mod13c2.LAND_MASK, converted)
     return write_manifest(destination, start, end, areas, records)
 
 
@@ -301,7 +336,10 @@ def write_manifest(
     earlier = []
     if manifest.exists():
         earlier = json.loads(manifest.read_text(encoding="utf-8")).get("files", [])
-    identity = lambda item: (item.get("collection_id"), item["file"])
+
+    def identity(item):
+        return item.get("collection_id"), item["file"]
+
     replaced = {identity(item) for item in records}
     manifest.write_text(
         json.dumps(

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getCatalog, surpriseMe } from './api.js'
+import { ApiError, getCatalog, getDiscoveries, surpriseMe } from './api.js'
 import { REGION_COLORS } from './palette.js'
 import MainScreen from './screens/MainScreen.jsx'
 
@@ -7,7 +7,8 @@ const NEW_SESSION = { shownDiscoveryIds: [], shownRegionIds: [] }
 
 // loading → welcome → drawing → discovery ⇄ drawing … → complete → welcome
 // unreachable when the catalog cannot be fetched. The investigation (#15) runs
-// in the sidebar, beside the globe, from a drawn Discovery.
+// in the sidebar, beside the globe, from a drawn Discovery. welcome ⇄ explore
+// opens one catalog Region in Explore My World (#75).
 export default function App() {
   const [catalog, setCatalog] = useState(null)
   const [phase, setPhase] = useState('loading')
@@ -15,6 +16,8 @@ export default function App() {
   const [notice, setNotice] = useState(null)
   const [session, setSession] = useState(NEW_SESSION)
   const [error, setError] = useState(null)
+  const [exploreRegionId, setExploreRegionId] = useState(null)
+  const [checkingDiscovery, setCheckingDiscovery] = useState(false)
   const drawing = useRef(false)
 
   const loadCatalog = useCallback(() => {
@@ -42,13 +45,29 @@ export default function App() {
 
   // Guards against a double click firing two draws before the first returns,
   // which would send the same session history twice.
-  const draw = (nextPhase) => {
+  const draw = (nextPhase, selectedRegions = []) => {
     if (drawing.current || !catalog) return
+    if (selectedRegions.length === 1) {
+      setError(new ApiError('incomplete_pair', 'Choose a second Region to investigate this pair.'))
+      return
+    }
     drawing.current = true
     const settled = discovery ? 'discovery' : 'welcome'
-    setPhase('drawing')
+    if (selectedRegions.length === 2) setCheckingDiscovery(true)
+    else setPhase('drawing')
     setError(null)
-    surpriseMe(session)
+    const request = selectedRegions.length === 2
+      ? getDiscoveries().then((response) => {
+          const selected = response.data.find((item) =>
+            item.region_ids.length === 2 && selectedRegions.every((id) => item.region_ids.includes(id)),
+          )
+          if (!selected) {
+            throw new ApiError('result_not_available', 'There is no Discovery to investigate for these Regions yet. Choose another pair or use Surprise Me!')
+          }
+          return { ...response, data: selected }
+        })
+      : surpriseMe(session)
+    request
       .then((response) => {
         const next = response.data
         setDiscovery(next)
@@ -69,6 +88,7 @@ export default function App() {
       })
       .finally(() => {
         drawing.current = false
+        setCheckingDiscovery(false)
       })
   }
 
@@ -88,12 +108,26 @@ export default function App() {
         highlights={highlights}
         notice={notice}
         error={error}
+        checkingDiscovery={checkingDiscovery}
         seen={session.shownDiscoveryIds.length}
         onSurprise={() => draw('discovery')}
-        onDetective={() => draw('investigation')}
+        onDetective={(selectedRegions) => draw('investigation', selectedRegions)}
         onInvestigate={() => setPhase('investigation')}
         onBack={() => setPhase('discovery')}
+        onHome={() => {
+          setDiscovery(null)
+          setNotice(null)
+          setError(null)
+          setPhase('welcome')
+        }}
         onNewSession={startOver}
+        exploreRegionId={exploreRegionId}
+        onExplore={(regionId) => {
+          setExploreRegionId(regionId)
+          setError(null)
+          setPhase('explore')
+        }}
+        onCloseExplore={() => setPhase('welcome')}
         onRetry={loadCatalog}
       />
     </main>

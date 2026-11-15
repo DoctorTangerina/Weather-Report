@@ -23,6 +23,10 @@ export const getDiscoveries = () => request('/api/discoveries')
 export const getComparison = (regionA, regionB, variableId) =>
   request(`/api/comparison?${new URLSearchParams({ region_a: regionA, region_b: regionB, variable_id: variableId })}`)
 
+export const getExploreOptions = () => request('/api/explore/options')
+
+export const getExploreJob = (url) => request(url)
+
 export const getAvailableSeries = () => request('/api/series/available')
 
 export const getSeries = (regionId, variableId, period) => {
@@ -34,6 +38,22 @@ export const getSeries = (regionId, variableId, period) => {
   return request(`/api/series?${params}`)
 }
 
+// Explore My World: the Series of a catalog Region (`regionId`) or a
+// Selected area (`rectangles`) with one Aggregation and one Time step, returned
+// directly or through a background job.
+export const getExploreSeries = (place, variableIds, period, aggregation, timeStep = 'monthly') => {
+  const params = new URLSearchParams({
+    aggregation,
+    time_step: timeStep,
+    period_start: period.start,
+    period_end: period.end,
+  })
+  if (place.regionId) params.set('region_id', place.regionId)
+  for (const rectangle of place.rectangles ?? []) params.append('rectangle', rectangle.join(','))
+  for (const variableId of variableIds) params.append('variable_id', variableId)
+  return request(`/api/explore/series?${params}`)
+}
+
 export const surpriseMe = (session) =>
   request('/api/discoveries/surprise', {
     method: 'POST',
@@ -43,6 +63,16 @@ export const surpriseMe = (session) =>
       shown_region_ids: session.shownRegionIds,
     }),
   })
+
+export const getFieldMap = (place, variableId, period, aggregation, timeStep) => {
+  const params = new URLSearchParams({
+    variable_id: variableId, aggregation, time_step: timeStep,
+    period_start: period.start, period_end: period.end,
+  })
+  if (place.regionId) params.set('region_id', place.regionId)
+  for (const rectangle of place.rectangles ?? []) params.append('rectangle', rectangle.join(','))
+  return request(`/api/explore/field-map?${params}`)
+}
 
 export const getCorrelationMap = (selection, signal) =>
   request('/api/correlation-map', {

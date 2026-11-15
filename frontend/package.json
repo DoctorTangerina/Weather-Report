@@ -7,8 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/*.test.js",
-    "test:e2e": "playwright test"
+    "test": "node --test \"src/**/*.test.js\"",
+    "test:e2e": "playwright test",
+    "test:integration": "playwright test --config playwright.integration.config.js",
+    "test:areas": "playwright test --config playwright.areas.config.js",
+    "test:time-steps": "playwright test --config playwright.time-steps.config.js",
+    "test:field-map": "playwright test --config playwright.field-map.config.js"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -16,7 +20,7 @@
     "react-globe.gl": "^2.38.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.56.1",
+    "@playwright/test": "^1.65.1",
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^5.4.11"
   }

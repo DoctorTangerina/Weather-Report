@@ -3,6 +3,9 @@
 // Both read on the dark globe and on the light sidebar.
 export const REGION_COLORS = ['#17a9c2', '#ec7a3c']
 
+// A Selected area (#79) is never a Region, so it never shares a Region's colour.
+export const AREA_COLOR = '#d65db1'
+
 export function withAlpha(hex, alpha) {
   const value = Number.parseInt(hex.slice(1), 16)
   return `rgba(${value >> 16}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`

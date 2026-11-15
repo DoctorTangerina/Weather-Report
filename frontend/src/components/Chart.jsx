@@ -1,5 +1,6 @@
 import { formatNumber } from '../format.js'
-import { seriesIndexAt } from '../timeline.js'
+import { seriesIndexAt, seriesInRange } from '../timeline.js'
+import { monthAt, stepRange, timeStepOf } from '../timeSteps.js'
 
 const WIDTH = 520
 const HEIGHT = 170
@@ -35,19 +36,48 @@ function path(values, x, y) {
   return d
 }
 
-function yearTicks(period, length) {
-  const startYear = Number(period.start.slice(0, 4))
-  const startMonth = Number(period.start.slice(5, 7))
-  const ticks = []
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+// Ticks depend only on the period and Time step, so charts of one view share
+// their axis. Ticks sit on the first value of a month. Long periods mark every
+// fifth or second January; up to two years, every quarter; below a month's
+// Time step, every month of a period of up to three months.
+function timeTicks(period, length, timeStep) {
+  const starts = []
   for (let index = 0; index < length; index += 1) {
-    const month = (startMonth - 1 + index) % 12
-    const year = startYear + Math.floor((startMonth - 1 + index) / 12)
-    if (month === 0 && year % 5 === 0) ticks.push({ index, year })
+    const key = monthAt(period, timeStep, index)
+    if (starts.length === 0 || starts.at(-1).key !== key) starts.push({ key, index })
+  }
+  const years = starts.length / 12
+  const everyMonth = timeStep !== 'monthly' && starts.length <= 3
+  const ticks = []
+  for (const { key, index } of starts) {
+    const month = key % 12
+    const year = Math.floor(key / 12)
+    if (everyMonth) {
+      ticks.push({ index, text: `${MONTHS[month]} ${year}` })
+    } else if (years <= 2) {
+      if (month % 3 === 0) ticks.push({ index, text: month === 0 ? `${MONTHS[0]} ${year}` : MONTHS[month] })
+    } else if (month === 0 && year % (years > 12 ? 5 : years > 4 ? 2 : 1) === 0) {
+      ticks.push({ index, text: String(year) })
+    }
   }
   return ticks
 }
 
-export default function Chart({ series, label, timestamp, color }) {
+// `smoothed` adds a 12-month mean drawn by the browser. Explore My World turns it
+// off: there every value on screen comes from the API (#75). `timeStep` says how
+// far apart the values are (#80); the timeline cursor is monthly only.
+export default function Chart({
+  series,
+  label,
+  timestamp,
+  color,
+  timeRange,
+  smoothed = true,
+  timeStep = 'monthly',
+}) {
+  series = seriesInRange(series, timeRange)
   const present = series.values.filter((value) => value !== null)
   if (present.length === 0) return <p className="muted">No data for {label}.</p>
 
@@ -58,7 +88,8 @@ export default function Chart({ series, label, timestamp, color }) {
   const x = (index) => PAD.left + (index / last) * PLOT_W
   const y = (value) => PAD.top + PLOT_H - ((value - min) / span) * PLOT_H
 
-  const selectedIndex = seriesIndexAt(series, timestamp)
+  const selectedIndex = timeStep === 'monthly' ? seriesIndexAt(series, timestamp) : -1
+  const count = series.values.length
   const selectedValue = selectedIndex >= 0 ? series.values[selectedIndex] : null
   const style = color ? { '--series': color } : undefined
 
@@ -71,7 +102,7 @@ export default function Chart({ series, label, timestamp, color }) {
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
-        aria-label={`${label}, monthly values in ${series.units} from ${series.period.start} to ${series.period.end}, with a 12-month average`}
+        aria-label={`${label}, one value per ${timeStepOf(timeStep).unit}, ${count} ${count === 1 ? 'value' : 'values'} in ${series.units} from ${stepRange(series.period, timeStep, count)}${smoothed ? ', with a 12-month average' : ''}`}
       >
         <line
           className="chart-axis"
@@ -86,13 +117,13 @@ export default function Chart({ series, label, timestamp, color }) {
         <text className="chart-tick" x={PAD.left - 6} y={PAD.top + PLOT_H} textAnchor="end">
           {formatNumber(min)}
         </text>
-        {yearTicks(series.period, series.values.length).map(({ index, year }) => (
-          <text key={year} className="chart-tick" x={x(index)} y={HEIGHT - 4} textAnchor="middle">
-            {year}
+        {timeTicks(series.period, count, timeStep).map(({ index, text }) => (
+          <text key={index} className="chart-tick chart-time" x={x(index)} y={HEIGHT - 4} textAnchor="middle">
+            {text}
           </text>
         ))}
         <path className="chart-monthly" d={path(series.values, x, y)} />
-        <path className="chart-mean" d={path(yearlyMean(series.values), x, y)} />
+        {smoothed && <path className="chart-mean" d={path(yearlyMean(series.values), x, y)} />}
         {selectedIndex >= 0 && (
           <line
             className="chart-cursor"
@@ -106,7 +137,7 @@ export default function Chart({ series, label, timestamp, color }) {
           <circle className="chart-point" cx={x(selectedIndex)} cy={y(selectedValue)} r="4" />
         )}
       </svg>
-      {timestamp && (
+      {timestamp && timeStep === 'monthly' && (
         <p className="chart-value">
           {timestamp}:{' '}
           {selectedValue === null ? 'no data' : `${formatNumber(selectedValue)} ${series.units}`}

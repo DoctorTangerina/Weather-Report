@@ -5,10 +5,21 @@ import json
 import os
 import sys
 import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
 from engine.contracts import Period, Region, Variable
+
+from .grid_source import GridAcquisitionSource
+
+# netCDF4 preparation in injected sources must not run concurrently in this process.
+_PREPARE_LOCK = threading.Lock()
+
+
+def _prepare(source: GridAcquisitionSource, request: dict) -> Path:
+    with _PREPARE_LOCK:
+        return source.prepare(request)
 
 
 class AcquisitionUnavailable(Exception):
@@ -16,8 +27,23 @@ class AcquisitionUnavailable(Exception):
 
 
 async def acquire_series(
-    region: Region, variable: Variable, period: Period, *, token: str
+    region: Region | None,
+    variable: Variable,
+    period: Period,
+    *,
+    token: str,
+    source: GridAcquisitionSource | None = None,
+    aggregation: str = "mean",
+    keep_values: bool = False,
+    rectangles: list[list[float]] | None = None,
+    time_step: str = "monthly",
+    field_map: bool = False,
 ) -> dict[str, Any]:
+    """A catalog Region's Series, or with `region` None a Selected area's.
+
+    keep_values keeps an excluded Series' values. `time_step` asks the source
+    for native sub-monthly grids and reduces them to that Time step.
+    """
     root = Path(__file__).resolve().parents[2]
     env = {
         **os.environ,
@@ -25,6 +51,42 @@ async def acquire_series(
         "PYTHONPATH": os.pathsep.join((str(root), str(root / "src"))),
     }
     with tempfile.TemporaryDirectory(prefix="weather-acquisition-") as workspace:
+        if region is None:
+            if not rectangles:
+                raise ValueError("A Selected area requires at least one rectangle.")
+            geometry = {"rectangles": rectangles, "bbox": rectangles[0]}
+        else:
+            geometry = {
+                "region_id": region.region_id,
+                "bbox": [
+                    region.bbox.west,
+                    region.bbox.south,
+                    region.bbox.east,
+                    region.bbox.north,
+                ],
+            }
+        request = {
+            **geometry,
+            "variable_id": variable.variable_id,
+            "period": {"start": period.start, "end": period.end},
+            "dataset": variable.source.dataset,
+            "time_step": time_step,
+            "aggregation": aggregation,
+            "keep_values": keep_values,
+            "field_map": field_map,
+            "workspace": workspace,
+        }
+        if source is not None:
+            preparation = asyncio.create_task(
+                asyncio.to_thread(_prepare, source, request)
+            )
+            try:
+                config = await asyncio.shield(preparation)
+            except asyncio.CancelledError:
+                # Let preparation release its files before cleaning the workspace.
+                await asyncio.gather(preparation, return_exceptions=True)
+                raise
+            request["config_path"] = str(config)
         process = await asyncio.create_subprocess_exec(
             sys.executable,
             "-m",
@@ -35,19 +97,6 @@ async def acquire_series(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,
         )
-        request = {
-            "region_id": region.region_id,
-            "variable_id": variable.variable_id,
-            "period": {"start": period.start, "end": period.end},
-            "bbox": [
-                region.bbox.west,
-                region.bbox.south,
-                region.bbox.east,
-                region.bbox.north,
-            ],
-            "dataset": variable.source.dataset,
-            "workspace": workspace,
-        }
         try:
             output, _ = await process.communicate(json.dumps(request).encode())
         finally:

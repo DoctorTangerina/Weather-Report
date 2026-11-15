@@ -15,6 +15,11 @@ from pathlib import Path
 import numpy as np
 from netCDF4 import Dataset, num2date
 
+if __package__:
+    from .aggregation import combine
+else:
+    from aggregation import combine
+
 
 def load_manifest(path: Path) -> dict:
     """Resolve source files relative to the manifest, not the working directory."""
@@ -100,6 +105,24 @@ def widths(variable, variables, latitude=False):
     return np.deg2rad(np.abs(high - low))
 
 
+def cell_bounds(variable, variables, index, latitude=False):
+    """Native bounds, or the midpoint edges of a regular coordinate axis."""
+    values = np.asarray(variable[:], dtype=float)
+    bounds = getattr(variable, "bounds", "")
+    if bounds in variables:
+        low, high = sorted(map(float, variables[bounds][index]))
+    elif len(values) > 1:
+        edges = np.r_[
+            values[0] - (values[1] - values[0]) / 2,
+            (values[:-1] + values[1:]) / 2,
+            values[-1] + (values[-1] - values[-2]) / 2,
+        ]
+        low, high = sorted(map(float, edges[index : index + 2]))
+    else:
+        raise ValueError("A single grid cell requires explicit native bounds.")
+    return [max(-90, low), min(90, high)] if latitude else [low, high]
+
+
 def geography(
     variables, area, aggregation, latitude=None, longitude=None, area_variable=None
 ):
@@ -122,14 +145,32 @@ def geography(
         raise ValueError(
             "Both latitude and longitude coordinates are required to select a box."
         )
-    west, south, east, north = area.bbox
+    boxes = _split_at_antimeridian(getattr(area, "boxes", ()) or (area.bbox,))
     lat_values = np.asarray(lat[:], dtype=float)
     lon_values = (np.asarray(lon[:], dtype=float) + 180) % 360 - 180
+
+    def centres_in(lat_part, lon_part):
+        # A cell belongs to the area when its centre lies in any of the boxes.
+        return np.any(
+            [
+                (lat_part >= south)
+                & (lat_part <= north)
+                & (lon_part >= west)
+                & (lon_part <= east)
+                for west, south, east, north in boxes
+            ],
+            axis=0,
+        )
+
     if lat.ndim == lon.ndim == 1 and lat.dimensions != lon.dimensions:
-        rows = np.flatnonzero((lat_values >= south) & (lat_values <= north))
-        cols = np.flatnonzero((lon_values >= west) & (lon_values <= east))
+        inside = centres_in(lat_values[:, None], lon_values[None, :])
+        rows = np.flatnonzero(inside.any(axis=1))
+        cols = np.flatnonzero(inside.any(axis=0))
         if not rows.size or not cols.size:
             raise ValueError("No grid-cell centres lie inside the configured box.")
+        inside = inside[np.ix_(rows, cols)]
+        # One box selects whole rows and columns; joined boxes may not.
+        inside = None if inside.all() else inside
         dims = (lat.dimensions[0], lon.dimensions[0])
         weights = np.ones((rows.size, cols.size))
         if aggregation == "area-mean":
@@ -160,16 +201,11 @@ def geography(
             "weights": weights,
             "coords": {dims[0]: lat_values, dims[1]: lon_values},
             "names": {lat_name, lon_name},
-            "inside": None,
+            "inside": inside,
         }
     if lat.dimensions != lon.dimensions or lat_values.shape != lon_values.shape:
         raise ValueError("Latitude and longitude must describe the same cells.")
-    inside = (
-        (lat_values >= south)
-        & (lat_values <= north)
-        & (lon_values >= west)
-        & (lon_values <= east)
-    )
+    inside = centres_in(lat_values, lon_values)
     if not inside.any():
         raise ValueError("No coordinate points lie inside the configured box.")
     weights = np.ones(lat_values.shape)
@@ -206,6 +242,17 @@ def geography(
     }
 
 
+def _split_at_antimeridian(boxes):
+    """(west, south, east, north) boxes, each crossing box cut in two at 180°."""
+    result = []
+    for west, south, east, north in boxes:
+        if west > east:
+            result += [(west, south, 180.0, north), (-180.0, south, east, north)]
+        else:
+            result.append((west, south, east, north))
+    return result
+
+
 def extract(
     records: list[dict],
     area,
@@ -220,6 +267,8 @@ def extract(
     time_window=None,
     land_mask_provider=None,
     verbose=True,
+    statistic="mean",
+    cell_conversion=None,
 ) -> dict:
     """Series for one area. See `extract_many`, which reads each file once for many."""
     result = extract_many(
@@ -234,6 +283,8 @@ def extract(
         max_series=max_series,
         time_window=time_window,
         land_mask_provider=land_mask_provider,
+        statistic=statistic,
+        cell_conversion=cell_conversion,
         on_file=(lambda done, total, path: print(f"Read {path.name}", flush=True))
         if verbose
         else None,
@@ -253,12 +304,21 @@ def extract_many(
     latitude=None,
     longitude=None,
     area_variable=None,
-    max_series=10000,
+    max_series: float = 10000,
     time_window=None,
     land_mask_provider=None,
     on_file=None,
+    statistic="mean",
+    cell_conversion=None,
+    with_cell_bounds=False,
 ) -> dict:
     """Series for several named areas, opening each file once.
+
+    `statistic` is the Aggregation (see `aggregation.combine`) that combines an
+    area's cells at each timestamp, weighted as `aggregation` says.
+    `cell_conversion(values, timestamp, units)`, if given, turns each
+    timestamp's cell values into the units wanted before they are combined, so
+    Aggregations that do not commute with a unit change still come out right.
 
     Each area gets the result `extract` would give it alone, or, when `extract`
     would have raised for it (a conflict, a limit, a land mask that cannot be
@@ -305,7 +365,9 @@ def extract_many(
                         raise ValueError(
                             "Time coordinate needs CF '<unit> since <date>' units."
                         )
-                    dates = num2date(time[:], time.units, calendar)
+                    dates = np.array(
+                        num2date(time[:], time.units, calendar), dtype=object, ndmin=1
+                    )
                     timestamps = [date.isoformat() for date in dates]
                     if len(timestamps) != len(set(timestamps)):
                         raise ValueError("Duplicate timestamps in one time coordinate.")
@@ -375,6 +437,9 @@ def extract_many(
                                 time_window,
                                 land_mask_provider,
                                 label,
+                                statistic,
+                                cell_conversion,
+                                with_cell_bounds,
                             )
                         except (ValueError, TypeError) as error:
                             # Conflicts and resource limits must never silently yield partial series.
@@ -424,6 +489,9 @@ def _read_field(
     time_window,
     land_mask_provider,
     label,
+    statistic="mean",
+    cell_conversion=None,
+    with_cell_bounds=False,
 ):
     """Add one field of one file to one area's output; returns the area's series count."""
     spatial = tuple(
@@ -453,6 +521,14 @@ def _read_field(
         )
     for indices in product(*choices):
         selection = dict(zip(remaining, indices))
+        cell_index = None
+        if aggregation == "none" and spatial:
+            cell_index = tuple(
+                int(np.flatnonzero(geo["indices"][dim] == selection[dim])[0])
+                for dim in geo["dims"]
+            )
+            if geo["inside"] is not None and not geo["inside"][cell_index]:
+                continue
         coordinates = {}
         coordinate_units = {}
         for dim, index in selection.items():
@@ -466,7 +542,7 @@ def _read_field(
                     else int(index)
                 )
             )
-            if hasattr(value, "item"):
+            if isinstance(value, np.generic):
                 value = value.item()
             if isinstance(value, bytes):
                 value = value.decode("utf-8")
@@ -492,6 +568,18 @@ def _read_field(
                 "spatial_aggregation": aggregation if spatial else "none",
                 "observations": {},
             }
+        if with_cell_bounds and cell_index is not None:
+            _, lat = coordinate(available, "latitude")
+            _, lon = coordinate(available, "longitude")
+            assert lat is not None and lon is not None
+            south, north = cell_bounds(
+                lat, available, selection[lat.dimensions[0]], True
+            )
+            west, east = cell_bounds(lon, available, selection[lon.dimensions[0]])
+            # Keep antimeridian cells continuous, centred in [-180, 180).
+            centre = (west + east) / 2
+            shift = ((centre + 180) // 360) * 360
+            fields[key]["bbox"] = [west - shift, south, east - shift, north]
         if land is not None:
             inside = geo["inside"]
             fraction = float(np.mean(land if inside is None else land[inside]))
@@ -523,6 +611,10 @@ def _read_field(
             values = np.ma.array(
                 numeric, mask=np.ma.getmaskarray(raw) | ~np.isfinite(numeric)
             )
+            if cell_index is not None and land is not None and not land[cell_index]:
+                values = np.ma.masked
+            if cell_conversion is not None:
+                values = cell_conversion(values, timestamp, field["units"])
             if aggregation != "none" and spatial:
                 axes = [
                     geo["dims"].index(dim)
@@ -535,14 +627,14 @@ def _read_field(
                     values = np.ma.masked_where(~inside, values)
                 if land is not None:
                     values = np.ma.masked_where(~np.transpose(land, axes), values)
-                reduced = np.ma.average(values, weights=weights)
+                value = combine(values, weights, statistic)
             else:
                 reduced = values.item() if not np.ma.is_masked(values) else np.ma.masked
-            value = (
-                None
-                if np.ma.is_masked(reduced) or not np.isfinite(reduced)
-                else float(reduced)
-            )
+                value = (
+                    None
+                    if np.ma.is_masked(reduced) or not np.isfinite(reduced)
+                    else float(reduced)
+                )
             if timestamp in field["observations"]:
                 raise ValueError(
                     f"Duplicate/overlapping timestamp {timestamp} for {key}; mosaic tiles before extraction."

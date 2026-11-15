@@ -1,8 +1,8 @@
 """Invariants of the Region and Variable catalog in `data/catalog.json`.
 
 The first group holds for any catalog. The second records what #23 established
-about this one: the NASA products confirmed against CMR and the AppEEARS product
-API, the climate zones it covers and the contrasts it is built to show. Changing
+about this one (with #41's change of vegetation source): the NASA products
+confirmed against CMR, the climate zones it covers and the contrasts it is built to show. Changing
 any of those should be a deliberate edit to this file, not a side effect.
 """
 
@@ -26,9 +26,9 @@ OCEAN_REGION_IDS = {"equatorial-pacific", "north-atlantic"}
 # simulate ice sheets, so land-only Variables are not offered there either.
 ICE_REGION_IDS = {"greenland-coast", "antarctic-peninsula"}
 
-# Confirmed on 2026-11-14 against NASA's CMR collection and variable records,
-# and the vegetation index against the AppEEARS product API it is requested
-# from. See docs/catalog-sources.md for the units and conversions.
+# Confirmed against NASA's CMR collection and variable records: the GES DISC
+# products on 2026-11-14, and the vegetation index on 2026-11-15 together with a
+# downloaded file. See docs/catalog-sources.md for the units and conversions.
 VERIFIED_SOURCES = {
     "temperature": ("GES DISC", "M2TMNXSLV", "T2M", "10.5067/AP1B0BA5PD2K"),
     "precipitation": ("GES DISC", "M2TMNXFLX", "PRECTOTCORR", "10.5067/0JRLVL8YV2Y4"),
@@ -39,10 +39,10 @@ VERIFIED_SOURCES = {
         "10.5067/SXAVCZFAQLNO",
     ),
     "vegetation-index": (
-        "AppEEARS",
-        "MOD13A3",
-        "_1_km_monthly_NDVI",
-        "10.5067/MODIS/MOD13A3.061",
+        "LP DAAC",
+        "MOD13C2",
+        "CMG 0.05 Deg Monthly NDVI",
+        "10.5067/MODIS/MOD13C2.061",
     ),
 }
 

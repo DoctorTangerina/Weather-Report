@@ -9,10 +9,13 @@ from dataclasses import dataclass
 from typing import cast
 
 from ..time_steps import series_time_step, time_step_label
+from .comparison import pearson
+from .detrending import detrend_values
 from .errors import ProcessingError
 from .missing_values import manage_missing
 from .resampling import resample_series
 from .scaling import scale_values
+from .temporal_filter import filter_series
 from .units import compound, conversion, is_rate
 from .validation import finite_number as _number
 from .validation import validate_series as _timeline
@@ -187,6 +190,7 @@ def process_series(request: Mapping) -> dict:
         raise ProcessingError("invalid_request", "Provide named series and operations.")
     available = copy.deepcopy(dict(sources))
     outputs: dict[str, dict] = {}
+    comparisons: dict[str, dict] = {}
     recipe: list[dict] = []
     warnings: list[dict] = []
     for index, step in enumerate(steps):
@@ -194,6 +198,7 @@ def process_series(request: Mapping) -> dict:
             not isinstance(step, Mapping)
             or not _name(step.get("id"))
             or step["id"] in available
+            or step["id"] in comparisons
         ):
             raise ProcessingError(
                 "invalid_operation",
@@ -201,7 +206,16 @@ def process_series(request: Mapping) -> dict:
                 operation=index,
             )
         method = step.get("operation", "arithmetic")
-        if method not in ("arithmetic", "minmax", "zscore", "resample", "missing"):
+        if method not in (
+            "arithmetic",
+            "minmax",
+            "zscore",
+            "resample",
+            "missing",
+            "filter",
+            "pearson",
+            "detrend",
+        ):
             raise ProcessingError(
                 "invalid_operation", "Unsupported operation.", operation=index
             )
@@ -210,6 +224,10 @@ def process_series(request: Mapping) -> dict:
             if method == "arithmetic"
             else {"id", "operation", "input", "ddof"}
         )
+        if method == "pearson":
+            allowed = {"id", "operation", "inputs"}
+        if method == "detrend":
+            allowed = {"id", "operation", "input", "preserve_mean"}
         if method == "resample":
             allowed = {
                 "id",
@@ -230,12 +248,30 @@ def process_series(request: Mapping) -> dict:
                 "replacements",
                 "max_gap_seconds",
             }
+        if method == "filter":
+            allowed = {
+                "id",
+                "operation",
+                "input",
+                "timezone",
+                "mode",
+                "hours",
+                "weekdays",
+                "months",
+                "dates",
+            }
         if method == "minmax":
             allowed.add("range")
         if set(step) - allowed:
             raise ProcessingError(
                 "invalid_operation",
                 "Unsupported operation parameters.",
+                operation=index,
+            )
+        if method == "detrend" and not isinstance(step.get("preserve_mean"), bool):
+            raise ProcessingError(
+                "invalid_detrending_parameters",
+                "Choose preserve_mean=true or false explicitly for linear detrending.",
                 operation=index,
             )
         expression = None
@@ -257,6 +293,20 @@ def process_series(request: Mapping) -> dict:
                 raise ProcessingError(
                     "invalid_expression", "Reference at least one series."
                 )
+        elif method == "pearson":
+            names = step.get("inputs")
+            if (
+                not isinstance(names, list)
+                or len(names) != 2
+                or not all(_name(name) for name in names)
+                or names[0] == names[1]
+            ):
+                raise ProcessingError(
+                    "invalid_operation",
+                    "A comparison requires two different named inputs.",
+                    operation=index,
+                )
+            names = list(names)
         else:
             if not _name(step.get("input")):
                 raise ProcessingError(
@@ -302,7 +352,9 @@ def process_series(request: Mapping) -> dict:
             )
         calendar = first.get("calendar", "standard")
         if any(
-            timelines[name] != timelines[names[0]]
+            # A comparison pairs only exactly equal instants, so its inputs may
+            # cover different periods; everything else needs identical timelines.
+            (method != "pearson" and timelines[name] != timelines[names[0]])
             or used[name].get("calendar", "standard") != calendar
             for name in names
         ):
@@ -311,6 +363,27 @@ def process_series(request: Mapping) -> dict:
                 "Explicitly align/resample these inputs first.",
                 inputs=names,
             )
+        # Metadata snapshots preserve source quality and previous processing history.
+        provenance = {
+            name: {
+                key: copy.deepcopy(value)
+                for key, value in series.items()
+                if key not in ("values", "timestamps")
+            }
+            for name, series in used.items()
+        }
+        if method == "pearson":
+            recipe.append(copy.deepcopy(dict(step)))
+            comparisons[step["id"]] = {
+                "id": step["id"],
+                **copy.deepcopy(pearson(names, used, timelines)),
+                "calendar": calendar,
+                "inputs": names,
+                "provenance": provenance,
+                "recipe": {"operations": copy.deepcopy(recipe)},
+                "warnings": [],
+            }
+            continue
         step_warnings: list[dict] = []
         resampled = None
         managed = None
@@ -323,8 +396,26 @@ def process_series(request: Mapping) -> dict:
                 step.get("acknowledge_unit_difference", False),
                 step_warnings,
             )
+        elif method == "detrend":
+            result = _Value(
+                detrend_values(
+                    first["values"], timelines[names[0]], step.get("preserve_mean")
+                ),
+                first["units"],
+            )
         elif method == "missing":
             managed = manage_missing(
+                first,
+                timelines[names[0]],
+                {
+                    key: value
+                    for key, value in step.items()
+                    if key not in ("id", "operation", "input")
+                },
+            )
+            result = _Value(managed["values"], first["units"])
+        elif method == "filter":
+            managed = filter_series(
                 first,
                 timelines[names[0]],
                 {
@@ -370,15 +461,6 @@ def process_series(request: Mapping) -> dict:
             )
         normalized_step = copy.deepcopy(dict(step))
         recipe.append(normalized_step)
-        # Metadata snapshots preserve source quality and previous processing history.
-        provenance = {
-            name: {
-                key: copy.deepcopy(value)
-                for key, value in series.items()
-                if key not in ("values", "timestamps")
-            }
-            for name, series in used.items()
-        }
         output = {
             "id": step["id"],
             "timestamps": copy.deepcopy(first["timestamps"]),
@@ -429,7 +511,18 @@ def process_series(request: Mapping) -> dict:
                 output["scaling"]["range"] = list(step["range"])
             if method == "zscore":
                 output["scaling"]["ddof"] = step["ddof"]
+        if method == "detrend":
+            output["detrending"] = {
+                "method": "ols",
+                "time_basis": "elapsed_utc_seconds",
+                "preserve_mean": step["preserve_mean"],
+            }
         available[step["id"]] = output
         outputs[step["id"]] = output
         warnings.extend({"operation": step["id"], **w} for w in step_warnings)
-    return {"series": outputs, "recipe": {"operations": recipe}, "warnings": warnings}
+    return {
+        "series": outputs,
+        "comparisons": comparisons,
+        "recipe": {"operations": recipe},
+        "warnings": warnings,
+    }

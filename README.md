@@ -27,7 +27,7 @@ Python 3.11 or newer, Node 18 or newer.
 
 ```sh
 pip install -e ".[api,dev]"
-python -m pytest                                  # 607 tests, no network
+python -m pytest                                  # the whole suite, no network
 python -m uvicorn api.main:app --port 8000        # API on :8000
 ```
 
@@ -39,11 +39,16 @@ cd frontend && npm install && npm run dev         # UI on :5173, /api proxied to
 `data/seed/`, the committed seed set. The catalog does not move with it: `WEATHER_REPORT_CATALOG` overrides
 `data/catalog.json` if needed.
 
+Run the browser suite against the real API and committed seed with
+`npm run test:integration` from `frontend/`. It starts and stops both servers.
+See [browser end-to-end setup and configuration](frontend/docs/browser-end-to-end.md).
+
 ## The seed set
 
 ```sh
 python scripts/build_seed_set.py                  # from the acquired NASA files
 python scripts/build_seed_set.py --series-dir DIR # from Series files already built
+python scripts/build_seed_set.py --only-aggregations # only the non-mean Aggregations
 ```
 
 The command builds the monthly Series for every catalog Region and Variable the
@@ -53,6 +58,14 @@ Discoveries) and writes `data/seed/series/` and `data/seed/discoveries/`. Commit
 the result. It refuses to overwrite the seed set when no Candidate carries one of
 the three Evidence labels (`--allow-missing-labels` overrides). Rerun it whenever
 the engine or the data changes.
+
+From the acquired files it also builds every other Aggregation (median, minimum,
+maximum, root mean square, standard deviation, mean absolute value) into
+`data/seed/aggregations/<aggregation>/series/`. Explore My World answers from
+those directly; only what the seed set does not hold, such as months after it
+ends, is fetched from NASA in a background job. A period that runs past the seed
+set fetches only its later months and joins them to the seeded ones. The Discovery engine never reads
+them. `--skip-aggregations` leaves them out; `--series-dir` implies it.
 
 The seed contains 71 Series: temperature and precipitation for all 25 Regions,
 and soil moisture for the 21 Regions that offer it. Soil moisture is not offered
@@ -96,6 +109,10 @@ fixtures still do.
 | `GET /api/catalog` | `catalogResponse` |
 | `GET /api/series?region_id=&variable_id=&period_start=&period_end=` | `seriesResponse` |
 | `GET /api/comparison?region_a=&region_b=&variable_id=&period_start=&period_end=` | `comparisonResponse`: two computed Trends and their monthly series, in requested Region order |
+| `GET /api/explore/series?region_id=&variable_id=…&aggregation=&time_step=&period_start=&period_end=` | `exploreSeriesResponse` (200) or `exploreJobResponse` (202): Explore My World, one Series per Variable (1–5, `variable_id` repeated) for a catalog Region, or for a Selected area given as `rectangle=west,south,east,north` (repeatable) instead of `region_id`, over 2000-01 to the latest month, at a `time_step` of `3-hourly` (at most 1 year), `daily` (at most 10 years) or `monthly`. A Variable without data at the Time step is refused with 422 `variable_not_available_at_time_step` |
+| `GET /api/explore/jobs/{id}` | `exploreJobResponse`: status, progress, result or failure |
+| `GET /api/explore/options` | `exploreOptionsResponse`: latest requestable month, the Variables a Selected area can have, and each Time step's Variables and period cap |
+| `POST /api/explore/process` | body `processingRequest`, answer `processingResponse`: applies a Processing recipe to Source or Derived series. Stateless; see below |
 | `GET /api/discoveries` | `discoveryListResponse`, highest score first |
 | `GET /api/discoveries/{discovery_id}` | `discoveryResponse` |
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |
@@ -213,7 +230,69 @@ unexpected worker failures propagate as server errors.
 Integration tests use synthetic NetCDF files with the actual #6 reader and
 quality gate. They do not constitute a real authenticated NASA download.
 
-### Correlation map (#56, #60–#62)
+## Processing recipes
+
+`POST /api/explore/process` (#83) applies an ordered Processing recipe with the
+data-layer processing of #46 (`data/data_processing/README.md` lists the
+operations). Each named input is either a Source series exactly as
+`/api/explore/series` returned it, sent as `{"time_step", "aggregation",
+"series"}` with that view's settings, or a Derived series from an earlier answer,
+sent back as `{"derived": ...}`. The answer holds every Derived series with its
+recipe, its inputs' provenance and its warnings. Nothing is stored: replaying a
+recipe means sending the same request again. A step the data layer does not
+provide is refused with 422 `processing_refused`, whose `details.reason` is the
+data layer's code; a body that does not match `processingRequest` gets 422
+`invalid_processing_request`.
+
+## Explore My World background Series
+
+`GET /api/explore/series` returns monthly catalog Region means immediately when
+covered by the seed or results cache (`exploreSeriesResponse`). Otherwise it
+returns HTTP 202 with `data.job` (`exploreJobResponse`). Poll the job's `url`
+(`/api/explore/jobs/{id}`) for `queued`, `running`, `succeeded` or `failed`, and
+`progress` from 0 to 100 (completed Variables). A successful job includes its
+view in `result`; a failed job includes a safe `error` message and can be retried.
+Explore My World displays progress, then the chart or acquisition failure.
+
+`GET /api/explore/options` exposes `latest_month`. Set
+`WEATHER_REPORT_LATEST_MONTH=YYYY-MM` to the source's known availability; by
+default it is the last complete UTC calendar month. This default is a request
+limit, not a guarantee NASA has published every Variable: unavailable months
+produce an acquisition failure. The view still opens on the seed period.
+
+A Selected area (#79) replaces `region_id` with one or more
+`rectangle=west,south,east,north` values that touch or overlap; west > east
+crosses the antimeridian. A grid cell belongs to the area when its centre lies in
+any rectangle. Its Series are always built by a job (only Variables listed in
+`area_variable_ids`), carry `area` where a Region's carry `region_id`, and are
+cached under `WEATHER_REPORT_CACHE_DIR/areas`, apart from every Region Series,
+so they never reach the catalog or a Discovery.
+
+Jobs use `EARTHDATA_TOKEN`, `WEATHER_REPORT_LIVE_TIMEOUT_SECONDS` and
+`WEATHER_REPORT_CACHE_DIR` as described above. Completed Series persist in the
+existing cache without expiry; an identical request returns them without
+acquiring again. Job references live in one API process and do not survive a
+restart; run one worker (or use sticky routing). Discoveries and comparisons
+use their existing seed-only paths.
+
+A daily or 3-hourly Time step (#80) is always built by a job, since the seed set
+is monthly. The job asks NASA for the native hourly (MERRA-2) or 3-hourly
+(GLDAS) grids of the period, combines each native time step's cells with the
+Aggregation, then each UTC day or 3-hour interval's values with the same
+Aggregation. A Series holds one value per Time step from the first day of its
+start month; precipitation is the total that fell in each (`mm/day`, `mm/3h`).
+The Quality gate counts missing Time steps (`too_many_missing_time_steps`) with
+the same one-in-five limit; monthly Series keep `too_many_missing_months`.
+Results are cached per Time step under `WEATHER_REPORT_CACHE_DIR/explore/<time
+step>/<aggregation>` (and `areas/<time step>/<aggregation>`). Vegetation index
+has no sub-monthly product, so `/api/explore/options` lists the Variables of
+each Time step and the view offers only those.
+
+Run the browser checks with the real API and synthetic acquisition grids:
+`cd frontend && npx playwright test --config playwright.jobs.config.js`, and for
+Time steps `--config playwright.time-steps.config.js`.
+
+## Correlation map (#56, #60–#62)
 
 In the welcome screen's **Correlation map** panel, add Variables for an area,
 repeat for other areas, choose a common period and build. You can also select
@@ -237,7 +316,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright starts the API on port 8005 and Vite on 5175. Controlled-response tests
+Playwright starts the API on port 8005 and Vite on 4173. Controlled-response tests
 verify frontend failure states, and a separate browser test uses real acquired
 catalog data through the API. `WEATHER_REPORT_API_URL` optionally changes the
 Vite development proxy target; the normal default remains localhost:8000.

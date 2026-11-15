@@ -58,8 +58,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.6245715102699856,
+            "family_size": 92,
+            "adjusted_p_value": 0.6452558351247586,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -121,8 +121,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.9458583547950883,
+            "family_size": 92,
+            "adjusted_p_value": 0.9639702175787892,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -156,7 +156,7 @@
       ],
       "correlation": -0.45830132317906036,
       "p_value": 1.5084790495243465e-16,
-      "adjusted_p_value": 7.29500468349974e-14,
+      "adjusted_p_value": 1.22367820497415e-13,
       "significant_after_correction": true
     },
     {
@@ -172,7 +172,7 @@
       ],
       "correlation": 0.4266649989442799,
       "p_value": 5.990961277225875e-13,
-      "adjusted_p_value": 1.8107680460415207e-10,
+      "adjusted_p_value": 3.0374173675535186e-10,
       "significant_after_correction": true
     }
   ],
@@ -270,7 +270,7 @@
           }
         }
       ],
-      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
       "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
     }
   },

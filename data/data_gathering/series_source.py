@@ -1,14 +1,14 @@
 """Serve selected fields from a trusted acquisition manifest, without fetching."""
 
 import threading
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 from netCDF4 import Dataset
 
-from .models import Bbox, Source
+from .models import Bbox, SelectedArea, Source
 from .netcdf import coordinate, extract_many, groups, inherited_variables, load_manifest
 from .selection import NativeSeries, SeriesSelectionError, TimeWindow
 
@@ -19,6 +19,13 @@ _READ_LOCK = threading.RLock()
 @dataclass(frozen=True)
 class _Area:
     bbox: tuple[float, float, float, float]
+    boxes: tuple[tuple[float, float, float, float], ...] = ()
+
+
+def _area(area: Bbox | SelectedArea) -> _Area:
+    if isinstance(area, SelectedArea):
+        return _Area(area.rectangles[0], area.rectangles)
+    return _Area((area.west, area.south, area.east, area.north))
 
 
 def _flag(value) -> bool:
@@ -141,17 +148,64 @@ class NetCDFSeriesSource:
         window: TimeWindow,
         dataset_id: str | None = None,
         on_file=None,
+        *,
+        aggregation: str = "mean",
+        cell_conversion=None,
     ) -> dict:
         """Each named area's series, reading every file once.
 
         A problem with the Variable or dataset itself is raised. A problem with
         one area (nothing readable there, a mask that does not align) is that
         area's value in the result, as the SeriesSelectionError `select` raises.
+        `aggregation` combines each area's cells at every timestamp, after
+        `cell_conversion` (see `netcdf.extract_many`).
         """
         with _READ_LOCK:
-            return self._select_many(areas, variable, window, dataset_id, on_file)
+            return self._select_many(
+                areas,
+                variable,
+                window,
+                dataset_id,
+                on_file,
+                aggregation,
+                cell_conversion,
+            )
 
-    def _select_many(self, areas, variable, window, dataset_id, on_file):
+    def select_cells(
+        self, area, variable, window, dataset_id, cell_conversion, land_only=False
+    ):
+        """Native cell observations and bounds, with the same masks as Series."""
+        with _READ_LOCK:
+            result = self._select_many(
+                {"field": area},
+                variable,
+                window,
+                dataset_id,
+                None,
+                cell_conversion=cell_conversion,
+                per_cell=True,
+                require_land_mask=land_only,
+            )["field"]
+        if isinstance(result, Exception):
+            raise result
+        if result["skipped"]:
+            raise SeriesSelectionError(
+                "series_source_unavailable", "Incomplete grid data."
+            )
+        return result["datasets"]
+
+    def _select_many(
+        self,
+        areas,
+        variable,
+        window,
+        dataset_id,
+        on_file,
+        aggregation="mean",
+        cell_conversion=None,
+        per_cell=False,
+        require_land_mask=False,
+    ):
         datasets = self._datasets()
         if dataset_id is not None:
             datasets = {
@@ -183,7 +237,11 @@ class NetCDFSeriesSource:
             )
         identifier, records, description = candidates[0]
         rule = self._rule(identifier, records[0], raw_name)
-        mask_provider = None
+        if require_land_mask and not description["land_only"]:
+            raise SeriesSelectionError(
+                "land_mask_unavailable", "This land-only Variable requires a land mask."
+            )
+        mask_provider: Callable[..., np.ndarray] | None = None
         if description["land_only"]:
             mask_rule = rule.get("land_mask")
             if not isinstance(mask_rule, dict) or "variable" not in mask_rule:
@@ -192,21 +250,25 @@ class NetCDFSeriesSource:
                     "This land-only Variable needs a configured land mask before it can be returned.",
                 )
 
-            def mask_provider(record, available, geo):
+            def provide_land_mask(record, available, geo):
                 return self._land_mask(mask_rule, available, geo)
+
+            mask_provider = provide_land_mask
 
         normalized = [{**record, "dataset": identifier} for record in records]
         try:
             extracted = extract_many(
                 normalized,
-                {
-                    name: _Area((area.west, area.south, area.east, area.north))
-                    for name, area in areas.items()
-                },
+                {name: _area(area) for name, area in areas.items()},
                 variables=[raw_name],
                 time_window=(window.lower, window.upper),
                 land_mask_provider=mask_provider,
                 on_file=on_file,
+                aggregation="none" if per_cell else "area-mean",
+                with_cell_bounds=per_cell,
+                max_series=float("inf") if per_cell else 10000,
+                statistic=aggregation,
+                cell_conversion=cell_conversion,
             )
         except SeriesSelectionError:
             raise
@@ -215,6 +277,8 @@ class NetCDFSeriesSource:
                 "series_source_unavailable",
                 "The selected data cannot be prepared for this area and time period.",
             ) from None
+        if per_cell:
+            return extracted
         results = {}
         for name, result in extracted.items():
             try:

@@ -518,10 +518,10 @@
       "units": "NDVI",
       "definition": "A satellite measure of how green and leafy the land is. It has no units: about 0 for bare rock, sand or snow, and close to 1 for dense, healthy plants.",
       "source": {
-        "provider": "AppEEARS",
-        "dataset": "MODIS/Terra MOD13A3 v061",
-        "variable": "_1_km_monthly_NDVI",
-        "url": "https://doi.org/10.5067/MODIS/MOD13A3.061"
+        "provider": "LP DAAC",
+        "dataset": "MODIS/Terra MOD13C2 v061",
+        "variable": "CMG 0.05 Deg Monthly NDVI",
+        "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
       },
       "land_only": true,
       "possible_causes": [
