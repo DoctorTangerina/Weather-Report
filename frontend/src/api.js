@@ -22,6 +22,10 @@ export const getDiscoveries = () => request('/api/discoveries')
 export const getComparison = (regionA, regionB, variableId) =>
   request(`/api/comparison?${new URLSearchParams({ region_a: regionA, region_b: regionB, variable_id: variableId })}`)
 
+export const getExploreOptions = () => request('/api/explore/options')
+
+export const getExploreJob = (url) => request(url)
+
 export const getAvailableSeries = () => request('/api/series/available')
 
 export const getSeries = (regionId, variableId, period) => {
@@ -31,6 +35,19 @@ export const getSeries = (regionId, variableId, period) => {
     params.set('period_end', period.end)
   }
   return request(`/api/series?${params}`)
+}
+
+// Explore My World: monthly means, returned directly or through a background job.
+export const getExploreSeries = (regionId, variableIds, period) => {
+  const params = new URLSearchParams({
+    region_id: regionId,
+    aggregation: 'mean',
+    time_step: 'monthly',
+    period_start: period.start,
+    period_end: period.end,
+  })
+  for (const variableId of variableIds) params.append('variable_id', variableId)
+  return request(`/api/explore/series?${params}`)
 }
 
 export const surpriseMe = (session) =>

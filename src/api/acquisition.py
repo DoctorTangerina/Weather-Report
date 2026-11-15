@@ -5,10 +5,21 @@ import json
 import os
 import sys
 import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
 from engine.contracts import Period, Region, Variable
+
+from .grid_source import GridAcquisitionSource
+
+# netCDF4 preparation in injected sources must not run concurrently in this process.
+_PREPARE_LOCK = threading.Lock()
+
+
+def _prepare(source: GridAcquisitionSource, request: dict) -> Path:
+    with _PREPARE_LOCK:
+        return source.prepare(request)
 
 
 class AcquisitionUnavailable(Exception):
@@ -16,7 +27,12 @@ class AcquisitionUnavailable(Exception):
 
 
 async def acquire_series(
-    region: Region, variable: Variable, period: Period, *, token: str
+    region: Region,
+    variable: Variable,
+    period: Period,
+    *,
+    token: str,
+    source: GridAcquisitionSource | None = None,
 ) -> dict[str, Any]:
     root = Path(__file__).resolve().parents[2]
     env = {
@@ -25,16 +41,6 @@ async def acquire_series(
         "PYTHONPATH": os.pathsep.join((str(root), str(root / "src"))),
     }
     with tempfile.TemporaryDirectory(prefix="weather-acquisition-") as workspace:
-        process = await asyncio.create_subprocess_exec(
-            sys.executable,
-            "-m",
-            "api.acquisition_worker",
-            cwd=root,
-            env=env,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-        )
         request = {
             "region_id": region.region_id,
             "variable_id": variable.variable_id,
@@ -46,8 +52,30 @@ async def acquire_series(
                 region.bbox.north,
             ],
             "dataset": variable.source.dataset,
+            "time_step": "monthly",
             "workspace": workspace,
         }
+        if source is not None:
+            preparation = asyncio.create_task(
+                asyncio.to_thread(_prepare, source, request)
+            )
+            try:
+                config = await asyncio.shield(preparation)
+            except asyncio.CancelledError:
+                # Let preparation release its files before cleaning the workspace.
+                await asyncio.gather(preparation, return_exceptions=True)
+                raise
+            request["config_path"] = str(config)
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "api.acquisition_worker",
+            cwd=root,
+            env=env,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
         try:
             output, _ = await process.communicate(json.dumps(request).encode())
         finally:
