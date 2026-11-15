@@ -129,8 +129,8 @@ daily_series = response["series"]["daily"]
 For hourly values `[1, 5, 9]` within one day, the daily result is `5` with `mean`,
 `15` with `sum`, `1` with `min`, `9` with `max`, and `5` with `median`.
 
-- Supported frequencies: `second`, `minute`, `hour`, `day`, `month`, `year` (plural
-  spellings also work). The target must be the same or coarser; upsampling is
+- Supported frequencies: `second`, `minute`, `hour`, `3-hourly`, `day`, `month`,
+  `year` (plural spellings also work; `daily` and `monthly` are accepted). The target must be the same or coarser; upsampling is
   rejected. Declare the real source frequency; multiple observations in a single
   declared source bucket produce `source_frequency_mismatch`.
 - Aggregations: `mean` (`average`/`avg`), `sum`, `min` (`minimum`), `max`
@@ -147,6 +147,9 @@ For hourly values `[1, 5, 9]` within one day, the daily result is `5` with `mean
 - Buckets include their start and exclude their end. Output labels identify the
   start as an ISO timestamp including its UTC offset. `timezone` optionally
   chooses an IANA zone such as `America/Sao_Paulo`; the default is `UTC`.
+- Explore My World inputs declaring `time_step` use UTC, including 3-hour buckets
+  starting at 00:00, 03:00, 06:00, and so on. A non-UTC override is rejected.
+  Legacy native inputs without that field retain the optional time-zone setting.
 - Day, month and year boundaries are calendar boundaries in the chosen zone.
   Only Gregorian calendars are supported by this simple resampling operation.
 - The output spans the first through last observation's buckets, including empty
@@ -164,6 +167,25 @@ For hourly values `[1, 5, 9]` within one day, the daily result is `5` with `mean
   Recorded instructions support replay, and output can feed scaling or arithmetic.
   A further resampling step may omit `source_frequency` if the input already has
   that frequency metadata. Explicit conflicting declarations are rejected.
+
+A Series can declare `time_step` (`3-hourly`, `daily`, `monthly`) and `aggregation`:
+
+```python
+series_a = {**hourly_series, "time_step": "hourly", "aggregation": "maximum"}
+response = process_series({
+    "series": {"A": series_a},
+    "operations": [{"id": "result", "operation": "resample", "input": "A", "frequency": "daily"}],
+})
+```
+
+Resampling inherits that Series' Aggregation; an explicit conflicting aggregation
+raises `aggregation_mismatch`. Source Time step is inherited from `time_step` or
+legacy `frequency`; explicit conflicts are rejected. If no Aggregation metadata
+exists, the instruction must choose one. This preserves existing native-input
+calls while supporting the amended Series contract. Temporal aggregation consumes
+already spatially reduced Series values: cells are not pooled across time. Cell
+weighting, on-demand acquisition and precipitation-total construction are owned
+by the Series-building work (#72/#78/#80), not this numeric processing method.
 
 Resample different inputs separately to a common timeline before combining them.
 This operation does not implicitly align differing coverage periods or fill gaps.
@@ -244,15 +266,20 @@ Each used input needs nonempty, equal-length `timestamps` and `values` lists,
 plus a nonempty `units` label. Values must be finite numbers or `None`; booleans,
 NaN and infinity are rejected. Optional `quality` metadata must indicate
 `included: true` when supplied. Acquisition remains responsible for assessing
-source quality; this method never downloads, fills gaps or improves its result.
+source quality; explicit processing does not improve the recorded source assessment.
 
-Inputs used together in arithmetic must have the same calendar and matching,
+Inputs used together in arithmetic must have the same declared Time step, calendar and matching,
 ordered, distinct timestamps. Standard-calendar ISO dates/times (and YYYY-MM) are compared as exact
 UTC instants; date-only and timezone-naive input timestamps mean UTC. The first
 referenced input's timestamp labels are retained in the output. Nonstandard
 calendars require matching timestamp labels and calendar identifiers. Different
 resolutions or timelines raise `unaligned_series`; use explicit resampling where
-appropriate, rather than expecting automatic alignment or repair.
+appropriate, rather than expecting automatic alignment or repair. Conflicting Time-step
+metadata is rejected even if the timestamp arrays happen to be identical.
+`time_step` and legacy `frequency` aliases must agree when both are supplied.
+Time step and a shared Aggregation are retained through arithmetic/scaling and
+missing-value operations. Legacy inputs without cadence metadata remain accepted
+when their exact timelines match; cadence is not guessed from sparse observations.
 
 ## Units and zero denominators
 
