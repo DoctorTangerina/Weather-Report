@@ -29,6 +29,7 @@ export default function MainScreen({
   onNewSession,
   onRetry,
 }) {
+  const [timeRange, setTimeRange] = useState(null)
   const [timestamp, setTimestamp] = useState(null)
   const [regionId, setRegionId] = useState('')
   const [secondRegionId, setSecondRegionId] = useState('')
@@ -207,6 +208,7 @@ export default function MainScreen({
               seriesLoading={seriesLoading}
               error={comparison.error}
               timestamp={timestamp}
+              timeRange={timeRange}
               highlights={explored}
               trends={comparison.trends}
             />
@@ -225,6 +227,7 @@ export default function MainScreen({
             series={series}
             seriesLoading={seriesLoading}
             timestamp={timestamp}
+            timeRange={timeRange}
             onInvestigate={onInvestigate}
             onSurprise={onSurprise}
           />
@@ -243,6 +246,7 @@ export default function MainScreen({
             substituted={discoverySeries.substituted}
             error={seriesError}
             timestamp={timestamp}
+            timeRange={timeRange}
           />
         )}
       </aside>
@@ -253,6 +257,7 @@ export default function MainScreen({
           series={timelineSeries}
           loading={seriesLoading}
           onTimestampChange={setTimestamp}
+          onRangeChange={setTimeRange}
         />
       )}
     </div>

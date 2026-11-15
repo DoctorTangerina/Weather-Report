@@ -1,5 +1,5 @@
 import { formatNumber } from '../format.js'
-import { seriesIndexAt } from '../timeline.js'
+import { seriesIndexAt, seriesInRange } from '../timeline.js'
 
 const WIDTH = 520
 const HEIGHT = 170
@@ -47,7 +47,8 @@ function yearTicks(period, length) {
   return ticks
 }
 
-export default function Chart({ series, label, timestamp, color }) {
+export default function Chart({ series, label, timestamp, color, timeRange }) {
+  series = seriesInRange(series, timeRange)
   const present = series.values.filter((value) => value !== null)
   if (present.length === 0) return <p className="muted">No data for {label}.</p>
 

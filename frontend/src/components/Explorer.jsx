@@ -15,6 +15,7 @@ export default function Explorer({
   error = null,
   series,
   seriesLoading,
+  timeRange,
   timestamp,
   highlights,
   trends,
@@ -96,7 +97,7 @@ export default function Explorer({
           <Chart
             key={`${item.region_id}-${item.variable_id}`}
             series={item}
-            timestamp={timestamp}
+            timestamp={timestamp} timeRange={timeRange}
             color={highlights.find((h) => h.region.region_id === item.region_id)?.color}
             label={catalog.regions.find((r) => r.region_id === item.region_id)?.name ?? item.region_id}
           />

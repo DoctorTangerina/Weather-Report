@@ -1,8 +1,12 @@
-import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Globe from 'react-globe.gl'
 import { withAlpha } from '../palette.js'
 
 const FLIGHT_MS = 1600
+const polygonCapColor = (feature) => withAlpha(feature.properties.color, 0.42)
+const polygonSideColor = (feature) => withAlpha(feature.properties.color, 0.18)
+const polygonStrokeColor = (feature) => feature.properties.color
+const ringColor = (ring) => (t) => withAlpha(ring.color, Math.max(0, 0.85 - t))
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 class GlobeBoundary extends Component {
@@ -79,7 +83,7 @@ function labelElement({ region, color }) {
   return element
 }
 
-export default function RegionGlobe({ highlights: requestedHighlights = [] }) {
+function RegionGlobe({ highlights: requestedHighlights = [] }) {
   // Equivalent highlights can arrive in new arrays as series requests settle.
   // Keep polygons, labels and the camera flight stable across those renders.
   const highlightKey = JSON.stringify(requestedHighlights)
@@ -101,23 +105,28 @@ export default function RegionGlobe({ highlights: requestedHighlights = [] }) {
     return () => observer.disconnect()
   }, [])
 
-  const polygons = useMemo(() => highlights.map(boxPolygon), [highlights])
-  const labels = useMemo(
-    () =>
-      highlights.map((highlight) => ({
-        ...highlight,
-        lat: highlight.region.bbox.north,
-        lng: centre(highlight.region).lng,
-      })),
-    [highlights],
-  )
-  const rings = useMemo(
-    () =>
-      reducedMotion()
-        ? []
-        : highlights.map((highlight) => ({ ...centre(highlight.region), color: highlight.color })),
-    [highlights],
-  )
+  const layerCache = useRef(new Map())
+  const layers = useMemo(() => {
+    const next = new Map()
+    const result = highlights.map((highlight) => {
+      const key = JSON.stringify(highlight)
+      // Keep an unchanged Region's geometry, label and ring alive when the
+      // other Region changes. Replacing them restarts their entrance animation.
+      const layer = layerCache.current.get(key) ?? {
+        polygon: boxPolygon(highlight),
+        label: { ...highlight, lat: highlight.region.bbox.north, lng: centre(highlight.region).lng },
+        ring: { ...centre(highlight.region), color: highlight.color },
+      }
+      next.set(key, layer)
+      return layer
+    })
+    layerCache.current = next
+    return {
+      polygons: result.map((layer) => layer.polygon),
+      labels: result.map((layer) => layer.label),
+      rings: reducedMotion() ? [] : result.map((layer) => layer.ring),
+    }
+  }, [highlights])
 
   const aim = useCallback(() => {
     const globe = globeRef.current
@@ -165,17 +174,17 @@ export default function RegionGlobe({ highlights: requestedHighlights = [] }) {
             atmosphereAltitude={0.18}
             animateIn={false}
             onGlobeReady={() => setReady(true)}
-            polygonsData={polygons}
-            polygonCapColor={(feature) => withAlpha(feature.properties.color, 0.42)}
-            polygonSideColor={(feature) => withAlpha(feature.properties.color, 0.18)}
-            polygonStrokeColor={(feature) => feature.properties.color}
+            polygonsData={layers.polygons}
+            polygonCapColor={polygonCapColor}
+            polygonSideColor={polygonSideColor}
+            polygonStrokeColor={polygonStrokeColor}
             polygonAltitude={0.012}
             polygonsTransitionDuration={reducedMotion() ? 0 : 700}
-            htmlElementsData={labels}
+            htmlElementsData={layers.labels}
             htmlElement={labelElement}
             htmlAltitude={0.02}
-            ringsData={rings}
-            ringColor={(ring) => (t) => withAlpha(ring.color, Math.max(0, 0.85 - t))}
+            ringsData={layers.rings}
+            ringColor={ringColor}
             ringMaxRadius={4.5}
             ringPropagationSpeed={2.2}
             ringRepeatPeriod={1500}
@@ -185,3 +194,9 @@ export default function RegionGlobe({ highlights: requestedHighlights = [] }) {
     </div>
   )
 }
+
+// Timeline playback and filtering do not change the Regions. Avoid restarting
+// globe layer transitions when only the surrounding controls update.
+export default memo(RegionGlobe, (previous, next) =>
+  JSON.stringify(previous.highlights) === JSON.stringify(next.highlights),
+)

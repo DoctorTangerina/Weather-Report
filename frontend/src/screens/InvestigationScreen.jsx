@@ -11,7 +11,7 @@ const EVIDENCE_CAVEAT = {
     'Evidence label: Not enough evidence yet. The data cannot yet tell this difference apart from chance.',
 }
 
-export default function InvestigationScreen({ discovery, catalog, highlights = [], onBack, stepIndex, onStepChange, loading, responses = [], substituted = false, error, timestamp }) {
+export default function InvestigationScreen({ discovery, catalog, highlights = [], onBack, stepIndex, onStepChange, loading, responses = [], substituted = false, error, timeRange, timestamp }) {
   const [guess, setGuess] = useState(null)
 
   const [predict, check, reason] = discovery.narrative.investigation.steps
@@ -28,7 +28,7 @@ export default function InvestigationScreen({ discovery, catalog, highlights = [
         {loading && <p className="muted" role="status">Loading the series…</p>}
         {error && <p className="error" role="alert">{error.message}</p>}
         {substituted && <p role="alert" className="notice">These examples cannot answer the original investigation.</p>}
-        <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
+        <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} timeRange={timeRange} highlights={highlights} />
       </section>
     )
   }
@@ -80,7 +80,7 @@ export default function InvestigationScreen({ discovery, catalog, highlights = [
           </p>
           <p>{check.comparison}</p>
 
-          <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
+          <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} timeRange={timeRange} highlights={highlights} />
           <p className="muted">Each chart has its own vertical scale. Use the rates above to compare how fast the Regions are changing.</p>
 
           <button onClick={() => onStepChange(2)}>Why might this happen?</button>
