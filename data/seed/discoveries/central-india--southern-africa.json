@@ -58,8 +58,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.4260377875885316,
+            "family_size": 92,
+            "adjusted_p_value": 0.4452007775800194,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -121,8 +121,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 1.4685975507890005e-07,
+            "family_size": 92,
+            "adjusted_p_value": 6.343238247539346e-08,
             "significant": true,
             "method": "benjamini-hochberg"
           },
@@ -190,8 +190,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.3036728558318588,
+            "family_size": 92,
+            "adjusted_p_value": 0.3291020552830798,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -253,8 +253,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.14012432316694012,
+            "family_size": 92,
+            "adjusted_p_value": 0.14822003715272772,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -272,15 +272,147 @@
           "engine_version": "0.1.0"
         }
       ]
+    },
+    {
+      "variable_id": "vegetation-index",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "central-india",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.0377171854869756,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            0.02851004709717865,
+            0.04692432387677255
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.0377171854869756,
+              "p_value": 1.6479546133615528e-47,
+              "r_squared": 0.5068636915815299
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.03773855975324006,
+              "p_value": 1.2903452848383486e-09
+            },
+            "robust": {
+              "slope_per_decade": 0.03771410831808681,
+              "p_value": 2.8918048784718857e-53
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.03755782456479681
+            },
+            "mann_kendall": {
+              "tau": 0.5124688559179368,
+              "p_value": 7.212984447346448e-40
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2002-07",
+              "slope_per_decade": 0.03720542559351325,
+              "p_value": 3.276474972612354e-47
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 7.304479947234403e-10,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.6400918068509733,
+            "effective_sample_size": 65.61373534215647
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.0003404756436115209,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.015179459106806754,
+            0.015860410394029797
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.0003404756436115209,
+              "p_value": 0.8875082442733238,
+              "r_squared": 6.748608316806042e-05
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.00010643858000261819,
+              "p_value": 0.9875480659278608
+            },
+            "robust": {
+              "slope_per_decade": -0.0003672177836714346,
+              "p_value": 0.8725385473028792
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.0003132217031488418
+            },
+            "mann_kendall": {
+              "tau": -0.0029853426410181593,
+              "p_value": 0.9386383831251485
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2016-01",
+              "slope_per_decade": 0.0005191706988019085,
+              "p_value": 0.8275794736795588
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.9859138151689508,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.8170104146764398,
+            "effective_sample_size": 30.11203764700907
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
     }
   ],
   "mirrors": [],
-  "score": 120.0,
+  "score": 126.791526616958,
   "score_components": {
     "opposite_sign": 100.0,
     "multi_variable": 20.0,
     "surprising_pair": 0.0,
-    "magnitude_gap": 0.0,
+    "magnitude_gap": 6.791526616957998,
     "mirror": 0.0
   },
   "evidence_label": "Not enough evidence yet",
@@ -387,9 +519,29 @@
             "variable": "T2M",
             "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
           }
+        },
+        {
+          "region_id": "central-india",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
         }
       ],
-      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
       "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
     }
   },

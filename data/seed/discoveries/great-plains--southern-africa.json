@@ -1,0 +1,245 @@
+{
+  "discovery_id": "great-plains--southern-africa",
+  "region_ids": [
+    "great-plains",
+    "southern-africa"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "vegetation-index",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "great-plains",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.0048219896291276125,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.007935122872682623,
+            0.01757910213093785
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.0048219896291276125,
+              "p_value": 0.06211145251864176,
+              "r_squared": 0.011668578065465953
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.00498974263886479,
+              "p_value": 0.3015591881708808
+            },
+            "robust": {
+              "slope_per_decade": 0.004090766712519074,
+              "p_value": 0.07508802008219113
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.003814275601981194
+            },
+            "mann_kendall": {
+              "tau": 0.061165854862966045,
+              "p_value": 0.11473814522399889
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2012-08",
+              "slope_per_decade": 0.00482891446196738,
+              "p_value": 0.05520780779112857
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.5842117402627127,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.7169644127783211,
+            "effective_sample_size": 49.28910579010838
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.0003404756436115209,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.015179459106806754,
+            0.015860410394029797
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.0003404756436115209,
+              "p_value": 0.8875082442733238,
+              "r_squared": 6.748608316806042e-05
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.00010643858000261819,
+              "p_value": 0.9875480659278608
+            },
+            "robust": {
+              "slope_per_decade": -0.0003672177836714346,
+              "p_value": 0.8725385473028792
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.0003132217031488418
+            },
+            "mann_kendall": {
+              "tau": -0.0029853426410181593,
+              "p_value": 0.9386383831251485
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2016-01",
+              "slope_per_decade": 0.0005191706988019085,
+              "p_value": 0.8275794736795588
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.9859138151689508,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.8170104146764398,
+            "effective_sample_size": 30.11203764700907
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 3.8240050461856168,
+  "score_components": {
+    "opposite_sign": 0.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 3.8240050461856168,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Vegetation index (NDVI) seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think vegetation index (ndvi) is changing faster?",
+          "options": [
+            {
+              "option_id": "great-plains",
+              "label": "Great Plains"
+            },
+            {
+              "option_id": "southern-africa",
+              "label": "Southern Africa"
+            }
+          ],
+          "answer_option_id": "great-plains",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "great-plains",
+              "variable_id": "vegetation-index"
+            },
+            {
+              "region_id": "southern-africa",
+              "variable_id": "vegetation-index"
+            }
+          ],
+          "comparison": "Great Plains: 0.005 NDVI/decade (95% interval -0.008 to 0.018). Southern Africa: 0 NDVI/decade (95% interval -0.015 to 0.016). Great Plains is changing faster. Evidence label for Great Plains: Not enough evidence yet. Evidence label for Southern Africa: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make vegetation index (ndvi) change this way?",
+          "possible_causes": [
+            {
+              "text": "Plants grow more when there is more rain and soil water.",
+              "kind": "context"
+            },
+            {
+              "text": "A longer warm season gives plants more time to grow.",
+              "kind": "context"
+            },
+            {
+              "text": "Clearing forests for farms or towns removes plant cover.",
+              "kind": "context"
+            },
+            {
+              "text": "Droughts and fires cut back plant growth.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "great-plains",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

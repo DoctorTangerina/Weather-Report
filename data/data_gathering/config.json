@@ -25,6 +25,18 @@
           ]
         }
       }
+    },
+    "C2565788914-LPCLOUD": {
+      "CMG 0.05 Deg Monthly NDVI": {
+        "land_only": true,
+        "land_mask": {
+          "file": "data/data_gathering/downloads/masks/MOD13C2_landmask_005d.nc",
+          "variable": "land_mask",
+          "land_values": [
+            1
+          ]
+        }
+      }
     }
   },
   "CATALOG_SERIES": {
@@ -41,6 +53,11 @@
     "soil-moisture": {
       "dataset_id": "C1342986036-GES_DISC",
       "native_units": "kg m-2",
+      "conversion": "identity"
+    },
+    "vegetation-index": {
+      "dataset_id": "C2565788914-LPCLOUD",
+      "native_units": "NDVI",
       "conversion": "identity"
     }
   }
