@@ -3,6 +3,7 @@
 import copy
 import json
 import math
+from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, is_dataclass
 from datetime import UTC, datetime, timedelta
@@ -19,6 +20,7 @@ from ..time_steps import (
 )
 from .arithmetic import process_series
 from .errors import ProcessingError
+from .resampling import require_coarser_time_step
 from .scaling import scale_values
 from .validation import validate_series
 
@@ -45,7 +47,8 @@ def _matrix(series):
     return result
 
 
-def _bounds(period, zone):
+def analysis_period_bounds(period, zone):
+    """Return half-open UTC bounds for inclusive caller-selected dates/instants."""
     if not isinstance(period, Mapping) or not all(
         isinstance(period.get(k), str) for k in ("start", "end")
     ):
@@ -285,7 +288,7 @@ def _build(request, loader):
     period = request.get("period")
     if not isinstance(period, Mapping):
         raise ProcessingError("invalid_period", "Choose a common start/end period.")
-    lower, upper = _bounds(period, zone)
+    lower, upper = analysis_period_bounds(period, zone)
     candidates, excluded = [], []
     for selection in selections:
         try:
@@ -302,7 +305,10 @@ def _build(request, loader):
                     "unsupported_calendar",
                     "Correlation currently requires Gregorian timestamps.",
                 )
-            frequency = series_time_step(item)
+            try:
+                frequency = series_time_step(item)
+            except ValueError as error:
+                raise ProcessingError("invalid_time_step", str(error)) from None
             if frequency is None:
                 raise ProcessingError(
                     "unknown_time_step", "The loaded series must declare its Time step."
@@ -349,6 +355,8 @@ def _build(request, loader):
         raise ProcessingError(
             "invalid_timezone", "Explore My World Time steps follow UTC."
         )
+    for _, _, _, frequency in candidates:
+        require_coarser_time_step(frequency, target)
     grid = _grid(lower, upper, target, zone)
     if len(grid) < 2:
         raise ProcessingError(
@@ -421,6 +429,17 @@ def _build(request, loader):
                 "message": "Only two observations were used; Pearson is necessarily +1 or -1.",
             }
         )
+    labels = Counter(item["label"] for item in selections)
+    used_labels = set()
+    for item in selections:
+        label = item["label"]
+        if labels[label] > 1:
+            dataset = item.get("dataset_id", item["metadata"].get("dataset_id"))
+            label += f" ({dataset or item['id']})"
+        while label in used_labels:
+            label += f" [{item['id']}]"
+        item["label"] = label
+        used_labels.add(label)
     filled_pairs = [
         [
             sum(a or b for a, b in zip(left["filled"], right["filled"]))

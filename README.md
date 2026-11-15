@@ -212,3 +212,32 @@ unexpected worker failures propagate as server errors.
 
 Integration tests use synthetic NetCDF files with the actual #6 reader and
 quality gate. They do not constitute a real authenticated NASA download.
+
+### Correlation map (#56, #60–#62)
+
+In the welcome screen's **Correlation map** panel, add Variables for an area,
+repeat for other areas, choose a common period and build. You can also select
+rectangles on the globe or enter joined rectangle coordinates, prepare a named
+calculation, and choose an explicit coarser Time step. The labeled heatmap shows
+numeric Pearson scores, warnings and exclusion reasons. The feature uses acquired
+results only: unavailable areas are explained, with no substituted examples or
+new NASA downloads.
+
+The connection follows the existing app pattern: React panel → `api.js` →
+`POST /api/correlation-map` → reusable methods in `data/data_processing/`.
+See [request, result and loading details](data/data_processing/CORRELATION_MAP.md).
+The automatic Discovery engine is unchanged.
+
+Run the browser workflow tests after installing API/dev Python dependencies and
+frontend dependencies:
+
+```sh
+cd frontend
+npx playwright install chromium
+npm run test:e2e
+```
+
+Playwright starts the API on port 8005 and Vite on 5175. Controlled-response tests
+verify frontend failure states, and a separate browser test uses real acquired
+catalog data through the API. `WEATHER_REPORT_API_URL` optionally changes the
+Vite development proxy target; the normal default remains localhost:8000.

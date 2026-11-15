@@ -55,4 +55,4 @@ The historical findings below describe the revision above, not this follow-up.
 | Lint errors | `ruff check .` reports 13 errors (9 auto-fixable), including a real one: `available_series` is defined twice in `src/engine/store.py` (lines 38 and 77). |
 | Stale README | `README.md` says `python -m pytest  # 30 tests`; the suite now has 258. Its layout table also has a broken row for `data/seed/`. |
 | Formatting, type checking, static analysis | Not run for this ticket. |
-| Open feature work | Correlation map (#56, #60–#62), manual time-series processing (#46–#53) are separate, unbuilt epics and not part of this demo. |
+| Open feature work | Correlation map (#56, #60–#62) now connects the frontend to acquired data through the API. Arbitrary-area/submonthly acquisition remains separate work; unavailable selections are explained. Manual-processing methods (#46–#53) remain reusable data methods. |

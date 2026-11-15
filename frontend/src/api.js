@@ -1,7 +1,8 @@
 export class ApiError extends Error {
-  constructor(code, message) {
+  constructor(code, message, details = {}) {
     super(message)
     this.code = code
+    this.details = details
   }
 }
 
@@ -10,7 +11,7 @@ async function request(path, options) {
   const body = await response.json()
   if (!response.ok) {
     const error = body?.error ?? {}
-    throw new ApiError(error.code ?? 'unknown', error.message ?? response.statusText)
+    throw new ApiError(error.code ?? 'unknown', error.message ?? response.statusText, error.details ?? {})
   }
   return body
 }
@@ -41,4 +42,12 @@ export const surpriseMe = (session) =>
       shown_discovery_ids: session.shownDiscoveryIds,
       shown_region_ids: session.shownRegionIds,
     }),
+  })
+
+export const getCorrelationMap = (selection, signal) =>
+  request('/api/correlation-map', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(selection),
+    signal,
   })

@@ -484,3 +484,87 @@ def test_invalid_requests_return_structured_errors(change, code):
             request, loader=lambda selection, period: source([1, 2, 3])
         )
     assert error.value.code == code
+
+
+def test_a_wholly_empty_month_after_resampling_excludes_only_that_input():
+    available = {
+        "A": source(
+            [1, 2, 3],
+            time_step="monthly",
+            timestamps=["2024-01-01", "2024-02-01", "2024-03-01"],
+        ),
+        "B": source(
+            [2, 4, 6],
+            time_step="monthly",
+            timestamps=["2024-01-01", "2024-02-01", "2024-03-01"],
+        ),
+        "C": source([1, 3], timestamps=["2024-01-01", "2024-03-01"]),
+    }
+    result = build_correlation_map(
+        {
+            "variables": ["A", "B", "C"],
+            "area": "test",
+            "period": {"start": "2024-01", "end": "2024-03"},
+            "time_step": "monthly",
+        },
+        loader=lambda selection, period: available[selection["variable"]],
+    )
+    assert result["matrix"] == [[1, 1], [1, 1]]
+    assert result["excluded"][0]["code"] == "incomplete_output_timeline"
+    assert result["excluded"][0]["details"]["missing_timestamps"] == [
+        "2024-02-01T00:00:00+00:00"
+    ]
+
+
+def test_zero_usable_inputs_returns_exclusions_and_no_matrix():
+    from data.data_processing import ProcessingError
+
+    with pytest.raises(ProcessingError) as error:
+        build_correlation_map(
+            {
+                "variables": ["A", "B"],
+                "area": "test",
+                "period": {"start": "2024-01-01", "end": "2024-01-03"},
+            },
+            loader=lambda selection, period: {"quality": {"included": False}},
+        )
+    assert error.value.code == "insufficient_inputs"
+    assert len(error.value.details["excluded"]) == 2
+    assert "matrix" not in error.value.as_dict()
+
+
+def test_legacy_local_zone_uses_common_local_bucket_boundaries():
+    hourly = source(
+        [1, 2, 3, 4, 5, 6],
+        timestamps=[
+            "2024-01-01T02:00Z",
+            "2024-01-01T04:00Z",
+            "2024-01-02T02:00Z",
+            "2024-01-02T04:00Z",
+            "2024-01-03T02:00Z",
+            "2024-01-03T04:00Z",
+        ],
+    )
+    hourly.pop("time_step")
+    hourly["frequency"] = "hour"
+    daily = source([1, 2], timestamps=["2024-01-01T03:00Z", "2024-01-02T03:00Z"])
+    daily.pop("time_step")
+    daily["frequency"] = "day"
+    result = build_correlation_map(
+        {
+            "variables": ["A", "B"],
+            "area": "test",
+            "period": {"start": "2024-01-01", "end": "2024-01-02"},
+            "time_step": "daily",
+            "timezone": "America/Sao_Paulo",
+        },
+        loader=lambda selection, period: (
+            hourly if selection["variable"] == "A" else daily
+        ),
+    )
+    assert result["matrix"] == [[1, 1], [1, 1]]
+    assert result["timestamps"] == [
+        "2024-01-01T03:00:00+00:00",
+        "2024-01-02T03:00:00+00:00",
+    ]
+    assert result["settings"]["timezone"] == "America/Sao_Paulo"

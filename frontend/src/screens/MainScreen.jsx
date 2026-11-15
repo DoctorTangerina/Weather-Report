@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import DiscoveryPanel from '../components/DiscoveryPanel.jsx'
 import Explorer from '../components/Explorer.jsx'
+import CorrelationExplorer from '../components/CorrelationExplorer.jsx'
 import RegionGlobe from '../components/Globe.jsx'
 import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
 import Timeline from '../components/Timeline.jsx'
@@ -28,6 +29,9 @@ export default function MainScreen({
   onRetry,
 }) {
   const [timestamp, setTimestamp] = useState(null)
+  const [mapPoint, setMapPoint] = useState(null)
+  const [pickingArea, setPickingArea] = useState(false)
+  const [correlationBoxes, setCorrelationBoxes] = useState(null)
   const [regionId, setRegionId] = useState('')
   const [secondRegionId, setSecondRegionId] = useState('')
   const [variableId, setVariableId] = useState('')
@@ -123,6 +127,14 @@ export default function MainScreen({
   const timelineSeries =
     seriesLoading || (investigating && investigationStep !== 1) ? NONE : series
 
+  const correlationHighlights = correlationBoxes?.map((bbox, index) => ({
+    region: { bbox, name: `Selected area ${index + 1}` },
+    color: REGION_COLORS[index % REGION_COLORS.length],
+  }))
+  const globeHighlights = showing || investigating
+    ? displayedHighlights
+    : correlationHighlights ?? explored
+
   return (
     <div className="main-screen">
       <header className="main-header">
@@ -138,7 +150,12 @@ export default function MainScreen({
       </header>
 
       <section className="globe-panel" aria-label="Interactive Earth globe">
-        <RegionGlobe highlights={showing || investigating ? displayedHighlights : explored} />
+        <RegionGlobe
+          highlights={globeHighlights}
+          onPick={exploring && pickingArea
+            ? point => setMapPoint({ ...point, clickId: Date.now() })
+            : undefined}
+        />
         <p className="globe-hint">Drag to explore · Scroll or pinch to zoom</p>
       </section>
 
@@ -169,6 +186,7 @@ export default function MainScreen({
         {exploring && (
           <>
             <Welcome catalog={catalog} onSurprise={onSurprise} onDetective={onDetective} />
+            <CorrelationExplorer catalog={catalog} mapPoint={mapPoint} onPicking={setPickingArea} onAreaPreview={setCorrelationBoxes} />
             <Explorer
               catalog={catalog}
               region={region}

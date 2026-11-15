@@ -32,12 +32,30 @@ _AGGREGATIONS = {
     "mean_absolute": "mav",
     "mav": "mav",
 }
+
+
+def normalize_aggregation(value):
+    """Return the public canonical aggregation name, without changing semantics."""
+    result = _AGGREGATIONS.get(value) if isinstance(value, str) else None
+    if result is None:
+        raise ValueError("Choose a supported Aggregation.")
+    return result
+
+
 _ORDER = {
     name: index
     for index, name in enumerate(
         ("second", "minute", "hour", "3-hour", "day", "month", "year")
     )
 }
+
+
+def require_coarser_time_step(source, target):
+    """Reject upsampling before callers allocate the target timeline."""
+    if _ORDER[target] < _ORDER[source]:
+        raise ProcessingError(
+            "upsampling_not_supported", "Choose the same or a coarser frequency."
+        )
 
 
 def _aggregate(values, aggregation, timestamp):
@@ -133,10 +151,7 @@ def resample_series(
         raise ProcessingError(
             "invalid_timezone", "Explore My World Time steps follow UTC."
         )
-    if _ORDER[target] < _ORDER[source]:
-        raise ProcessingError(
-            "upsampling_not_supported", "Choose the same or a coarser frequency."
-        )
+    require_coarser_time_step(source, target)
     if series.get("calendar", "standard") not in (
         "standard",
         "gregorian",

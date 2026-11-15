@@ -81,3 +81,52 @@ The result contains ordered `inputs` (IDs, labels, source/processing `metadata`,
 `filled_pair_counts[i][j]` counts observations where either input used a filled
 value. Matrix rows/columns follow `inputs` order. Resource failure returns a
 structured error asking for fewer inputs, never a partial matrix.
+
+## Connected application flow
+
+`POST /api/correlation-map` follows the app's existing resource wrapper:
+`{"data": result, "notice": null}`. Processing failures return
+`{"error": {"code": ..., "message": ..., "details": ...}}` with HTTP 422;
+resource exhaustion returns 503. Exclusions and warnings remain in the details
+when no map can be produced. The transport schema is
+`schemas/correlation-map.schema.json`. The frontend `getCorrelationMap` client
+retains structured details and supports request cancellation.
+
+The API supplies its configured acquired and live-cache inventories to
+`correlate_acquired_series` in `correlation_service.py`. No request causes NASA
+acquisition, no fallback example is substituted, and no engine statistics are
+changed. Named catalog areas and exact matching acquired rectangle identities
+are supported. Joined/antimeridian descriptors are preserved, but without an
+acquired result for that exact area they return an explicit coverage exclusion.
+The globe picker renders antimeridian areas as two longitude intervals.
+
+Optional `derived` instructions let callers name a calculation without sending
+series values:
+
+```json
+{
+  "variables": [
+    {"id": "A", "variable": "temperature", "area": "sahel"},
+    {"id": "D", "variable": "twice", "area": "derived", "label": "Twice temperature"}
+  ],
+  "period": {"start": "2010-01", "end": "2010-12"},
+  "derived": [{
+    "id": "twice",
+    "inputs": {"source": {"variable": "temperature", "area": "sahel"}},
+    "operations": [{"id": "result", "expression": "2 * source"}],
+    "output": "result"
+  }]
+}
+```
+
+Derived inputs are cropped to the common period before operations are replayed;
+otherwise scaling statistics could depend on observations outside the requested
+analysis. Existing processing rules, unit acknowledgement, source quality and
+filled-value provenance apply. Source inputs can be removed from the displayed
+map without changing the saved calculation's input references.
+
+The Correlation map panel in Explore My World adds independent area/Variable
+batches, removes duplicates, manages Derived calculations, and renders a labeled
+heatmap with a fixed −1 to +1 scale. Cells show scores and both labels. Excluded
+inputs appear below; missing data also opens a dismissible message. New selections
+clear stale results, and superseded HTTP responses are ignored.

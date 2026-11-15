@@ -1,6 +1,7 @@
 import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Globe from 'react-globe.gl'
 import { withAlpha } from '../palette.js'
+import { rectangleCentre, splitRectangle } from '../areaGeometry.js'
 
 const FLIGHT_MS = 1600
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -46,7 +47,7 @@ function boxPolygon({ region, color }) {
 }
 
 function centre({ bbox }) {
-  return { lat: (bbox.south + bbox.north) / 2, lng: (bbox.west + bbox.east) / 2 }
+  return rectangleCentre(bbox)
 }
 
 function toVector({ lat, lng }) {
@@ -79,7 +80,7 @@ function labelElement({ region, color }) {
   return element
 }
 
-export default function RegionGlobe({ highlights = [] }) {
+export default function RegionGlobe({ highlights = [], onPick }) {
   const globeRef = useRef(null)
   const containerRef = useRef(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
@@ -94,7 +95,7 @@ export default function RegionGlobe({ highlights = [] }) {
     return () => observer.disconnect()
   }, [])
 
-  const polygons = useMemo(() => highlights.map(boxPolygon), [highlights])
+  const polygons = useMemo(() => highlights.flatMap(item => splitRectangle(item.region.bbox).map(bbox => boxPolygon({ ...item, region: { ...item.region, bbox } }))), [highlights])
   const labels = useMemo(
     () =>
       highlights.map((highlight) => ({
@@ -153,6 +154,7 @@ export default function RegionGlobe({ highlights = [] }) {
             atmosphereAltitude={0.18}
             animateIn={false}
             onGlobeReady={() => setReady(true)}
+            onGlobeClick={onPick}
             polygonsData={polygons}
             polygonCapColor={(feature) => withAlpha(feature.properties.color, 0.42)}
             polygonSideColor={(feature) => withAlpha(feature.properties.color, 0.18)}
