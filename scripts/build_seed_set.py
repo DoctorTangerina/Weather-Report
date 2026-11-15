@@ -12,7 +12,9 @@ reads it. Commit `data/seed/` afterwards so the demo works with no network.
                        acquired NASA files
     --output DIR       where to write the seed set (default `data/seed`)
 
-A Series the data cannot provide is reported and skipped. The command refuses to
+Each Variable's files are read once for all Regions, and a line is printed as
+every 25th file is read and as each Series is finished. A Series the data cannot
+provide is reported and skipped. The command refuses to
 overwrite the seed set when no Candidate carries one of the three Evidence
 labels, so a demo cannot lose its strong or weak case unnoticed; pass
 `--allow-missing-labels` to write it anyway.
@@ -52,16 +54,14 @@ def build_series_from_acquired_data(
 
     catalog = load_catalog(catalog_path)
     variable_ids = [variable.variable_id for variable in catalog.variables]
-    report = build_series_files(
+    build_series_files(
         [region.region_id for region in catalog.regions],
         variable_ids,
         GatheringPeriod(period.start, period.end),
         series_dir,
         catalog_path=catalog_path,
+        progress=lambda text: print(f"  {text}", flush=True),
     )
-    for row in report:
-        if row["status"] != "included":
-            print(f"  {row['region_id']} {row['variable_id']}: {row['status']}")
 
 
 def main(argv: list[str] | None = None) -> int:
