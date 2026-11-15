@@ -396,3 +396,22 @@ def test_declared_aggregation_survives_filling_missing_values():
     with pytest.raises(ProcessingError) as error:
         process_series(payload)
     assert error.value.code == "aggregation_mismatch"
+
+
+# #47 amendment: an Expression needs its inputs on a common Time step first.
+def test_inputs_on_different_time_steps_combine_only_after_resampling():
+    payload = request(HOURS, [1, 5, 9])
+    payload["series"]["B"] = {
+        **payload["series"]["A"],
+        "timestamps": ["2024-01-01T00:00:00Z"],
+        "values": [10],
+        "frequency": "day",
+    }
+    total = {"id": "total", "operation": "arithmetic", "expression": "A + B"}
+    with pytest.raises(ProcessingError) as error:
+        process_series({**payload, "operations": [total]})
+    assert error.value.code == "unaligned_series"
+
+    total["expression"] = "daily + B"
+    payload["operations"].append(total)
+    assert process_series(payload)["series"]["total"]["values"] == [15]

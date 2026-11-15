@@ -3,6 +3,7 @@
 import copy
 import json
 import statistics
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -212,3 +213,16 @@ def test_custom_range_does_not_apply_to_zscore():
     with pytest.raises(ProcessingError) as error:
         process_series(request([1, 2, 3], "zscore", ddof=0, range=[0, 1]))
     assert error.value.code == "invalid_operation"
+
+
+# #50 amendment: scaling works on a Series at any Time step.
+@pytest.mark.parametrize("hours", [1, 3, 24])
+def test_scaling_does_not_depend_on_the_time_step(hours):
+    payload = request([2, None, 4, 6], "minmax")
+    start = datetime(2024, 1, 1, tzinfo=UTC)
+    payload["series"]["A"]["timestamps"] = [
+        (start + timedelta(hours=hours * i)).isoformat() for i in range(4)
+    ]
+    scaled = process_series(payload)["series"]["scaled"]
+    assert scaled["values"] == [0.0, None, 0.5, 1.0]
+    assert scaled["timestamps"] == payload["series"]["A"]["timestamps"]
