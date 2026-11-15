@@ -100,6 +100,7 @@ fixtures still do.
 | `GET /api/catalog` | `catalogResponse` |
 | `GET /api/series?region_id=&variable_id=&period_start=&period_end=` | `seriesResponse` |
 | `GET /api/comparison?region_a=&region_b=&variable_id=&period_start=&period_end=` | `comparisonResponse`: two computed Trends and their monthly series, in requested Region order |
+| `GET /api/explore/series?region_id=&variable_id=…&aggregation=&time_step=&period_start=&period_end=` | `exploreSeriesResponse`: Explore My World, one Series per Variable (1–5, `variable_id` repeated) for a catalog Region over 2000-01 to the latest month. Only monthly means are answered so far; other Aggregations and Time steps return 501 `not_available_yet` |
 | `GET /api/discoveries` | `discoveryListResponse`, highest score first |
 | `GET /api/discoveries/{discovery_id}` | `discoveryResponse` |
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |

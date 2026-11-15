@@ -7,7 +7,8 @@ const NEW_SESSION = { shownDiscoveryIds: [], shownRegionIds: [] }
 
 // loading → welcome → drawing → discovery ⇄ drawing … → complete → welcome
 // unreachable when the catalog cannot be fetched. The investigation (#15) runs
-// in the sidebar, beside the globe, from a drawn Discovery.
+// in the sidebar, beside the globe, from a drawn Discovery. welcome ⇄ explore
+// opens one catalog Region in Explore My World (#75).
 export default function App() {
   const [catalog, setCatalog] = useState(null)
   const [phase, setPhase] = useState('loading')
@@ -15,6 +16,7 @@ export default function App() {
   const [notice, setNotice] = useState(null)
   const [session, setSession] = useState(NEW_SESSION)
   const [error, setError] = useState(null)
+  const [exploreRegionId, setExploreRegionId] = useState(null)
   const drawing = useRef(false)
 
   const loadCatalog = useCallback(() => {
@@ -109,6 +111,13 @@ export default function App() {
         onInvestigate={() => setPhase('investigation')}
         onBack={() => setPhase('discovery')}
         onNewSession={startOver}
+        exploreRegionId={exploreRegionId}
+        onExplore={(regionId) => {
+          setExploreRegionId(regionId)
+          setError(null)
+          setPhase('explore')
+        }}
+        onCloseExplore={() => setPhase('welcome')}
         onRetry={loadCatalog}
       />
     </main>
