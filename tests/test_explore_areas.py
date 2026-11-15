@@ -228,10 +228,6 @@ def test_a_selected_area_never_becomes_a_region_or_a_discovery(api, validator_fo
         assert client.get(path).json() == body, path
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Daily Time steps arrive with #80; until then the API answers 501.",
-)
 def test_daily_area_series_do_not_change_the_discoveries(api, validator_for):
     # BS-013 (#81): Series for a Selected area at a daily Time step.
     client, _ = api
