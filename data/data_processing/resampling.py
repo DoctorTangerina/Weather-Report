@@ -6,13 +6,9 @@ from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from ..time_steps import normalize_time_step, series_time_step, time_step_label
 from .errors import ProcessingError
 
-_FREQUENCIES = {
-    alias: frequency
-    for frequency in ("second", "minute", "hour", "day", "month", "year")
-    for alias in (frequency, frequency + "s")
-}
 _AGGREGATIONS = {
     "mean": "mean",
     "average": "mean",
@@ -23,10 +19,21 @@ _AGGREGATIONS = {
     "max": "max",
     "maximum": "max",
     "median": "median",
+    "root mean square": "rms",
+    "root_mean_square": "rms",
+    "rms": "rms",
+    "standard deviation": "std",
+    "standard_deviation": "std",
+    "std": "std",
+    "mean absolute value": "mav",
+    "mean_absolute_value": "mav",
+    "mav": "mav",
 }
 _ORDER = {
     name: index
-    for index, name in enumerate(("second", "minute", "hour", "day", "month", "year"))
+    for index, name in enumerate(
+        ("second", "minute", "hour", "3-hour", "day", "month", "year")
+    )
 }
 
 
@@ -35,8 +42,9 @@ def _floor(instant, frequency):
         return instant.replace(microsecond=0)
     if frequency == "minute":
         return instant.replace(second=0, microsecond=0)
-    if frequency == "hour":
-        return instant.replace(minute=0, second=0, microsecond=0)
+    if frequency in ("hour", "3-hour"):
+        hour = instant.hour if frequency == "hour" else (instant.hour // 3) * 3
+        return instant.replace(hour=hour, minute=0, second=0, microsecond=0)
     if frequency == "day":
         return instant.replace(hour=0, minute=0, second=0, microsecond=0)
     if frequency == "month":
@@ -45,8 +53,8 @@ def _floor(instant, frequency):
 
 
 def _next(instant, frequency):
-    if frequency in ("second", "minute", "hour"):
-        seconds = {"second": 1, "minute": 60, "hour": 3600}[frequency]
+    if frequency in ("second", "minute", "hour", "3-hour"):
+        seconds = {"second": 1, "minute": 60, "hour": 3600, "3-hour": 10800}[frequency]
         return (instant.astimezone(UTC) + timedelta(seconds=seconds)).astimezone(
             instant.tzinfo
         )
@@ -72,6 +80,20 @@ def _aggregate(values, aggregation, timestamp):
             value = min(values)
         elif aggregation == "max":
             value = max(values)
+        elif aggregation == "rms":
+            magnitude = max(abs(value) for value in values)
+            value = (
+                magnitude
+                * math.sqrt(
+                    statistics.mean((value / magnitude) ** 2 for value in values)
+                )
+                if magnitude
+                else 0.0
+            )
+        elif aggregation == "std":
+            value = statistics.pstdev(values)
+        elif aggregation == "mav":
+            value = statistics.mean(abs(value) for value in values)
         else:
             value = statistics.median(values)
             if not math.isfinite(value):
@@ -97,18 +119,40 @@ def resample_series(
     The caller validates values and ordered timestamps. This simple operation
     supports standard Gregorian calendars and explicit coarsening, not interpolation.
     """
-    source = (
-        _FREQUENCIES.get(source_frequency)
-        if isinstance(source_frequency, str)
+    try:
+        declared = series_time_step(series)
+        source = (
+            normalize_time_step(source_frequency)
+            if source_frequency is not None
+            else declared
+        )
+        target = normalize_time_step(frequency)
+    except ValueError as error:
+        raise ProcessingError("invalid_resampling_parameters", str(error)) from None
+    selected_aggregation = series.get("aggregation", aggregation)
+    reducer = (
+        _AGGREGATIONS.get(selected_aggregation)
+        if isinstance(selected_aggregation, str)
         else None
     )
-    target = _FREQUENCIES.get(frequency) if isinstance(frequency, str) else None
-    reducer = _AGGREGATIONS.get(aggregation) if isinstance(aggregation, str) else None
-    if source is None or target is None or reducer is None:
+    explicit = _AGGREGATIONS.get(aggregation) if isinstance(aggregation, str) else None
+    if source is None or reducer is None:
         raise ProcessingError(
             "invalid_resampling_parameters",
-            "Choose source_frequency and frequency from second, minute, hour, day, month, year; "
-            "choose aggregation from mean, sum, min, max, median.",
+            "Provide a source Time step and an Aggregation (on the Series or instruction).",
+        )
+    if aggregation is not None and explicit != reducer:
+        raise ProcessingError(
+            "aggregation_mismatch", "Resampling must use the Series' Aggregation."
+        )
+    if declared is not None and source != declared:
+        raise ProcessingError(
+            "source_frequency_mismatch",
+            "Source frequency contradicts the input's Time step.",
+        )
+    if "time_step" in series and timezone != "UTC":
+        raise ProcessingError(
+            "invalid_timezone", "Explore My World Time steps follow UTC."
         )
     if _ORDER[target] < _ORDER[source]:
         raise ProcessingError(
@@ -131,14 +175,6 @@ def resample_series(
         raise ProcessingError(
             "invalid_timezone", "Choose an IANA time zone such as UTC."
         ) from None
-    existing = series.get("frequency")
-    if existing is not None and (
-        not isinstance(existing, str) or _FREQUENCIES.get(existing) != source
-    ):
-        raise ProcessingError(
-            "source_frequency_mismatch",
-            "Source frequency contradicts the input's frequency metadata.",
-        )
     groups = defaultdict(list)
     source_buckets = set()
     filled = series.get("filled", [False] * len(series["values"]))
@@ -186,6 +222,7 @@ def resample_series(
             "Timestamps cannot be resampled in the chosen time zone.",
         ) from None
     return {
+        "time_step": time_step_label(target),
         "timestamps": output_times,
         "values": output_values,
         "frequency": target,

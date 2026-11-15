@@ -8,7 +8,9 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from itertools import pairwise
+from typing import cast
 
+from ..time_steps import series_time_step, time_step_label
 from .errors import ProcessingError
 from .missing_values import manage_missing
 from .resampling import resample_series
@@ -162,7 +164,7 @@ def _evaluate(node, inputs, length, timestamps, acknowledged, warnings):
     if isinstance(node, ast.Name):
         return _Value(inputs[node.id]["values"], inputs[node.id]["units"])
     if isinstance(node, ast.Constant):
-        return _Value([float(node.value)] * length, "1", scalar=True)
+        return _Value([float(cast(int | float, node.value))] * length, "1", scalar=True)
     if isinstance(node, ast.UnaryOp):
         value = _evaluate(
             node.operand, inputs, length, timestamps, acknowledged, warnings
@@ -223,7 +225,7 @@ def _evaluate(node, inputs, length, timestamps, acknowledged, warnings):
     else:
         units = compound(left.units, right.units, divide=divide)
         operation = (lambda a, b: a / b) if divide else lambda a, b: a * b
-    values = []
+    values: list[float | None] = []
     for timestamp, a, b in zip(timestamps, left.values, right.values):
         if a is None or b is None:
             values.append(None)
@@ -262,7 +264,9 @@ def process_series(request: Mapping) -> dict:
     ):
         raise ProcessingError("invalid_request", "Provide named series and operations.")
     available = copy.deepcopy(dict(sources))
-    outputs, recipe, warnings = {}, [], []
+    outputs: dict[str, dict] = {}
+    recipe: list[dict] = []
+    warnings: list[dict] = []
     for index, step in enumerate(steps):
         if (
             not isinstance(step, Mapping)
@@ -321,6 +325,10 @@ def process_series(request: Mapping) -> dict:
                     operation=index,
                 )
             expression = step.get("expression")
+            if not isinstance(expression, str):
+                raise ProcessingError(
+                    "invalid_expression", "Provide an arithmetic expression."
+                )
             tree = _parse(expression)
             names = preview_expression(expression)["inputs"]
             if not names:
@@ -357,6 +365,19 @@ def process_series(request: Mapping) -> dict:
         used = {name: available[name] for name in names}
         timelines = {name: _timeline(series, name) for name, series in used.items()}
         first = used[names[0]]
+        try:
+            declared_steps = {
+                name: series_time_step(series) for name, series in used.items()
+            }
+        except ValueError as error:
+            raise ProcessingError("invalid_time_step", str(error)) from None
+        known_steps = {value for value in declared_steps.values() if value is not None}
+        if len(known_steps) > 1:
+            raise ProcessingError(
+                "unaligned_series",
+                "Inputs have different Time steps; explicitly resample to a common Time step first.",
+                inputs=names,
+            )
         calendar = first.get("calendar", "standard")
         if any(
             timelines[name] != timelines[names[0]]
@@ -368,7 +389,7 @@ def process_series(request: Mapping) -> dict:
                 "Explicitly align/resample these inputs first.",
                 inputs=names,
             )
-        step_warnings = []
+        step_warnings: list[dict] = []
         resampled = None
         managed = None
         if method == "arithmetic":
@@ -444,6 +465,18 @@ def process_series(request: Mapping) -> dict:
                 and any(flags is not None and flags[i] for flags in input_flags)
                 for i, value in enumerate(result.values)
             ]
+        common_step = declared_steps[names[0]]
+        if (
+            resampled is None
+            and common_step is not None
+            and all(value == common_step for value in declared_steps.values())
+        ):
+            output["time_step"] = time_step_label(common_step)
+        if "aggregation" in first and all(
+            series.get("aggregation") == first["aggregation"]
+            for series in used.values()
+        ):
+            output["aggregation"] = copy.deepcopy(first["aggregation"])
         frequency = first.get("frequency")
         if (
             resampled is None
