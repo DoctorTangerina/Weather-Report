@@ -6,8 +6,8 @@ use the same fake. Files live in the acquisition workspace owned by the API.
 """
 
 import json
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from netCDF4 import Dataset, date2num
@@ -24,6 +24,10 @@ class FakeGridAcquisitionSource:
     # Explicit [low, high] cell bounds; one degree around each centre by default.
     latitude_bounds: list[list[float]] | None = None
     longitude_bounds: list[list[float]] | None = None
+    # A unit conversion the config declares, as the NASA source does for its
+    # products (for example a rate in kg m-2 s-1 to a precipitation total).
+    conversion: str | None = None
+    native_units: str | None = None
 
     def prepare(self, request: dict, *, fetch: bool = False) -> Path:
         directory = Path(request["workspace"])
@@ -95,9 +99,67 @@ class FakeGridAcquisitionSource:
                         request["variable_id"]: {
                             "dataset_id": "TEST",
                             "variable": field_name,
+                            **(
+                                {
+                                    "conversion": self.conversion,
+                                    "native_units": self.native_units,
+                                }
+                                if self.conversion
+                                else {}
+                            ),
                         }
                     },
                 }
             )
         )
         return config
+
+
+@dataclass
+class NativeGridSource:
+    """Hourly (or `hours`-hourly) grids over the requested months, like MERRA-2.
+
+    `value(stamp, cell)` gives cell `cell`'s value at native time `stamp` (UTC),
+    or None. Hourly stamps fall on the half hour, as MERRA-2's do. One latitude
+    row with one-degree bounds keeps the cells equal-area.
+    """
+
+    value: object
+    longitudes: list = field(default_factory=lambda: [0.0, 1.0, 2.0])
+    latitude: float = 15.0
+    hours: int = 1
+    units: str = "°C"
+    conversion: str | None = None
+    native_units: str | None = None
+    # Per Variable replacements for units, conversion and native_units.
+    overrides: dict = field(default_factory=dict)
+    calls: int = 0
+    requests: list = field(default_factory=list)
+
+    def prepare(self, request, *, fetch=False):
+        self.calls += 1
+        self.requests.append(dict(request))
+        start = datetime.fromisoformat(request["period"]["start"] + "-01")
+        last = datetime.fromisoformat(request["period"]["end"] + "-01")
+        end = (last + timedelta(days=32)).replace(day=1)
+        stamps = []
+        stamp = start + timedelta(minutes=30 if self.hours == 1 else 0)
+        while stamp < end:
+            stamps.append(stamp)
+            stamp += timedelta(hours=self.hours)
+        grid = FakeGridAcquisitionSource(
+            timestamps=[item.isoformat() for item in stamps],
+            latitudes=[self.latitude],
+            longitudes=self.longitudes,
+            values=[
+                [[self.value(item, cell) for cell in range(len(self.longitudes))]]
+                for item in stamps
+            ],
+            **{
+                "units": self.units,
+                "conversion": self.conversion,
+                "native_units": self.native_units,
+                **self.overrides.get(request["variable_id"], {}),
+            },
+        )
+        return grid.prepare(request, fetch=fetch)
