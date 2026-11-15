@@ -28,7 +28,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from engine.contracts import (  # noqa: E402
+from engine.catalog import load_catalog
+from engine.contracts import (
     Autocorrelation,
     CheckStep,
     Contrast,
@@ -60,9 +61,8 @@ from engine.contracts import (  # noqa: E402
     as_dict,
     direction_of,
 )
-from engine.catalog import load_catalog  # noqa: E402
-from engine.trend import FALSE_DISCOVERY_RATE  # noqa: E402
-from engine.version import ENGINE_VERSION  # noqa: E402
+from engine.trend import FALSE_DISCOVERY_RATE
+from engine.version import ENGINE_VERSION
 
 PERIOD = Period(start="2000-01", end="2024-12")
 MONTHS = 300

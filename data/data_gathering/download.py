@@ -29,7 +29,9 @@ def load_token(env_path: Path | None = None) -> str:
     """Read EARTHDATA_TOKEN; an exported environment value takes precedence."""
     token = settings(env_path).get("EARTHDATA_TOKEN")
     if not token or not token.strip():
-        raise ValueError(f"Set EARTHDATA_TOKEN in {env_path or ENV_PATH} or your environment.")
+        raise ValueError(
+            f"Set EARTHDATA_TOKEN in {env_path or ENV_PATH} or your environment."
+        )
     token = token.strip()
     if any(character.isspace() for character in token):
         raise ValueError("EARTHDATA_TOKEN must not contain whitespace.")
@@ -45,7 +47,10 @@ class SafeRedirectHandler(HTTPRedirectHandler):
         redirected = super().redirect_request(
             request, response, code, message, headers, new_url
         )
-        if redirected is not None and urlsplit(request.full_url).netloc != urlsplit(new_url).netloc:
+        if (
+            redirected is not None
+            and urlsplit(request.full_url).netloc != urlsplit(new_url).netloc
+        ):
             redirected.remove_header("Authorization")
         return redirected
 
@@ -57,9 +62,7 @@ def download(url: str, destination: Path, token: str) -> Path:
     if destination.exists():
         raise FileExistsError(f"Destination already exists: {destination}")
 
-    opener = build_opener(
-        SafeRedirectHandler(), HTTPCookieProcessor(CookieJar())
-    )
+    opener = build_opener(SafeRedirectHandler(), HTTPCookieProcessor(CookieJar()))
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = None
     try:
@@ -77,7 +80,9 @@ def download(url: str, destination: Path, token: str) -> Path:
                 shutil.copyfileobj(response, output)
                 length = response.headers.get("Content-Length")
                 if length is not None and output.tell() != int(length):
-                    raise ValueError("Response ended before the declared file size was received.")
+                    raise ValueError(
+                        "Response ended before the declared file size was received."
+                    )
             # Exclusive creation also prevents overwriting another download.
             os.link(temporary, destination)
         return destination

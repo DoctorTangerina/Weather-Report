@@ -26,12 +26,15 @@ def _flag(value) -> bool:
         return True
     if value in (False, 0, "0", "false", "False", None):
         return False
-    raise SeriesSelectionError("series_source_unavailable", "The Variable's land-only metadata is invalid.")
+    raise SeriesSelectionError(
+        "series_source_unavailable", "The Variable's land-only metadata is invalid."
+    )
 
 
 class NetCDFSeriesSource:
-    def __init__(self, manifest: Path, *, rules: dict | None = None,
-                 root: Path | None = None):
+    def __init__(
+        self, manifest: Path, *, rules: dict | None = None, root: Path | None = None
+    ):
         self.manifest = Path(manifest)
         self.rules = rules or {}
         self.root = root or self.manifest.parent
@@ -44,20 +47,29 @@ class NetCDFSeriesSource:
             for item in records:
                 record = dict(item)
                 path = Path(record["file"])
-                record["file"] = str(path if path.is_absolute() else self.manifest.parent / path)
+                record["file"] = str(
+                    path if path.is_absolute() else self.manifest.parent / path
+                )
                 identifier = record.get("collection_id") or record["dataset"]
                 result.setdefault(identifier, []).append(record)
             return result
         except (OSError, ValueError, KeyError, TypeError):
-            raise SeriesSelectionError("series_source_unavailable", "Acquired series data is not configured or available.") from None
+            raise SeriesSelectionError(
+                "series_source_unavailable",
+                "Acquired series data is not configured or available.",
+            ) from None
 
     def _rule(self, identifier: str, record: dict, variable: str) -> dict:
-        configured = self.rules.get(identifier, self.rules.get(record.get("dataset"), {}))
+        configured = self.rules.get(
+            identifier, self.rules.get(record.get("dataset"), {})
+        )
         return configured.get(variable, {})
 
     def _land_only(self, identifier: str, record: dict, name: str, variable) -> bool:
         rule = self._rule(identifier, record, name)
-        declared = _flag(rule.get("land_only")) or _flag(getattr(variable, "land_only", None))
+        declared = _flag(rule.get("land_only")) or _flag(
+            getattr(variable, "land_only", None)
+        )
         return declared
 
     def _describe(self, identifier: str, records: list[dict]) -> list[dict]:
@@ -71,34 +83,65 @@ class NetCDFSeriesSource:
                         continue
                     for name, variable in group.variables.items():
                         full_name = prefix + name
-                        if (name in variable.dimensions or np.dtype(variable.dtype).kind not in "iuf"
-                                or time.dimensions[0] not in variable.dimensions):
+                        if (
+                            name in variable.dimensions
+                            or np.dtype(variable.dtype).kind not in "iuf"
+                            or time.dimensions[0] not in variable.dimensions
+                        ):
                             continue
-                        if name in {getattr(item, "bounds", "") for item in available.values()}:
+                        if name in {
+                            getattr(item, "bounds", "") for item in available.values()
+                        }:
                             continue
-                        fields.append({"variable": full_name,
-                                       "description": getattr(variable, "long_name", name).replace("_", " "),
-                                       "units": getattr(variable, "units", "unknown"),
-                                       "land_only": self._land_only(identifier, records[0], full_name, variable)})
+                        fields.append(
+                            {
+                                "variable": full_name,
+                                "description": getattr(
+                                    variable, "long_name", name
+                                ).replace("_", " "),
+                                "units": getattr(variable, "units", "unknown"),
+                                "land_only": self._land_only(
+                                    identifier, records[0], full_name, variable
+                                ),
+                            }
+                        )
         except OSError:
-            raise SeriesSelectionError("series_source_unavailable", "An acquired dataset cannot be read.") from None
+            raise SeriesSelectionError(
+                "series_source_unavailable", "An acquired dataset cannot be read."
+            ) from None
         return fields
 
     def available(self) -> list[dict]:
         with _READ_LOCK:
-            return [{"dataset_id": identifier, "name": records[0].get("dataset", identifier),
-                     "variables": self._describe(identifier, records)}
-                    for identifier, records in self._datasets().items()]
+            return [
+                {
+                    "dataset_id": identifier,
+                    "name": records[0].get("dataset", identifier),
+                    "variables": self._describe(identifier, records),
+                }
+                for identifier, records in self._datasets().items()
+            ]
 
-    def select(self, area: Bbox, variable: str, window: TimeWindow,
-               dataset_id: str | None = None) -> NativeSeries:
+    def select(
+        self,
+        area: Bbox,
+        variable: str,
+        window: TimeWindow,
+        dataset_id: str | None = None,
+    ) -> NativeSeries:
         result = self.select_many({"": area}, variable, window, dataset_id)[""]
         if isinstance(result, Exception):
             raise result
         return result
 
-    def select_many(self, areas: Mapping[str, Bbox], variable: str, window: TimeWindow,
-                    dataset_id: str | None = None, on_file=None) -> dict:
+    def select_many(
+        self,
+        areas: Mapping[str, Bbox],
+        variable: str,
+        window: TimeWindow,
+        dataset_id: str | None = None,
+        on_file=None,
+    ) -> dict:
         """Each named area's series, reading every file once.
 
         A problem with the Variable or dataset itself is raised. A problem with
@@ -111,43 +154,73 @@ class NetCDFSeriesSource:
     def _select_many(self, areas, variable, window, dataset_id, on_file):
         datasets = self._datasets()
         if dataset_id is not None:
-            datasets = {identifier: records for identifier, records in datasets.items()
-                        if dataset_id in (identifier, records[0].get("dataset"))}
+            datasets = {
+                identifier: records
+                for identifier, records in datasets.items()
+                if dataset_id in (identifier, records[0].get("dataset"))
+            }
             if not datasets:
-                raise SeriesSelectionError("dataset_not_available", "The selected dataset has not been acquired.")
+                raise SeriesSelectionError(
+                    "dataset_not_available",
+                    "The selected dataset has not been acquired.",
+                )
         raw_name = variable.partition("[")[0]
-        candidates = [(identifier, records, field)
-                      for identifier, records in datasets.items()
-                      for field in self._describe(identifier, records) if field["variable"] == raw_name]
+        candidates = [
+            (identifier, records, field)
+            for identifier, records in datasets.items()
+            for field in self._describe(identifier, records)
+            if field["variable"] == raw_name
+        ]
         if not candidates:
-            raise SeriesSelectionError("variable_not_available", "The selected Variable is not available in the acquired data.")
+            raise SeriesSelectionError(
+                "variable_not_available",
+                "The selected Variable is not available in the acquired data.",
+            )
         if len(candidates) != 1:
-            raise SeriesSelectionError("series_selection_ambiguous", "This Variable occurs in multiple datasets; choose a dataset_id.")
+            raise SeriesSelectionError(
+                "series_selection_ambiguous",
+                "This Variable occurs in multiple datasets; choose a dataset_id.",
+            )
         identifier, records, description = candidates[0]
         rule = self._rule(identifier, records[0], raw_name)
         mask_provider = None
         if description["land_only"]:
             mask_rule = rule.get("land_mask")
             if not isinstance(mask_rule, dict) or "variable" not in mask_rule:
-                raise SeriesSelectionError("land_mask_unavailable", "This land-only Variable needs a configured land mask before it can be returned.")
+                raise SeriesSelectionError(
+                    "land_mask_unavailable",
+                    "This land-only Variable needs a configured land mask before it can be returned.",
+                )
+
             def mask_provider(record, available, geo):
                 return self._land_mask(mask_rule, available, geo)
+
         normalized = [{**record, "dataset": identifier} for record in records]
         try:
             extracted = extract_many(
-                normalized, {name: _Area((area.west, area.south, area.east, area.north))
-                             for name, area in areas.items()},
-                variables=[raw_name], time_window=(window.lower, window.upper),
-                land_mask_provider=mask_provider, on_file=on_file)
+                normalized,
+                {
+                    name: _Area((area.west, area.south, area.east, area.north))
+                    for name, area in areas.items()
+                },
+                variables=[raw_name],
+                time_window=(window.lower, window.upper),
+                land_mask_provider=mask_provider,
+                on_file=on_file,
+            )
         except SeriesSelectionError:
             raise
         except (OSError, ValueError, KeyError):
-            raise SeriesSelectionError("series_source_unavailable", "The selected data cannot be prepared for this area and time period.") from None
+            raise SeriesSelectionError(
+                "series_source_unavailable",
+                "The selected data cannot be prepared for this area and time period.",
+            ) from None
         results = {}
         for name, result in extracted.items():
             try:
                 results[name] = self._native_series(
-                    result, variable, raw_name, identifier, records, description)
+                    result, variable, raw_name, identifier, records, description
+                )
             except SeriesSelectionError as error:
                 results[name] = error
         return results
@@ -157,9 +230,15 @@ class NetCDFSeriesSource:
         if isinstance(extracted, SeriesSelectionError):
             raise extracted
         if isinstance(extracted, Exception):
-            raise SeriesSelectionError("series_source_unavailable", "The selected data cannot be prepared for this area and time period.") from None
+            raise SeriesSelectionError(
+                "series_source_unavailable",
+                "The selected data cannot be prepared for this area and time period.",
+            ) from None
         if extracted["skipped"]:
-            raise SeriesSelectionError("series_source_unavailable", "Some selected source files or fields could not be read; no partial series was returned.")
+            raise SeriesSelectionError(
+                "series_source_unavailable",
+                "Some selected source files or fields could not be read; no partial series was returned.",
+            )
         fields = extracted["datasets"][identifier]
         if variable in fields:
             key, field = variable, fields[variable]
@@ -167,35 +246,66 @@ class NetCDFSeriesSource:
             key, field = next(iter(fields.items()))
         else:
             choices = ", ".join(list(fields)[:10])
-            raise SeriesSelectionError("series_selection_ambiguous", "Choose a specific field/layer: " + choices)
+            raise SeriesSelectionError(
+                "series_selection_ambiguous",
+                "Choose a specific field/layer: " + choices,
+            )
         if field["spatial_aggregation"] == "none":
-            raise SeriesSelectionError("series_source_unavailable", "This field has no geographic axes for the requested area.")
-        return NativeSeries(identifier, key, field["units"], field["calendar"], field["observations"],
-                            Source(provider=records[0].get("provider", "Earthdata"),
-                                   dataset=records[0].get("dataset", identifier), variable=raw_name,
-                                   url=f"https://cmr.earthdata.nasa.gov/search/concepts/{identifier}.html"
-                                   if identifier.startswith("C") else records[0].get("url")),
-                            land_only=description["land_only"],
-                            valid_land_fraction=field.get("valid_land_fraction"))
+            raise SeriesSelectionError(
+                "series_source_unavailable",
+                "This field has no geographic axes for the requested area.",
+            )
+        return NativeSeries(
+            identifier,
+            key,
+            field["units"],
+            field["calendar"],
+            field["observations"],
+            Source(
+                provider=records[0].get("provider", "Earthdata"),
+                dataset=records[0].get("dataset", identifier),
+                variable=raw_name,
+                url=f"https://cmr.earthdata.nasa.gov/search/concepts/{identifier}.html"
+                if identifier.startswith("C")
+                else records[0].get("url"),
+            ),
+            land_only=description["land_only"],
+            valid_land_fraction=field.get("valid_land_fraction"),
+        )
 
     def _land_mask(self, rule: dict, available: dict, geo: dict) -> np.ndarray:
         if geo is None:
-            raise SeriesSelectionError("land_mask_unavailable", "A land mask cannot be aligned without geographic coordinates.")
+            raise SeriesSelectionError(
+                "land_mask_unavailable",
+                "A land mask cannot be aligned without geographic coordinates.",
+            )
         try:
             if rule.get("file"):
                 path = Path(rule["file"])
                 path = path if path.is_absolute() else self.root / path
                 # The mask is static and the cells are the same in every file of
                 # a product, so it is read once per set of cells.
-                key = (str(path), rule["variable"], tuple(rule.get("land_values", [1])), geo["dims"],
-                       tuple(np.asarray(geo["indices"][dim]).tobytes() for dim in geo["dims"]))
+                key = (
+                    str(path),
+                    rule["variable"],
+                    tuple(rule.get("land_values", [1])),
+                    geo["dims"],
+                    tuple(
+                        np.asarray(geo["indices"][dim]).tobytes() for dim in geo["dims"]
+                    ),
+                )
                 if key not in self._masks:
                     with Dataset(path) as mask_file:
                         self._masks[key] = self._external_mask(mask_file, rule, geo)
                 return self._masks[key]
-            return self._mask_values(available[rule["variable"]], geo["dims"], geo["indices"], rule)
+            return self._mask_values(
+                available[rule["variable"]], geo["dims"], geo["indices"], rule
+            )
         except (OSError, KeyError, ValueError, IndexError):
-            raise SeriesSelectionError("land_mask_unavailable", "The configured land mask is missing or cannot be aligned with the selected cells.") from None
+            raise SeriesSelectionError(
+                "land_mask_unavailable",
+                "The configured land mask is missing or cannot be aligned with the selected cells.",
+            ) from None
 
     @staticmethod
     def _mask_values(variable, dims, indices, rule):
@@ -212,27 +322,49 @@ class NetCDFSeriesSource:
             raise ValueError("Land mask has different geographic axes.")
         raw = variable[tuple(selectors)]
         raw = np.transpose(raw, [remaining.index(dim) for dim in dims])
-        land = np.isin(np.ma.getdata(raw), rule.get("land_values", [1])) & ~np.ma.getmaskarray(raw)
+        land = np.isin(
+            np.ma.getdata(raw), rule.get("land_values", [1])
+        ) & ~np.ma.getmaskarray(raw)
         return land
 
     def _external_mask(self, dataset, rule, geo):
         available = dataset.variables
         _, lat = coordinate(available, "latitude")
         _, lon = coordinate(available, "longitude")
-        if lat is None or lon is None or lat.ndim != 1 or lon.ndim != 1 or len(geo["coords"]) != 2:
+        if (
+            lat is None
+            or lon is None
+            or lat.ndim != 1
+            or lon.ndim != 1
+            or len(geo["coords"]) != 2
+        ):
             raise ValueError("External masks require aligned rectilinear coordinates.")
         target = [geo["coords"][dim][geo["indices"][dim]] for dim in geo["dims"]]
         indices = {}
-        for variable, values, is_lon in ((lat, target[0], False), (lon, target[1], True)):
+        for variable, values, is_lon in (
+            (lat, target[0], False),
+            (lon, target[1], True),
+        ):
             coordinates = np.asarray(variable[:], dtype=float)
             if is_lon:
                 coordinates = (coordinates + 180) % 360 - 180
             order = np.argsort(coordinates)
             sorted_values = coordinates[order]
-            right = np.clip(np.searchsorted(sorted_values, values), 0, len(coordinates) - 1)
+            right = np.clip(
+                np.searchsorted(sorted_values, values), 0, len(coordinates) - 1
+            )
             left = np.clip(right - 1, 0, len(coordinates) - 1)
-            nearest = np.where(abs(sorted_values[left] - values) < abs(sorted_values[right] - values), left, right)
+            nearest = np.where(
+                abs(sorted_values[left] - values) < abs(sorted_values[right] - values),
+                left,
+                right,
+            )
             if not np.allclose(sorted_values[nearest], values, rtol=0, atol=1e-5):
                 raise ValueError("Mask grid resolution or coordinates do not match.")
             indices[variable.dimensions[0]] = order[nearest]
-        return self._mask_values(available[rule["variable"]], (lat.dimensions[0], lon.dimensions[0]), indices, rule)
+        return self._mask_values(
+            available[rule["variable"]],
+            (lat.dimensions[0], lon.dimensions[0]),
+            indices,
+            rule,
+        )

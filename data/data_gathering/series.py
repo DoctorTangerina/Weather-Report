@@ -21,7 +21,10 @@ def load_series_config(config_path: Path = DEFAULT_CONFIG) -> dict:
             raise TypeError
         return configuration
     except (OSError, ValueError, TypeError):
-        raise SeriesSelectionError("series_source_unavailable", "Configure SERIES_MANIFEST and VARIABLE_RULES in the gathering config.") from None
+        raise SeriesSelectionError(
+            "series_source_unavailable",
+            "Configure SERIES_MANIFEST and VARIABLE_RULES in the gathering config.",
+        ) from None
 
 
 def open_source(config_path: Path = DEFAULT_CONFIG):
@@ -34,14 +37,23 @@ def open_source(config_path: Path = DEFAULT_CONFIG):
         if not isinstance(rules, dict):
             raise TypeError
     except (KeyError, TypeError):
-        raise SeriesSelectionError("series_source_unavailable", "Configure SERIES_MANIFEST and VARIABLE_RULES in the gathering config.") from None
-    return NetCDFSeriesSource(manifest if manifest.is_absolute() else ROOT / manifest,
-                              rules=rules, root=ROOT)
+        raise SeriesSelectionError(
+            "series_source_unavailable",
+            "Configure SERIES_MANIFEST and VARIABLE_RULES in the gathering config.",
+        ) from None
+    return NetCDFSeriesSource(
+        manifest if manifest.is_absolute() else ROOT / manifest, rules=rules, root=ROOT
+    )
 
 
-def get_time_series(area: Bbox | Mapping[str, float], variable: str,
-                    period: Period | Mapping[str, str], *, dataset_id: str | None = None,
-                    config_path: Path = DEFAULT_CONFIG) -> dict:
+def get_time_series(
+    area: Bbox | Mapping[str, float],
+    variable: str,
+    period: Period | Mapping[str, str],
+    *,
+    dataset_id: str | None = None,
+    config_path: Path = DEFAULT_CONFIG,
+) -> dict:
     """Return a JSON-ready, quality-approved selection or raise SeriesSelectionError.
 
     area: west/east/south/north in degrees, or a Bbox.
@@ -54,19 +66,36 @@ def get_time_series(area: Bbox | Mapping[str, float], variable: str,
     """
     try:
         box = area if isinstance(area, Bbox) else Bbox(**dict(area))
-        selected_period = period if isinstance(period, Period) else Period(**dict(period))
-        if (not isinstance(variable, str) or not variable.strip()
-                or not all(isinstance(value, str) for value in (selected_period.start, selected_period.end))
-                or not all(isinstance(value, (int, float)) and math.isfinite(value)
-                           for value in (box.west, box.east, box.south, box.north))):
+        selected_period = (
+            period if isinstance(period, Period) else Period(**dict(period))
+        )
+        if (
+            not isinstance(variable, str)
+            or not variable.strip()
+            or not all(
+                isinstance(value, str)
+                for value in (selected_period.start, selected_period.end)
+            )
+            or not all(
+                isinstance(value, (int, float)) and math.isfinite(value)
+                for value in (box.west, box.east, box.south, box.north)
+            )
+        ):
             raise ValueError
-        if not (-180 <= box.west < box.east <= 180 and -90 <= box.south < box.north <= 90):
+        if not (
+            -180 <= box.west < box.east <= 180 and -90 <= box.south < box.north <= 90
+        ):
             raise ValueError
     except (TypeError, ValueError):
-        raise SeriesSelectionError("invalid_request", "Provide an area with west/east/south/north, a Variable name, and a start/end period.") from None
+        raise SeriesSelectionError(
+            "invalid_request",
+            "Provide an area with west/east/south/north, a Variable name, and a start/end period.",
+        ) from None
     # Reject invalid dates before opening any source file.
     TimeWindow.create(selected_period.start, selected_period.end)
-    result = select_series(open_source(config_path), box, variable, selected_period, dataset_id)
+    result = select_series(
+        open_source(config_path), box, variable, selected_period, dataset_id
+    )
     payload = asdict(result)
     payload["timestamps"] = list(result.timestamps)
     payload["values"] = list(result.values)

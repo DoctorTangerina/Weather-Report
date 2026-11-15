@@ -30,7 +30,9 @@ def make_grid(path, *, calendar="standard"):
         lon[:] = [290, 300]
         heights = data.createVariable("height", "f8", ("height",))
         heights[:] = [1000, 500]
-        rainfall = data.createVariable("arbitrary_field", "f8", ("clock", "height", "x", "y"), fill_value=-9999)
+        rainfall = data.createVariable(
+            "arbitrary_field", "f8", ("clock", "height", "x", "y"), fill_value=-9999
+        )
         rainfall.units = "mm/day"
         rainfall.long_name = "An arbitrary field"
         rainfall[:] = np.broadcast_to(np.array([[10, 30], [20, 40]]), (3, 2, 2, 2))
@@ -44,10 +46,17 @@ def test_custom_names_ordered_axes_layers_and_hourly_timestamps(tmp_path):
     records = make_grid(tmp_path / "grid.nc")
     result = extract(records, BOX)
     fields = result["datasets"]["arbitrary-dataset"]
-    assert set(fields) == {"arbitrary_field[height=1000.0]", "arbitrary_field[height=500.0]"}
+    assert set(fields) == {
+        "arbitrary_field[height=1000.0]",
+        "arbitrary_field[height=500.0]",
+    }
     field = fields["arbitrary_field[height=1000.0]"]
     assert field["units"] == "mm/day"
-    assert list(field["observations"]) == ["2024-01-01T00:00:00", "2024-01-01T01:00:00", "2024-01-01T06:00:00"]
+    assert list(field["observations"]) == [
+        "2024-01-01T00:00:00",
+        "2024-01-01T01:00:00",
+        "2024-01-01T06:00:00",
+    ]
     assert field["observations"]["2024-01-01T00:00:00"] == pytest.approx(65 / 3)
     assert field["observations"]["2024-01-01T01:00:00"] is None
     assert field["observations"]["2024-01-01T06:00:00"] is None
@@ -97,9 +106,10 @@ def test_conflicting_timestamps_are_not_silently_overwritten(tmp_path):
 def test_nongregorian_calendar_is_preserved(tmp_path):
     records = make_grid(tmp_path / "grid.nc", calendar="360_day")
     result = extract(records, BOX)
-    assert all(field["calendar"] == "360_day" for field in result["datasets"]["arbitrary-dataset"].values())
-
-
+    assert all(
+        field["calendar"] == "360_day"
+        for field in result["datasets"]["arbitrary-dataset"].values()
+    )
 
 
 def test_missing_time_metadata_is_reported(tmp_path):
@@ -111,7 +121,9 @@ def test_missing_time_metadata_is_reported(tmp_path):
         extract([{"file": str(path)}], BOX)
 
 
-def test_environment_overrides_dotenv_without_replacing_existing_secrets(tmp_path, monkeypatch):
+def test_environment_overrides_dotenv_without_replacing_existing_secrets(
+    tmp_path, monkeypatch
+):
     path = tmp_path / ".env"
     path.write_text('EARTHDATA_TOKEN="private-token"\n')
     monkeypatch.setenv("EARTHDATA_TOKEN", "environment-token")
@@ -127,12 +139,17 @@ def test_theme_search_can_be_customized_in_a_json_file(tmp_path, monkeypatch):
     path.write_text(json.dumps({"my-new-theme": {"keyword": "snow depth"}}))
     themes = load_themes(path)
     calls = []
-    monkeypatch.setattr("data.data_gathering.datasets.cmr_entries", lambda resource, params: calls.append(params) or iter([]))
+    monkeypatch.setattr(
+        "data.data_gathering.datasets.cmr_entries",
+        lambda resource, params: calls.append(params) or iter([]),
+    )
     assert search("my-new-theme", [BOX], "2024-01", "2024-12", themes=themes) == []
     assert calls[0]["keyword"] == "snow depth"
 
 
-def test_token_is_found_beside_the_example_file_when_the_root_has_none(tmp_path, monkeypatch):
+def test_token_is_found_beside_the_example_file_when_the_root_has_none(
+    tmp_path, monkeypatch
+):
     from data.data_gathering import config
 
     root, beside_example = tmp_path / "root.env", tmp_path / "gathering.env"

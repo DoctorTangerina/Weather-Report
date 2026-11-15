@@ -25,12 +25,19 @@ def months_in(period: Period) -> tuple[str, ...]:
     return tuple(result)
 
 
-def assess_quality(values: Sequence[float | None], *, land_only: bool,
-                   valid_land_fraction: float | None = None) -> SeriesQuality:
+def assess_quality(
+    values: Sequence[float | None],
+    *,
+    land_only: bool,
+    valid_land_fraction: float | None = None,
+) -> SeriesQuality:
     if len(values) == 0:
         raise ValueError("A series must contain at least one calendar month.")
-    if land_only and (valid_land_fraction is None or not math.isfinite(valid_land_fraction)
-                      or not 0 <= valid_land_fraction <= 1):
+    if land_only and (
+        valid_land_fraction is None
+        or not math.isfinite(valid_land_fraction)
+        or not 0 <= valid_land_fraction <= 1
+    ):
         raise ValueError("Land-only Variables require a valid land-cell fraction.")
     missing = sum(value is None or not math.isfinite(value) for value in values)
     exclusions = []

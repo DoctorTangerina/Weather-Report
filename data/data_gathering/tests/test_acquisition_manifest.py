@@ -17,7 +17,13 @@ def listed(destination):
 
 
 def test_a_second_acquisition_adds_to_the_first_instead_of_replacing_it(tmp_path):
-    write_manifest(tmp_path, "2023-01", "2023-02", [AREA], [record("T", "t1.nc4"), record("T", "t2.nc4")])
+    write_manifest(
+        tmp_path,
+        "2023-01",
+        "2023-02",
+        [AREA],
+        [record("T", "t1.nc4"), record("T", "t2.nc4")],
+    )
     write_manifest(tmp_path, "2023-01", "2023-02", [AREA], [record("P", "p1.nc4")])
     assert listed(tmp_path) == [("P", "p1.nc4"), ("T", "t1.nc4"), ("T", "t2.nc4")]
 

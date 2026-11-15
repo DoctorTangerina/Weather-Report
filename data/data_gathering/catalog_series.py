@@ -59,10 +59,14 @@ CONVERSIONS: dict[str, Conversion] = {
 }
 
 
-def get_catalog_series(region_id: str, variable_id: str,
-                       period: Period | Mapping[str, str] = DEFAULT_PERIOD, *,
-                       catalog_path: Path = DEFAULT_CATALOG,
-                       config_path: Path = DEFAULT_CONFIG) -> dict:
+def get_catalog_series(
+    region_id: str,
+    variable_id: str,
+    period: Period | Mapping[str, str] = DEFAULT_PERIOD,
+    *,
+    catalog_path: Path = DEFAULT_CATALOG,
+    config_path: Path = DEFAULT_CONFIG,
+) -> dict:
     """The monthly series for a catalog Region and Variable, with its quality.
 
     period: inclusive start/end in YYYY-MM. Default 2000-01 to 2024-12.
@@ -71,17 +75,27 @@ def get_catalog_series(region_id: str, variable_id: str,
     has no land mask, or the file's units cannot be reported in catalog units.
     A series that is merely too incomplete is returned, flagged as excluded.
     """
-    result = get_catalog_series_many([region_id], variable_id, period,
-                                     catalog_path=catalog_path, config_path=config_path)[region_id]
+    result = get_catalog_series_many(
+        [region_id],
+        variable_id,
+        period,
+        catalog_path=catalog_path,
+        config_path=config_path,
+    )[region_id]
     if isinstance(result, SeriesSelectionError):
         raise result
     return result
 
 
-def get_catalog_series_many(region_ids: list[str], variable_id: str,
-                            period: Period | Mapping[str, str] = DEFAULT_PERIOD, *,
-                            catalog_path: Path = DEFAULT_CATALOG,
-                            config_path: Path = DEFAULT_CONFIG, on_file=None) -> dict:
+def get_catalog_series_many(
+    region_ids: list[str],
+    variable_id: str,
+    period: Period | Mapping[str, str] = DEFAULT_PERIOD,
+    *,
+    catalog_path: Path = DEFAULT_CATALOG,
+    config_path: Path = DEFAULT_CONFIG,
+    on_file=None,
+) -> dict:
     """`get_catalog_series` for several Regions of one Variable, reading each file once.
 
     Each Region's value is its series, or the SeriesSelectionError that
@@ -92,15 +106,22 @@ def get_catalog_series_many(region_ids: list[str], variable_id: str,
     catalog = _load_catalog(catalog_path)
     variable = _find(catalog["variables"], "variable_id", variable_id)
     if variable is None:
-        raise SeriesSelectionError("not_in_catalog", "Choose a Region and a Variable from the catalogs.")
+        raise SeriesSelectionError(
+            "not_in_catalog", "Choose a Region and a Variable from the catalogs."
+        )
     results: dict = {}
     regions = {}
     for region_id in region_ids:
         region = _find(catalog["regions"], "region_id", region_id)
         if region is None:
-            results[region_id] = SeriesSelectionError("not_in_catalog", "Choose a Region and a Variable from the catalogs.")
+            results[region_id] = SeriesSelectionError(
+                "not_in_catalog", "Choose a Region and a Variable from the catalogs."
+            )
         elif variable_id not in region["variable_ids"]:
-            results[region_id] = SeriesSelectionError("variable_not_offered_for_region", "The catalog does not offer this Variable for this Region.")
+            results[region_id] = SeriesSelectionError(
+                "variable_not_offered_for_region",
+                "The catalog does not offer this Variable for this Region.",
+            )
         else:
             regions[region_id] = region
     if not regions:
@@ -114,38 +135,61 @@ def get_catalog_series_many(region_ids: list[str], variable_id: str,
     window = TimeWindow.create(selected.start, selected.end)
     natives = open_source(config_path).select_many(
         {region_id: Bbox(**region["bbox"]) for region_id, region in regions.items()},
-        field, window, entry.get("dataset_id"), on_file)
+        field,
+        window,
+        entry.get("dataset_id"),
+        on_file,
+    )
 
     for region_id, native in natives.items():
         try:
             if isinstance(native, SeriesSelectionError):
                 raise native
-            results[region_id] = _series(region_id, variable, native, entry, selected, window,
-                                         months, catalog["engine_version"])
+            results[region_id] = _series(
+                region_id,
+                variable,
+                native,
+                entry,
+                selected,
+                window,
+                months,
+                catalog["engine_version"],
+            )
         except SeriesSelectionError as error:
             results[region_id] = error
     return {region_id: results[region_id] for region_id in region_ids}
 
 
-def _series(region_id, variable, native, entry, selected, window, months, engine_version) -> dict:
+def _series(
+    region_id, variable, native, entry, selected, window, months, engine_version
+) -> dict:
     land_only = bool(variable["land_only"] or native.land_only)
     if variable["land_only"] and not native.land_only:
-        raise SeriesSelectionError("land_mask_unavailable", "This land-only Variable has no configured land mask in the acquired data.")
+        raise SeriesSelectionError(
+            "land_mask_unavailable",
+            "This land-only Variable has no configured land mask in the acquired data.",
+        )
     convert = _conversion(entry, native.units, variable["units"])
 
     buckets: dict[str, list[float]] = {}
     for stamp, value in native.observations.items():
         if window.contains(stamp) and value is not None and math.isfinite(value):
             buckets.setdefault(stamp[:7], []).append(value)
-    monthly = [sum(buckets[month]) / len(buckets[month]) if month in buckets else None
-               for month in months]
+    monthly = [
+        sum(buckets[month]) / len(buckets[month]) if month in buckets else None
+        for month in months
+    ]
     monthly = convert(monthly, selected.start, native.units)
 
     try:
-        quality = assess_quality(monthly, land_only=land_only,
-                                 valid_land_fraction=native.valid_land_fraction)
+        quality = assess_quality(
+            monthly, land_only=land_only, valid_land_fraction=native.valid_land_fraction
+        )
     except ValueError:
-        raise SeriesSelectionError("land_mask_unavailable", "This Variable requires verified land-mask metadata before its series can be returned.") from None
+        raise SeriesSelectionError(
+            "land_mask_unavailable",
+            "This Variable requires verified land-mask metadata before its series can be returned.",
+        ) from None
     return {
         "region_id": region_id,
         "variable_id": variable["variable_id"],
@@ -164,7 +208,9 @@ def _load_catalog(path: Path) -> dict:
         catalog["regions"], catalog["variables"], catalog["engine_version"]
         return catalog
     except (OSError, ValueError, KeyError, TypeError):
-        raise SeriesSelectionError("catalog_unavailable", "The Region and Variable catalogs cannot be read.") from None
+        raise SeriesSelectionError(
+            "catalog_unavailable", "The Region and Variable catalogs cannot be read."
+        ) from None
 
 
 def _find(entries: list[dict], key: str, identifier: str) -> dict | None:
@@ -175,14 +221,19 @@ def _period(value: Mapping[str, str]) -> Period:
     try:
         return Period(value["start"], value["end"])
     except (KeyError, TypeError):
-        raise SeriesSelectionError("invalid_period", "Give a period with start and end months in YYYY-MM.") from None
+        raise SeriesSelectionError(
+            "invalid_period", "Give a period with start and end months in YYYY-MM."
+        ) from None
 
 
 def _months(period: Period) -> tuple[str, ...]:
     try:
         return months_in(period)
     except (ValueError, TypeError):
-        raise SeriesSelectionError("invalid_period", "Use whole months in YYYY-MM, with start no later than end.") from None
+        raise SeriesSelectionError(
+            "invalid_period",
+            "Use whole months in YYYY-MM, with start no later than end.",
+        ) from None
 
 
 def _conversion(entry: dict, native_units: str, catalog_units: str) -> Conversion:
@@ -193,13 +244,22 @@ def _conversion(entry: dict, native_units: str, catalog_units: str) -> Conversio
     """
     name = entry.get("conversion", "identity")
     if name not in CONVERSIONS:
-        raise SeriesSelectionError("series_source_unavailable", f"Unknown unit conversion {name!r} in the gathering config.")
+        raise SeriesSelectionError(
+            "series_source_unavailable",
+            f"Unknown unit conversion {name!r} in the gathering config.",
+        )
     declared = entry.get("native_units")
     if declared is None:
         if name != "identity" or _units(native_units) != _units(catalog_units):
-            raise SeriesSelectionError("units_mismatch", f"The data is in {native_units!r}, not the catalog's {catalog_units!r}; declare native_units and a conversion.")
+            raise SeriesSelectionError(
+                "units_mismatch",
+                f"The data is in {native_units!r}, not the catalog's {catalog_units!r}; declare native_units and a conversion.",
+            )
     elif _units(declared) != _units(native_units):
-        raise SeriesSelectionError("units_mismatch", f"The config declares {declared!r} but the data is in {native_units!r}.")
+        raise SeriesSelectionError(
+            "units_mismatch",
+            f"The config declares {declared!r} but the data is in {native_units!r}.",
+        )
     return CONVERSIONS[name]
 
 
@@ -217,11 +277,16 @@ def _units(text: str) -> object:
     return {name: power for name, power in exponents.items() if power}
 
 
-def build_series_files(region_ids: list[str], variable_ids: list[str],
-                       period: Period | Mapping[str, str], output_dir: Path, *,
-                       catalog_path: Path = DEFAULT_CATALOG,
-                       config_path: Path = DEFAULT_CONFIG,
-                       progress: Callable[[str], None] | None = None) -> list[dict]:
+def build_series_files(
+    region_ids: list[str],
+    variable_ids: list[str],
+    period: Period | Mapping[str, str],
+    output_dir: Path,
+    *,
+    catalog_path: Path = DEFAULT_CATALOG,
+    config_path: Path = DEFAULT_CONFIG,
+    progress: Callable[[str], None] | None = None,
+) -> list[dict]:
     """Write one series file per Region and Variable and report each outcome.
 
     Files are named `<region>__<variable>.json`, like the committed stub set.
@@ -237,10 +302,17 @@ def build_series_files(region_ids: list[str], variable_ids: list[str],
         say(f"{variable_id}: reading the files for {len(region_ids)} Regions")
         try:
             results = get_catalog_series_many(
-                region_ids, variable_id, period, catalog_path=catalog_path,
+                region_ids,
+                variable_id,
+                period,
+                catalog_path=catalog_path,
                 config_path=config_path,
                 on_file=lambda done, total, path, v=variable_id: (
-                    say(f"{v}: file {done}/{total}") if done in (1, total) or done % 25 == 0 else None))
+                    say(f"{v}: file {done}/{total}")
+                    if done in (1, total) or done % 25 == 0
+                    else None
+                ),
+            )
         except SeriesSelectionError as error:
             results = dict.fromkeys(region_ids, error)
         for region_id in region_ids:
@@ -251,12 +323,21 @@ def build_series_files(region_ids: list[str], variable_ids: list[str],
             else:
                 output_dir.mkdir(parents=True, exist_ok=True)
                 (output_dir / f"{region_id}__{variable_id}.json").write_text(
-                    json.dumps(result, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+                    json.dumps(result, indent=2, allow_nan=False) + "\n",
+                    encoding="utf-8",
+                )
                 quality = result["quality"]
-                row.update(status="included" if quality["included"]
-                           else "excluded: " + ", ".join(quality["exclusions"]),
-                           missing_fraction=quality["missing_fraction"],
-                           valid_land_fraction=quality["valid_land_fraction"])
+                row.update(
+                    status="included"
+                    if quality["included"]
+                    else "excluded: " + ", ".join(quality["exclusions"]),
+                    missing_fraction=quality["missing_fraction"],
+                    valid_land_fraction=quality["valid_land_fraction"],
+                )
             rows[region_id, variable_id] = row
             say(f"{region_id} {variable_id}: {row['status']}")
-    return [rows[region_id, variable_id] for region_id in region_ids for variable_id in variable_ids]
+    return [
+        rows[region_id, variable_id]
+        for region_id in region_ids
+        for variable_id in variable_ids
+    ]

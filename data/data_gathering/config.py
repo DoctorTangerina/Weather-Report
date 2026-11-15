@@ -25,15 +25,19 @@ def settings(env_path: Path | None = None) -> dict[str, str]:
     Without `env_path`, the repository-root .env wins over the one in this folder.
     """
     values = {}
-    for path in ((env_path,) if env_path else reversed(ENV_PATHS)):
+    for path in (env_path,) if env_path else reversed(ENV_PATHS):
         if path.exists():
             for line in path.read_text(encoding="utf-8").splitlines():
-                key, separator, value = line.strip().removeprefix("export ").partition("=")
+                key, separator, value = (
+                    line.strip().removeprefix("export ").partition("=")
+                )
                 if not separator or key.startswith("#"):
                     continue
                 parts = shlex.split(value, comments=True)
                 if len(parts) > 1:
-                    raise ValueError(f"Quote values containing spaces in .env ({key.strip()}).")
+                    raise ValueError(
+                        f"Quote values containing spaces in .env ({key.strip()})."
+                    )
                 values[key.strip()] = parts[0] if parts else ""
     return {**values, **os.environ}
 
@@ -45,7 +49,9 @@ def configured_bbox() -> tuple[float, float, float, float]:
             raise TypeError
         bounds = tuple(float(part) for part in value)
     except (ValueError, TypeError):
-        raise ValueError("Set BBOX to [WEST,SOUTH,EAST,NORTH] in config.json, or pass --bbox.") from None
+        raise ValueError(
+            "Set BBOX to [WEST,SOUTH,EAST,NORTH] in config.json, or pass --bbox."
+        ) from None
     if len(bounds) != 4:
         raise ValueError("BBOX must contain WEST,SOUTH,EAST,NORTH.")
     return bounds

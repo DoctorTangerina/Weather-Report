@@ -117,7 +117,7 @@ def test_store_serves_the_stub_set_keyed_by_region_variable_and_period(stub_dir)
         is None
     )
     assert store.series("not-a-region", "temperature", period) is None
-    assert [d["discovery_id"] for d in store.discoveries()][0] == "amazon-basin--sahel"
+    assert next(d["discovery_id"] for d in store.discoveries()) == "amazon-basin--sahel"
     assert store.discovery("amazon-basin--sahel") is not None
     assert store.discovery("nope") is None
 
