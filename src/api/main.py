@@ -17,9 +17,9 @@ import math
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -39,6 +39,7 @@ from engine.contracts import Discovery, as_dict
 from engine.discovery import SessionHistory
 
 from .acquisition import AcquisitionUnavailable, acquire_series
+from .explore import FIRST_MONTH, Refusal, explore_series
 from .results import example_response, select_example, usable
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -190,6 +191,32 @@ async def get_series(
     return error(
         503, "live_data_unavailable", "No live data or usable examples available."
     )
+
+
+@app.get("/api/explore/series")
+def get_explore_series(
+    region_id: str,
+    variable_id: Annotated[list[str] | None, Query()] = None,
+    aggregation: str = "mean",
+    time_step: str = "monthly",
+    period_start: str = FIRST_MONTH,
+    period_end: str | None = None,
+) -> Any:
+    """Explore My World: one Region's Series for one to five Variables."""
+    try:
+        data = explore_series(
+            catalog,
+            store,
+            region_id,
+            variable_id or [],
+            aggregation,
+            time_step,
+            period_start,
+            period_end,
+        )
+    except Refusal as refusal:
+        return error(refusal.status, refusal.code, refusal.message)
+    return {**ok(data), "provenance": "preloaded"}
 
 
 @app.get("/api/comparison")
