@@ -24,4 +24,4 @@ extend-exclude = [".claude"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
-testpaths = ["tests"]
+testpaths = ["tests", "data/data_processing/tests", "data/data_gathering/tests"]

@@ -37,6 +37,12 @@ files; it never starts NASA downloads or reads the Earthdata token.
   `data.data_gathering.models.Period`. Values are selected by their native timestamps.
 - `dataset_id` (optional keyword argument): selects a collection when the same
   field occurs in multiple acquired datasets. A unique field needs no id.
+- `time_step` (optional keyword argument): `3-hourly`, `daily` or `monthly`.
+  Declares the cadence of an already sampled Source series and assesses every
+  requested UTC Time step, including absent slots. It does not aggregate a finer
+  native dataset; explicitly resample/reduce that source first. Contradictory
+  native cadence is rejected. Without this argument the legacy monthly catalog
+  coverage contract remains unchanged.
 - `config_path` (optional keyword argument): defaults to
   `data/data_gathering/config.json`.
 
@@ -50,7 +56,9 @@ The returned plain dict contains `dataset_id`, `variable`, `area`, `period`,
 `timestamps`, `values`, `units`, `calendar`, `source`, and `quality`.
 `timestamps` and `values` are equally sized lists in chronological order. Masked
 or invalid observations are represented by `None`. Units and cadence stay native;
-the method does not silently convert units or resample to months.
+the method does not silently convert units or resample to months. When a Time
+step is declared, the payload additionally records canonical `time_step` and
+`aggregation: "mean"` (this selector's spatial reduction is area-weighted mean).
 
 All selection, file reading and quality validation happen inside
 `data/data_gathering/`. The API owner receives only a validated native-frequency
@@ -60,7 +68,14 @@ or engine/API changes in this implementation.
 ## Quality gate
 
 Quality is calculated **after the requested area and period are selected**.
-The method returns nothing unless the selection passes:
+The method returns nothing unless the selection passes. For Explore My World,
+pass `time_step` explicitly: more than 20% missing requested Time steps excludes
+and exactly 20% passes, using reason `too_many_missing_time_steps`. For example,
+21 missing daily slots out of 100 excludes even if every calendar month contains
+some data. Three-hour intervals and days follow UTC; the full requested window,
+including absent leading/trailing/internal slots, forms the denominator.
+
+The legacy call without a declared Time step preserves the monthly catalog rule:
 
 - More than 20% missing calendar months: excluded. Exactly 20% passes.
 - For land-only Variables, less than 50% valid land cells: excluded. Exactly
