@@ -129,6 +129,11 @@ export default function RegionGlobe({ highlights: requestedHighlights = [] }) {
 
     const duration = reducedMotion() ? 0 : FLIGHT_MS
     const aspect = dimensions.width / Math.max(1, dimensions.height)
+    // globe.gl ends an in-flight tween at its old destination when a new
+    // pointOfView starts. Restore the visible position synchronously first,
+    // so selecting another Region redirects the flight without a snap.
+    const currentView = globe.pointOfView()
+    globe.pointOfView(currentView, 0)
     if (highlights.length === 2) {
       const centres = highlights.map(({ region }) => centre(region))
       globe.pointOfView(framing(centres, aspect), duration)

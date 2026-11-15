@@ -15,6 +15,7 @@ export default function App() {
   const [notice, setNotice] = useState(null)
   const [session, setSession] = useState(NEW_SESSION)
   const [error, setError] = useState(null)
+  const [checkingDiscovery, setCheckingDiscovery] = useState(false)
   const drawing = useRef(false)
 
   const loadCatalog = useCallback(() => {
@@ -50,7 +51,8 @@ export default function App() {
     }
     drawing.current = true
     const settled = discovery ? 'discovery' : 'welcome'
-    setPhase('drawing')
+    if (selectedRegions.length === 2) setCheckingDiscovery(true)
+    else setPhase('drawing')
     setError(null)
     const request = selectedRegions.length === 2
       ? getDiscoveries().then((response) => {
@@ -84,6 +86,7 @@ export default function App() {
       })
       .finally(() => {
         drawing.current = false
+        setCheckingDiscovery(false)
       })
   }
 
@@ -103,11 +106,18 @@ export default function App() {
         highlights={highlights}
         notice={notice}
         error={error}
+        checkingDiscovery={checkingDiscovery}
         seen={session.shownDiscoveryIds.length}
         onSurprise={() => draw('discovery')}
         onDetective={(selectedRegions) => draw('investigation', selectedRegions)}
         onInvestigate={() => setPhase('investigation')}
         onBack={() => setPhase('discovery')}
+        onHome={() => {
+          setDiscovery(null)
+          setNotice(null)
+          setError(null)
+          setPhase('welcome')
+        }}
         onNewSession={startOver}
         onRetry={loadCatalog}
       />
