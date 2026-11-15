@@ -15,6 +15,7 @@ from .errors import ProcessingError
 from .missing_values import manage_missing
 from .resampling import resample_series
 from .scaling import scale_values
+from .temporal_filter import filter_series
 from .units import compound, conversion, is_rate
 
 
@@ -279,7 +280,14 @@ def process_series(request: Mapping) -> dict:
                 operation=index,
             )
         method = step.get("operation", "arithmetic")
-        if method not in ("arithmetic", "minmax", "zscore", "resample", "missing"):
+        if method not in (
+            "arithmetic",
+            "minmax",
+            "zscore",
+            "resample",
+            "missing",
+            "filter",
+        ):
             raise ProcessingError(
                 "invalid_operation", "Unsupported operation.", operation=index
             )
@@ -307,6 +315,18 @@ def process_series(request: Mapping) -> dict:
                 "value",
                 "replacements",
                 "max_gap_seconds",
+            }
+        if method == "filter":
+            allowed = {
+                "id",
+                "operation",
+                "input",
+                "timezone",
+                "mode",
+                "hours",
+                "weekdays",
+                "months",
+                "dates",
             }
         if method == "minmax":
             allowed.add("range")
@@ -403,6 +423,17 @@ def process_series(request: Mapping) -> dict:
             )
         elif method == "missing":
             managed = manage_missing(
+                first,
+                timelines[names[0]],
+                {
+                    key: value
+                    for key, value in step.items()
+                    if key not in ("id", "operation", "input")
+                },
+            )
+            result = _Value(managed["values"], first["units"])
+        elif method == "filter":
+            managed = filter_series(
                 first,
                 timelines[names[0]],
                 {
