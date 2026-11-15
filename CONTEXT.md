@@ -21,11 +21,19 @@ The fixed list of Variables the engine and the user can choose from, each with i
 _Avoid_: Variable list, dataset list
 
 **Series**:
-The monthly values of one Variable over one Region across a period, averaged over the Region's area, together with a record of its quality.
+The values of one Variable over one Region or Selected area across a period, one value per Time step, each combining the area's grid cells by an Aggregation, together with a record of its quality. The Discovery engine only uses monthly Series of catalog Regions combined by the area-weighted mean; other Time steps, Aggregations and Selected areas exist only for the user's own exploration.
 _Avoid_: Time series, data, curve
 
+**Aggregation**:
+The rule that combines the values of an area's grid cells into one value for a Time step: mean (weighted by cell area), median, minimum, maximum, root mean square, standard deviation, or mean absolute value. When the Time step is longer than the data's own, the area's values are combined over space first, then over the Time step by the same rule (a daily maximum is the highest of the area's values that day).
+_Avoid_: Composition, strategy, reducer
+
+**Time step**:
+The interval between consecutive values of a Series, such as 3-hourly, daily or monthly.
+_Avoid_: Granularity, resolution, frequency
+
 **Quality gate**:
-The check that decides whether a Series has enough valid data to be used: too many missing months, or, for a land-only Variable, too little of the Region being valid land.
+The check that decides whether a Series has enough valid data to be used: too large a share of missing Time steps, or, for a land-only Variable, too little of the Region being valid land.
 _Avoid_: Filter, validation
 
 **Excluded series**:
@@ -69,7 +77,22 @@ A Discovery the engine has found and scored but not yet selected for presentatio
 _Avoid_: Proposal, lead
 
 **Selected area**:
-A rectangular geographic area chosen by a user on the map for a Manual investigation. It is distinct from a named Region in the fixed Region catalog.
+A geographic area a user draws on the map in Explore My World: one rectangle, or several rectangles joined into one shape. It may cross the antimeridian. It is distinct from a named Region in the fixed Region catalog and never becomes one.
+_Avoid_: Custom area, box, polygon
+
+**Source series**:
+A Series as acquired, before any Processing recipe is applied.
+
+**Processing recipe**:
+An ordered list of processing steps applied to one or more Series, which can be replayed to reproduce the same result.
+_Avoid_: Recipe (on its own), pipeline, workflow, transformation
+
+**Derived series**:
+The result of applying a Processing recipe to one or more Source series. It keeps its Processing recipe and the provenance of its inputs.
+
+**Field map**:
+The values of one Variable in every grid cell of a Region or Selected area at one Time step, drawn on the globe at the data's own resolution. Its colour scale spans that Variable's range over the area and period, so every Time step is drawn on the same scale.
+_Avoid_: Heatmap (reserved for the Correlation map display), raster, layer
 
 **Correlation map**:
 A pairwise correlation matrix for a user-selected list of Source series or Derived series, which may represent different Variables and Selected areas.
@@ -86,4 +109,5 @@ The experience where the user investigates a Discovery by comparing charts, answ
 The part of an investigation that shows the NASA source, the period analyzed, and the statistical assessment in plain language.
 
 **Explore My World**:
-A later experience where the user freely chooses any region of the planet, beyond the Region catalog. Not part of the MVP.
+The experience where the user freely picks catalog Regions or Selected areas, up to five Variables, an Aggregation and a Time step, sees their Series and Field maps, and processes Series with Processing recipes. Nothing made here feeds the Discovery engine.
+_Avoid_: Manual investigation
