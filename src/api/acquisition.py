@@ -10,13 +10,20 @@ from typing import Any
 
 from engine.contracts import Period, Region, Variable
 
+from .grid_source import GridAcquisitionSource
+
 
 class AcquisitionUnavailable(Exception):
     """Expected upstream/authentication/quality failure, not a programming error."""
 
 
 async def acquire_series(
-    region: Region, variable: Variable, period: Period, *, token: str
+    region: Region,
+    variable: Variable,
+    period: Period,
+    *,
+    token: str,
+    source: GridAcquisitionSource | None = None,
 ) -> dict[str, Any]:
     root = Path(__file__).resolve().parents[2]
     env = {
@@ -25,16 +32,6 @@ async def acquire_series(
         "PYTHONPATH": os.pathsep.join((str(root), str(root / "src"))),
     }
     with tempfile.TemporaryDirectory(prefix="weather-acquisition-") as workspace:
-        process = await asyncio.create_subprocess_exec(
-            sys.executable,
-            "-m",
-            "api.acquisition_worker",
-            cwd=root,
-            env=env,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-        )
         request = {
             "region_id": region.region_id,
             "variable_id": variable.variable_id,
@@ -48,6 +45,18 @@ async def acquire_series(
             "dataset": variable.source.dataset,
             "workspace": workspace,
         }
+        if source is not None:
+            request["config_path"] = str(source.prepare(request))
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "api.acquisition_worker",
+            cwd=root,
+            env=env,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
         try:
             output, _ = await process.communicate(json.dumps(request).encode())
         finally:
