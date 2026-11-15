@@ -27,7 +27,7 @@ Python 3.11 or newer, Node 18 or newer.
 
 ```sh
 pip install -e ".[api,dev]"
-python -m pytest                                  # 607 tests, no network
+python -m pytest                                  # the whole suite, no network
 python -m uvicorn api.main:app --port 8000        # API on :8000
 ```
 
