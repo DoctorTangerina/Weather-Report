@@ -19,6 +19,7 @@ export default function Explorer({
   highlights,
   trends,
 }) {
+
   // Not every Region has a stored series for every Variable. Mark the missing
   // ones for the chosen Variable instead of letting a student hit a blank.
   const label = (item) =>

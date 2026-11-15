@@ -35,6 +35,8 @@ class ResultStore(Protocol):
 
     def save_series(self, payload: dict[str, Any]) -> None: ...
 
+    def available_series(self) -> list[dict[str, Any]]: ...
+
     def discoveries(self) -> list[dict[str, Any]]: ...
 
     def discovery(self, discovery_id: str) -> dict[str, Any] | None: ...
@@ -53,6 +55,18 @@ class JsonResultStore:
     ) -> dict[str, Any] | None:
         key = (region_id, variable_id, period.start, period.end, self._engine_version)
         return self._series.get(key)
+
+    def available_series(self) -> list[dict[str, Any]]:
+        """Which Region-Variable series this store holds, without their values."""
+        return [
+            {
+                "region_id": region_id,
+                "variable_id": variable_id,
+                "period": {"start": start, "end": end},
+            }
+            for region_id, variable_id, start, end, version in sorted(self._series)
+            if version == self._engine_version
+        ]
 
     def discoveries(self) -> list[dict[str, Any]]:
         return list(self._discoveries)

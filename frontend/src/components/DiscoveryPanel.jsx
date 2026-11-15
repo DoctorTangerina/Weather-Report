@@ -1,6 +1,7 @@
 import { formatRate } from '../format.js'
 import Evidence from './Evidence.jsx'
 import SeriesResults from './SeriesResults.jsx'
+import Evidence from './Evidence.jsx'
 
 const LABEL_TONE = {
   'Strong evidence': 'strong',
