@@ -125,7 +125,7 @@ def list_available_series() -> dict[str, Any]:
 def get_acquisition_source() -> GridAcquisitionSource | None:
     """Override this dependency to supply grids without NASA or server credentials.
 
-    None selects the live monthly source inside the cancellable worker.
+    None selects on-demand NASA subsetting inside the cancellable worker.
     """
     return None
 
