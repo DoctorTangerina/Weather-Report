@@ -1,7 +1,7 @@
 """Shared Time-step vocabulary for data selection and manual processing."""
 
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 _ALIASES = {
     alias: name
@@ -52,3 +52,34 @@ def utc_instant(timestamp: str) -> datetime:
     text = timestamp + "-01" if len(timestamp) == 7 else timestamp
     value = datetime.fromisoformat(text)
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+
+def bucket_start(instant, frequency):
+    if frequency == "second":
+        return instant.replace(microsecond=0)
+    if frequency == "minute":
+        return instant.replace(second=0, microsecond=0)
+    if frequency in ("hour", "3-hour"):
+        hour = instant.hour if frequency == "hour" else (instant.hour // 3) * 3
+        return instant.replace(hour=hour, minute=0, second=0, microsecond=0)
+    if frequency == "day":
+        return instant.replace(hour=0, minute=0, second=0, microsecond=0)
+    if frequency == "month":
+        return instant.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return instant.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+def next_bucket(instant, frequency):
+    if frequency in ("second", "minute", "hour", "3-hour"):
+        seconds = {"second": 1, "minute": 60, "hour": 3600, "3-hour": 10800}[frequency]
+        return (instant.astimezone(UTC) + timedelta(seconds=seconds)).astimezone(
+            instant.tzinfo
+        )
+    if frequency == "day":
+        return instant + timedelta(days=1)
+    if frequency == "month":
+        return instant.replace(
+            year=instant.year + (instant.month == 12),
+            month=1 if instant.month == 12 else instant.month + 1,
+        )
+    return instant.replace(year=instant.year + 1)

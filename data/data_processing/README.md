@@ -1,9 +1,12 @@
 # Manual data processing
 
 Public Python methods for issue #46's arithmetic, scaling, simple resampling and
-missing-value management. Everything in this
-package is independent of the API and automatic engine. It performs no downloads
-or file reads, needs no Earthdata token, and adds no third-party dependencies.
+missing-value management. The [correlation-map method](CORRELATION_MAP.md) loads
+named selections and returns a numeric matrix for issue #56. Everything in this
+package is independent of the API and automatic engine. Numeric processing performs
+no downloads or file reads. The correlation-map default loader reads the catalog
+and cached monthly series; other sources use an injected loader. No third-party
+dependencies are added.
 
 ## Execute a request
 
@@ -172,10 +175,19 @@ A Series can declare `time_step` (`3-hourly`, `daily`, `monthly`) and `aggregati
 
 ```python
 series_a = {**hourly_series, "time_step": "hourly", "aggregation": "maximum"}
-response = process_series({
-    "series": {"A": series_a},
-    "operations": [{"id": "result", "operation": "resample", "input": "A", "frequency": "daily"}],
-})
+response = process_series(
+    {
+        "series": {"A": series_a},
+        "operations": [
+            {
+                "id": "result",
+                "operation": "resample",
+                "input": "A",
+                "frequency": "daily",
+            }
+        ],
+    }
+)
 ```
 
 Resampling inherits that Series' Aggregation; an explicit conflicting aggregation
@@ -335,4 +347,4 @@ From the repository root with the project's local environment:
 ```
 
 Tests exercise the public method and preview with deterministic fixtures. No API,
-engine or correlation implementation is included here.
+engine implementation is included here.

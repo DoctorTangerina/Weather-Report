@@ -3,9 +3,11 @@
 import math
 import statistics
 from collections import defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from ..time_steps import bucket_start as _floor
+from ..time_steps import next_bucket as _next
 from ..time_steps import normalize_time_step, series_time_step, time_step_label
 from .errors import ProcessingError
 
@@ -36,37 +38,6 @@ _ORDER = {
         ("second", "minute", "hour", "3-hour", "day", "month", "year")
     )
 }
-
-
-def _floor(instant, frequency):
-    if frequency == "second":
-        return instant.replace(microsecond=0)
-    if frequency == "minute":
-        return instant.replace(second=0, microsecond=0)
-    if frequency in ("hour", "3-hour"):
-        hour = instant.hour if frequency == "hour" else (instant.hour // 3) * 3
-        return instant.replace(hour=hour, minute=0, second=0, microsecond=0)
-    if frequency == "day":
-        return instant.replace(hour=0, minute=0, second=0, microsecond=0)
-    if frequency == "month":
-        return instant.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    return instant.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-
-
-def _next(instant, frequency):
-    if frequency in ("second", "minute", "hour", "3-hour"):
-        seconds = {"second": 1, "minute": 60, "hour": 3600, "3-hour": 10800}[frequency]
-        return (instant.astimezone(UTC) + timedelta(seconds=seconds)).astimezone(
-            instant.tzinfo
-        )
-    if frequency == "day":
-        return instant + timedelta(days=1)
-    if frequency == "month":
-        return instant.replace(
-            year=instant.year + (instant.month == 12),
-            month=1 if instant.month == 12 else instant.month + 1,
-        )
-    return instant.replace(year=instant.year + 1)
 
 
 def _aggregate(values, aggregation, timestamp):
