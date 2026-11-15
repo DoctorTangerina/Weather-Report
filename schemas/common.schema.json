@@ -81,7 +81,7 @@
       "additionalProperties": false
     },
     "notice": {
-      "description": "Set when the service served something other than a fresh result, e.g. the seed set after a failed live fetch (BS-009).",
+      "description": "Set when live acquisition fails and preloaded examples are served (BS-009). Ordinary cache hits use provenance without this failure notice.",
       "type": ["object", "null"],
       "properties": {
         "code": {

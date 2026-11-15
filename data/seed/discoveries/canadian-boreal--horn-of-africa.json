@@ -1,0 +1,245 @@
+{
+  "discovery_id": "canadian-boreal--horn-of-africa",
+  "region_ids": [
+    "canadian-boreal",
+    "horn-of-africa"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "soil-moisture",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -1.8290855582069874,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -2.3997099109233995,
+            -1.2584612054905753
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -1.8290855582069874,
+              "p_value": 4.9776891766348295e-26,
+              "r_squared": 0.3121889593037385
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -1.8319964293210333,
+              "p_value": 1.1927338288100112e-06
+            },
+            "robust": {
+              "slope_per_decade": -1.8581162258626196,
+              "p_value": 3.75749303235601e-31
+            },
+            "theil_sen": {
+              "slope_per_decade": -1.8663101828855004
+            },
+            "mann_kendall": {
+              "tau": -0.3824749163879599,
+              "p_value": 5.117092535984848e-23
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2010-04",
+              "slope_per_decade": -1.8374208895937263,
+              "p_value": 9.345651445104759e-27
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.9725234824316446e-07,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5384583938940662,
+            "effective_sample_size": 90.00079714948357
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.6927172756106158,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -1.1731398819995529,
+            -0.21229466922167883
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.6927172756106158,
+              "p_value": 1.0137741426089475e-05,
+              "r_squared": 0.06339727997045527
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.6938196902564048,
+              "p_value": 0.005223390916349476
+            },
+            "robust": {
+              "slope_per_decade": -0.7094836057677573,
+              "p_value": 9.337624864182971e-08
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.6965506982606959
+            },
+            "mann_kendall": {
+              "tau": -0.1839464882943144,
+              "p_value": 2.0207101886706143e-06
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2010-03",
+              "slope_per_decade": -0.6807624630103621,
+              "p_value": 8.060405186790354e-06
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.014418320491579328,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.4243982834227619,
+            "effective_sample_size": 121.23049920997396
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 1.4007840022492104,
+  "score_components": {
+    "opposite_sign": 0.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 1.4007840022492104,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Soil moisture is falling in both of these places. Why would it change so much faster in one of them?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think soil moisture is changing faster?",
+          "options": [
+            {
+              "option_id": "canadian-boreal",
+              "label": "Canadian Boreal Forest"
+            },
+            {
+              "option_id": "horn-of-africa",
+              "label": "Horn of Africa"
+            }
+          ],
+          "answer_option_id": "canadian-boreal",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "canadian-boreal",
+              "variable_id": "soil-moisture"
+            },
+            {
+              "region_id": "horn-of-africa",
+              "variable_id": "soil-moisture"
+            }
+          ],
+          "comparison": "Canadian Boreal Forest: -1.829 mm/decade (95% interval -2.4 to -1.258). Horn of Africa: -0.693 mm/decade (95% interval -1.173 to -0.212). Canadian Boreal Forest is changing faster. Evidence label for Canadian Boreal Forest: Strong evidence. Evidence label for Horn of Africa: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make soil moisture change this way?",
+          "possible_causes": [
+            {
+              "text": "Less rain means less water soaks into the soil.",
+              "kind": "context"
+            },
+            {
+              "text": "Hotter air pulls more water out of the soil through evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Farming and irrigation change how much water the soil holds.",
+              "kind": "context"
+            },
+            {
+              "text": "Melting snow and ice add water to the soil in spring.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

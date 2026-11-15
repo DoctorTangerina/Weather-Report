@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable
 from pathlib import Path
 
@@ -11,6 +12,11 @@ from referencing import Registry, Resource
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = ROOT / "schemas"
 SCHEMA_BASE = "https://weather-report.local/schemas/"
+
+# The API serves the committed seed set by default. Its contract tests assert on
+# the stub fixtures (which Regions have no result, which Candidates may headline),
+# so they are pinned to the stub before `api.main` is first imported.
+os.environ.setdefault("WEATHER_REPORT_DATA_DIR", str(ROOT / "data" / "stub"))
 
 
 @pytest.fixture(scope="session")

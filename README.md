@@ -16,8 +16,10 @@ students about trends and statistical evidence. See `CONTEXT.md` for the vocabul
 | `src/api/` | FastAPI over the engine. No statistics |
 | `frontend/` | React: the three screens |
 | `data/catalog.json` | The Region and Variable catalog, with confirmed NASA sources |
-| `data/stub/` | Synthetic stub set so everything runs before the real pipeline lands |
-| `scripts/` | `generate_stub_data.py` regenerates `data/stub/` |
+| `data/stub/` | Synthetic stub set the API contract tests run against |
+
+| `data/seed/` | The seed set: results computed from real NASA data, committed so the demo needs no network |
+| `scripts/` | `generate_stub_data.py` regenerates `data/stub/`; `build_seed_set.py` regenerates `data/seed/` |
 | `tests/` | Seam 1 (engine interface) and seam 2 (HTTP contract) |
 
 ## Running it
@@ -35,8 +37,23 @@ cd frontend && npm install && npm run dev         # UI on :5173, /api proxied to
 ```
 
 `WEATHER_REPORT_DATA_DIR` points the API at a different result set; it defaults to
-`data/stub/`. The catalog does not move with it: `WEATHER_REPORT_CATALOG` overrides
+`data/seed/`, the committed seed set. The catalog does not move with it: `WEATHER_REPORT_CATALOG` overrides
 `data/catalog.json` if needed.
+
+## The seed set
+
+```sh
+python scripts/build_seed_set.py                  # from the acquired NASA files
+python scripts/build_seed_set.py --series-dir DIR # from Series files already built
+```
+
+The command builds the monthly Series for every catalog Region and Variable the
+acquired data can provide (see `data/data_gathering/README.md` for acquiring it),
+runs the engine over them (Trends rated as one family, Mirrors, Candidate
+Discoveries) and writes `data/seed/series/` and `data/seed/discoveries/`. Commit
+the result. It refuses to overwrite the seed set when no Candidate carries one of
+the three Evidence labels (`--allow-missing-labels` overrides). Rerun it whenever
+the engine or the data changes.
 
 ## The contracts
 
@@ -60,8 +77,8 @@ fixtures still do.
   units, NASA source and labeled possible causes. Kept separate so the definition
   can be reused outside the catalog; the catalog references it.
 - **`responses.schema.json`** — every HTTP body: a resource under `data` plus a
-  `notice` that stays null until the service serves something other than a fresh
-  result.
+  `notice` for live-data unavailability. Series responses also identify their
+  provenance as live, cached or preloaded.
 - **`common.schema.json`** — the shared pieces: ids, periods, sources, Evidence
   labels.
 
@@ -78,8 +95,8 @@ fixtures still do.
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |
 
 A Region or Variable outside the catalog is rejected with `422` and an
-`errorResponse`. A request with no stored result gets `404 result_not_available`
-until ticket #13 adds the live fetch.
+`errorResponse`. A Series cache miss attempts acquisition and then uses a labelled
+preloaded fallback; if neither is available it returns `503 live_data_unavailable`.
 
 The welcome screen lets students compare two catalog Regions using a Variable
 offered for both. The comparison endpoint analyzes their stored series with the
@@ -96,7 +113,8 @@ and two Variables, so other catalog choices may be unavailable until #12/#13.
 is generated from an explicit slope and each Trend reports the slope its series was
 built from, so no statistics are implied. It covers all three Evidence labels, an
 opposite-sign contrast, a multi-Variable contrast, a Mirror and a series with missing
-months. Ticket #12 replaces it with the seed set computed from real data.
+months. The API serves the seed set from real data (`data/seed/`) by default; the
+stub is kept for the contract tests, which pin to it through `WEATHER_REPORT_DATA_DIR`.
 
 The generator reads the real catalog in `data/catalog.json` and takes every
 series' units from it. The catalog holds 25 Regions and the four Variables, but the
@@ -137,3 +155,53 @@ Two numbers the spec left open are answered here, and both are easy to change:
 
 Candidates are filtered for eligibility before they are ranked, so a long session works
 its way down the list instead of running dry the moment it has seen a fixed top N.
+
+
+### Live results and preloaded fallback (#13)
+
+`GET /api/series` checks the persistent live cache, then an exact preloaded
+example, before attempting acquisition. Series responses add `provenance`:
+`live`, `cache`, or `preloaded`. A fallback also sets
+`notice.code = "live_data_unavailable"`; a normal cache hit does not.
+The UI labels preloaded and cached data separately. Different examples retain
+their actual Region, Variable and period and cannot answer the original investigation.
+
+- `WEATHER_REPORT_DATA_DIR`: catalog, preloaded Series and Discoveries (default `data/stub`).
+- `WEATHER_REPORT_CACHE_DIR`: writable live-result storage (default `.scratch/results-cache`).
+- `WEATHER_REPORT_LIVE_TIMEOUT_SECONDS`: positive finite acquisition deadline (default `15`).
+- `EARTHDATA_TOKEN`: server-only acquisition credential; never send it from the client.
+
+Malformed/inverted periods return `422` (`invalid_period`). Expected acquisition
+failures use a deterministic fallback: same Region/Variable, then same Variable,
+then another example, with identity/period ordering to break ties. Examples must
+match the schema, current engine and catalog, have aligned finite monthly values,
+and pass their quality record. Without an example the API returns `503`
+(`live_data_unavailable`). Fallbacks are never cached under the requested key.
+Cache writes are atomic; a failed write still returns successfully acquired data.
+
+The acquisition bridge uses the #6 pipeline; see the integration update below.
+
+The #38 globe UI is integrated through `data-engineering`. DiscoveryPanel uses
+the returned identity, period and provenance; substituted examples update the
+globe highlights and cannot enter the original investigation. The #16 comparison
+endpoint and Region/Variable pickers remain available.
+
+### Acquisition integration update
+
+The #6 pipeline is now connected through `api.acquisition_worker`. The worker
+first attempts `get_catalog_series` on configured acquired files. If the source
+is unavailable, it downloads the explicitly configured collection with #6's
+`acquire`, then computes the monthly Series. Temporary downloads are isolated per
+request; cancellation kills and reaps the worker before removing its workspace.
+Only the computed Series is persisted in the result cache. Land-only products
+still require the trusted mask configured by #6; vegetation remains #41.
+
+`WEATHER_REPORT_ACQUISITION_CONFIG` selects the server-controlled gathering JSON
+(default `data/data_gathering/config.json`). Run the API from this repository with
+its `data/` package available. The exported `EARTHDATA_TOKEN` is passed only in
+the child environment. Worker diagnostics are suppressed to avoid leaking token
+or download URLs. Missing sources/authentication errors trigger fallback;
+unexpected worker failures propagate as server errors.
+
+Integration tests use synthetic NetCDF files with the actual #6 reader and
+quality gate. They do not constitute a real authenticated NASA download.

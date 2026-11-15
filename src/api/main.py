@@ -5,13 +5,17 @@ catalog and serializes. Every statistic and every selection rule belongs to the
 engine package.
 
 Response bodies follow `schemas/responses.schema.json`: a resource under
-`data`, plus a `notice` that stays null until something other than a fresh
-result was served (ticket #13).
+`data`, a `notice` for live unavailability, and (for Series) `provenance`
+that distinguishes live, cached and preloaded data.
 """
 
 from __future__ import annotations
 
+import asyncio
+import logging
+import math
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -33,8 +37,11 @@ from engine import (
 from engine.contracts import Discovery, as_dict
 from engine.discovery import SessionHistory
 
+from .acquisition import AcquisitionUnavailable, acquire_series
+from .results import example_response, select_example, usable
+
 ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(ROOT / "data" / "stub")))
+DATA_DIR = Path(os.environ.get("WEATHER_REPORT_DATA_DIR", str(ROOT / "data" / "seed")))
 
 # The catalog is configuration rather than a result set, so it does not move
 # when DATA_DIR points at a different set of results.
@@ -46,6 +53,16 @@ app = FastAPI(title="Weather Report", version=ENGINE_VERSION)
 
 catalog = load_catalog(CATALOG_PATH)
 store = JsonResultStore(DATA_DIR, ENGINE_VERSION)
+live_store = JsonResultStore(
+    Path(os.environ.get("WEATHER_REPORT_CACHE_DIR", ".scratch/results-cache")),
+    ENGINE_VERSION,
+)
+LIVE_TIMEOUT_SECONDS = float(
+    os.environ.get("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS", "15")
+)
+if not math.isfinite(LIVE_TIMEOUT_SECONDS) or LIVE_TIMEOUT_SECONDS <= 0:
+    raise ValueError("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS must be positive and finite")
+logger = logging.getLogger(__name__)
 
 
 class SurpriseRequest(BaseModel):
@@ -95,7 +112,7 @@ def reject_outside_catalog(region_id: str, variable_id: str) -> JSONResponse | N
 
 
 @app.get("/api/series")
-def get_series(
+async def get_series(
     region_id: str,
     variable_id: str,
     period_start: str = "2000-01",
@@ -105,15 +122,63 @@ def get_series(
     if rejection is not None:
         return rejection
 
-    payload = store.series(region_id, variable_id, Period(period_start, period_end))
-    if payload is None:
-        # Ticket #13 replaces this with a live fetch and a seed-set fallback.
-        return error(
-            404,
-            "result_not_available",
-            f"No stored series for {region_id}/{variable_id} over {period_start}..{period_end}.",
+    if (
+        any(
+            re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", month) is None
+            or month[:4] == "0000"
+            for month in (period_start, period_end)
         )
-    return ok(payload)
+        or period_start > period_end
+    ):
+        return error(
+            422, "invalid_period", "Use an inclusive YYYY-MM period with start <= end."
+        )
+    region = catalog.region(region_id)
+    variable = catalog.variable(variable_id)
+    assert region is not None and variable is not None
+    period = Period(period_start, period_end)
+    payload = live_store.series(region_id, variable_id, period)
+    if payload is not None and usable(payload, catalog):
+        return {**ok(payload), "provenance": "cache"}
+    payload = store.series(region_id, variable_id, period)
+    if payload is not None and usable(payload, catalog):
+        return {**ok(payload), "provenance": "preloaded"}
+    try:
+        token = os.environ.get("EARTHDATA_TOKEN")
+        if not token:
+            raise AcquisitionUnavailable("Server token unavailable")
+        acquired = await asyncio.wait_for(
+            acquire_series(
+                region,
+                variable,
+                period,
+                token=token,
+            ),
+            timeout=LIVE_TIMEOUT_SECONDS,
+        )
+        if not usable(acquired, catalog) or (
+            acquired["region_id"],
+            acquired["variable_id"],
+            acquired["period"],
+        ) != (region_id, variable_id, {"start": period.start, "end": period.end}):
+            raise AcquisitionUnavailable(
+                "Acquisition did not yield a usable exact result"
+            )
+    except (AcquisitionUnavailable, TimeoutError) as exc:
+        # Exception text and tracebacks may contain credentials; log the category only.
+        logger.warning("Live acquisition unavailable: %s", type(exc).__name__)
+    else:
+        try:
+            live_store.save_series(acquired)
+        except OSError:
+            logger.error("Live result could not be persisted")
+        return {**ok(acquired), "provenance": "live"}
+    payload = select_example(store.all_series(), catalog, region_id, variable_id)
+    if payload is not None:
+        return example_response(payload, region_id, variable_id, period)
+    return error(
+        503, "live_data_unavailable", "No live data or usable examples available."
+    )
 
 
 @app.get("/api/comparison")

@@ -54,7 +54,7 @@ export default function MainScreen({
     [exploring, region, secondRegion],
   )
 
-  const discoverySeries = useSeries(refs)
+  const discoverySeries = useSeries(refs, showing ? discovery.period : undefined)
   const comparison = useComparison(
     exploring ? region?.region_id : null,
     exploring ? secondRegion?.region_id : null,
@@ -62,7 +62,13 @@ export default function MainScreen({
   )
   const { loading: seriesLoading, series, notice: seriesNotice, error: seriesError } =
     exploring ? comparison : discoverySeries
-  const banner = notice ?? seriesNotice
+  const displayedHighlights = showing && discoverySeries.substituted
+    ? [...new Set(series.map((item) => item.region_id))].map((id, index) => ({
+      region: catalog.regions.find((item) => item.region_id === id),
+      color: REGION_COLORS[index % REGION_COLORS.length],
+    })).filter((item) => item.region)
+    : highlights
+  const banner = notice ?? (exploring ? seriesNotice : null)
   const timelineKey = showing
     ? discovery.discovery_id
     : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
@@ -82,7 +88,7 @@ export default function MainScreen({
       </header>
 
       <section className="globe-panel" aria-label="Interactive Earth globe">
-        <RegionGlobe highlights={showing ? highlights : explored} />
+        <RegionGlobe highlights={showing ? displayedHighlights : explored} />
         <p className="globe-hint">Drag to explore · Scroll or pinch to zoom</p>
       </section>
 
@@ -135,7 +141,10 @@ export default function MainScreen({
           <DiscoveryPanel
             discovery={discovery}
             catalog={catalog}
-            highlights={highlights}
+            highlights={displayedHighlights}
+            responses={discoverySeries.responses}
+            substituted={discoverySeries.substituted}
+            seriesError={seriesError}
             series={series}
             seriesLoading={seriesLoading}
             timestamp={timestamp}
