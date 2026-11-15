@@ -47,6 +47,9 @@ from .explore import (
     AGGREGATIONS,
     AREA_VARIABLES,
     FIRST_MONTH,
+    LIMITS,
+    SUB_MONTHLY_VARIABLES,
+    TIME_STEPS,
     AcquisitionNeeded,
     Refusal,
     explore_series,
@@ -260,9 +263,9 @@ async def get_explore_series(
         period_start,
         period_end,
         rectangles=rectangle,
-        cache=explore_cache(aggregation),
+        cache=explore_cache(aggregation, time_step),
         seed=explore_seed(aggregation),
-        area_cache=explore_area_cache(aggregation),
+        area_cache=explore_area_cache(aggregation, time_step),
         latest=explore_latest_month(),
     )
     try:
@@ -271,11 +274,11 @@ async def get_explore_series(
         job = explore_jobs.start(
             needed.view,
             catalog,
-            explore_cache(aggregation),
+            explore_cache(aggregation, time_step),
             acquisition_source,
             LIVE_TIMEOUT_SECONDS,
             finish=lambda: build()[0],
-            area_cache=explore_area_cache(aggregation),
+            area_cache=explore_area_cache(aggregation, time_step),
         )
         return JSONResponse(status_code=202, content=ok({"job": dict(job)}))
     except Refusal as refusal:
@@ -284,7 +287,7 @@ async def get_explore_series(
 
 
 def explore_seed(aggregation: str) -> JsonResultStore | None:
-    """The seed set's Series built with `aggregation`.
+    """The seed set's Series built with `aggregation`; it holds only monthly ones.
 
     Means are the seed set the Discoveries come from. Every other Aggregation
     lives in its own folder under it, which the Discovery engine never reads.
@@ -299,33 +302,44 @@ def explore_seed(aggregation: str) -> JsonResultStore | None:
     return _aggregation_seeds[root]
 
 
-def explore_cache(aggregation: str) -> JsonResultStore | None:
+def explore_cache(
+    aggregation: str, time_step: str = "monthly"
+) -> JsonResultStore | None:
     """Where Explore My World keeps the Series pieces it acquired with `aggregation`.
 
     One folder per Aggregation beside the live results cache, which is keyed
-    without one. A piece keeps its values even when it alone fails the Quality
-    gate, so nothing that serves stored Series directly (`/api/series`) reads it.
+    without one, and for a sub-monthly Time step one folder per Time step above
+    those. A piece keeps its values even when it alone fails the Quality gate,
+    so nothing that serves stored Series directly (`/api/series`) reads it.
     """
-    if aggregation not in AGGREGATIONS:
-        # An unknown Aggregation is refused before any cache is read.
+    if aggregation not in AGGREGATIONS or time_step not in TIME_STEPS:
+        # An unknown Aggregation or Time step is refused before any cache is read.
         return None
-    root = live_store.root / "explore" / aggregation
+    root = live_store.root / "explore"
+    if time_step != "monthly":
+        root = root / time_step
+    root = root / aggregation
     if root not in _aggregation_caches:
         _aggregation_caches[root] = JsonResultStore(root, ENGINE_VERSION)
     return _aggregation_caches[root]
 
 
-def explore_area_cache(aggregation: str) -> AreaSeriesCache | None:
+def explore_area_cache(
+    aggregation: str, time_step: str = "monthly"
+) -> AreaSeriesCache | None:
     """Where Explore My World keeps Selected-area Series built with `aggregation`.
 
-    Means live in the area cache itself; every other Aggregation in its own
-    folder under it.
+    Monthly means live in the area cache itself; every other monthly
+    Aggregation in its own folder under it. A sub-monthly Time step has its own
+    folder, with one folder per Aggregation under it.
     """
+    if aggregation not in AGGREGATIONS or time_step not in TIME_STEPS:
+        # An unknown Aggregation or Time step is refused before any cache is read.
+        return None
+    if time_step != "monthly":
+        return AreaSeriesCache(area_cache.root / time_step / aggregation)
     if aggregation == "mean":
         return area_cache
-    if aggregation not in AGGREGATIONS:
-        # An unknown Aggregation is refused before any cache is read.
-        return None
     return AreaSeriesCache(area_cache.root / aggregation)
 
 
@@ -346,13 +360,28 @@ def explore_latest_month() -> str:
 
 @app.get("/api/explore/options")
 def get_explore_options() -> Any:
+    def variable_ids(allowed: tuple[str, ...] | None) -> list[str]:
+        return [
+            variable.variable_id
+            for variable in catalog.variables
+            if allowed is None or variable.variable_id in allowed
+        ]
+
     return ok(
         {
             "latest_month": explore_latest_month(),
-            "area_variable_ids": [
-                variable.variable_id
-                for variable in catalog.variables
-                if variable.variable_id in AREA_VARIABLES
+            "area_variable_ids": variable_ids(AREA_VARIABLES),
+            # Each Time step with the Variables that have data at it and its cap.
+            "time_steps": [
+                {
+                    "time_step": time_step,
+                    "variable_ids": variable_ids(
+                        None if time_step == "monthly" else SUB_MONTHLY_VARIABLES
+                    ),
+                    "max_months": LIMITS[time_step][0] if time_step in LIMITS else None,
+                    "limit": LIMITS[time_step][1] if time_step in LIMITS else None,
+                }
+                for time_step in TIME_STEPS
             ],
         }
     )

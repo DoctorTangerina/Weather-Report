@@ -187,19 +187,14 @@ def test_requests_outside_the_catalogs_and_glossary_are_refused(
     refused(client.get(ENDPOINT, params=query), validator_for, code)
 
 
-@pytest.mark.parametrize(
-    "params",
-    [
-        {"time_step": "daily", "period_start": "2010-01", "period_end": "2010-12"},
-    ],
-)
-def test_series_the_seed_set_cannot_answer_are_not_available_yet(
-    client, validator_for, params
-):
-    response = explore(client, **params)
-    assert response.status_code == 501
-    validator_for(RESPONSES, "#/$defs/errorResponse").validate(response.json())
-    assert response.json()["error"]["code"] == "not_available_yet"
+def test_a_time_step_the_seed_set_cannot_answer_starts_a_job(client, validator_for):
+    # BS-007 (#80): the seed set has no daily temperature for the Sahel. This
+    # replaces #75's 501 not_available_yet placeholder.
+    response = explore(
+        client, time_step="daily", period_start="2010-01", period_end="2010-12"
+    )
+    assert response.status_code == 202
+    validator_for(RESPONSES, "#/$defs/exploreJobResponse").validate(response.json())
 
 
 def test_a_variable_without_a_stored_series_starts_a_job(client, validator_for):
