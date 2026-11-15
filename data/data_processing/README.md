@@ -1,6 +1,7 @@
 # Manual data processing
 
-Public Python methods for issue #46's arithmetic, scaling and simple resampling. Everything in this
+Public Python methods for issue #46's arithmetic, scaling, simple resampling and
+missing-value management. Everything in this
 package is independent of the API and automatic engine. It performs no downloads
 or file reads, needs no Earthdata token, and adds no third-party dependencies.
 
@@ -155,6 +156,76 @@ For hourly values `[1, 5, 9]` within one day, the daily result is `5` with `mean
 Resample different inputs separately to a common timeline before combining them.
 This operation does not implicitly align differing coverage periods or fill gaps.
 
+## Missing-value management
+
+Use `operation: "missing"` with one common policy:
+
+```python
+{"id": "restored", "operation": "missing", "input": "A", "policy": "zero"}
+{"id": "restored", "operation": "missing", "input": "A", "policy": "mean"}
+{"id": "restored", "operation": "missing", "input": "A", "policy": "min"}
+{"id": "restored", "operation": "missing", "input": "A", "policy": "max"}
+{
+    "id": "restored",
+    "operation": "missing",
+    "input": "A",
+    "policy": "custom",
+    "value": 12.5,
+}
+{"id": "restored", "operation": "missing", "input": "A", "policy": "remove"}
+{
+    "id": "restored",
+    "operation": "missing",
+    "input": "A",
+    "policy": "interpolate",
+    "max_gap_seconds": 14400,
+}
+```
+
+`mean`/`average`, `min`/`minimum` and `max`/`maximum` use all valid values in the
+immediate input, including earlier explicitly restored values. With no valid
+observations, these statistical policies raise `no_valid_values`. Zero and custom
+filling can restore an entirely missing input. Custom values must be finite
+numbers; booleans, strings, NaN and infinity are rejected.
+
+Linear `interpolate`/`interpolation` uses actual elapsed UTC time. A four-hour
+maximum gap means that valid endpoints must be at most four hours apart; a value
+at 01:00 between 00:00=0 and 04:00=8 becomes 2. Longer gaps and leading/trailing
+missing values stay missing; no extrapolation occurs. The maximum gap must be
+explicit, finite and positive. This operation requires Gregorian timestamps.
+
+Restore individual missing observations by their exact input timestamp labels:
+
+```python
+{
+    "id": "restored",
+    "operation": "missing",
+    "input": "A",
+    "replacements": {
+        "2024-01-01T01:00:00Z": 3.5,
+        "2024-01-01T04:00:00Z": 8.0,
+    },
+}
+```
+
+Unspecified observations are unchanged. Unknown timestamps and attempts to
+replace an already nonmissing observation are rejected. Use either individual
+`replacements` or a common `policy` within one instruction; to combine them,
+restore individual values first, then apply a common policy in a later step.
+
+Results keep units and source quality unchanged. They include:
+
+- `filled`: a boolean flag per output observation. True means a filled value
+  contributed to it; missing positions are false. Flags persist through later
+  arithmetic/scaling and mark resampling buckets with filled contributions.
+- `missing_values`: policy, newly filled timestamps and removed timestamps.
+- Input provenance and replayable instructions, just like other operations.
+
+`remove` deletes only missing observations, without shifting remaining timestamps
+or changing the source. Removing all observations returns an empty Derived series;
+subsequent numeric operations require nonempty inputs. Failed acquisition quality
+cannot be repaired by filling: excluded sources remain excluded.
+
 ## Input requirements
 
 Each used input needs nonempty, equal-length `timestamps` and `values` lists,
@@ -225,4 +296,4 @@ From the repository root with the project's local environment:
 ```
 
 Tests exercise the public method and preview with deterministic fixtures. No API,
-engine, correlation or missing-value repair is implemented here.
+engine or correlation implementation is included here.

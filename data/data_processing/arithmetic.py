@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from itertools import pairwise
 
 from .errors import ProcessingError
+from .missing_values import manage_missing
 from .resampling import resample_series
 from .scaling import scale_values
 from .units import compound, conversion
@@ -106,6 +107,18 @@ def _timeline(series: Mapping, name: str) -> list:
             "invalid_series",
             "Provide timestamps, finite values/nulls and units.",
             input=name,
+        )
+    flags = series.get("filled")
+    if "filled" in series and (
+        not isinstance(flags, list)
+        or len(flags) != len(values)
+        or any(
+            not isinstance(flag, bool) or (flag and value is None)
+            for flag, value in zip(flags, values)
+        )
+    ):
+        raise ProcessingError(
+            "invalid_series", "Filled flags must match the observations.", input=name
         )
     quality = series.get("quality")
     if quality is not None and (
@@ -262,7 +275,7 @@ def process_series(request: Mapping) -> dict:
                 operation=index,
             )
         method = step.get("operation", "arithmetic")
-        if method not in ("arithmetic", "minmax", "zscore", "resample"):
+        if method not in ("arithmetic", "minmax", "zscore", "resample", "missing"):
             raise ProcessingError(
                 "invalid_operation", "Unsupported operation.", operation=index
             )
@@ -280,6 +293,16 @@ def process_series(request: Mapping) -> dict:
                 "frequency",
                 "aggregation",
                 "timezone",
+            }
+        if method == "missing":
+            allowed = {
+                "id",
+                "operation",
+                "input",
+                "policy",
+                "value",
+                "replacements",
+                "max_gap_seconds",
             }
         if method == "minmax":
             allowed.add("range")
@@ -347,6 +370,7 @@ def process_series(request: Mapping) -> dict:
             )
         step_warnings = []
         resampled = None
+        managed = None
         if method == "arithmetic":
             result = _evaluate(
                 tree.body,
@@ -356,6 +380,17 @@ def process_series(request: Mapping) -> dict:
                 step.get("acknowledge_unit_difference", False),
                 step_warnings,
             )
+        elif method == "missing":
+            managed = manage_missing(
+                first,
+                timelines[names[0]],
+                {
+                    key: value
+                    for key, value in step.items()
+                    if key not in ("id", "operation", "input")
+                },
+            )
+            result = _Value(managed["values"], first["units"])
         elif method == "resample":
             resampled = resample_series(
                 first,
@@ -400,6 +435,22 @@ def process_series(request: Mapping) -> dict:
         }
         if resampled is not None:
             output.update(resampled)
+        elif managed is not None:
+            output.update(managed)
+        else:
+            input_flags = [series.get("filled") for series in used.values()]
+            output["filled"] = [
+                value is not None
+                and any(flags is not None and flags[i] for flags in input_flags)
+                for i, value in enumerate(result.values)
+            ]
+        frequency = first.get("frequency")
+        if (
+            resampled is None
+            and frequency is not None
+            and all(series.get("frequency") == frequency for series in used.values())
+        ):
+            output["frequency"] = frequency
         if method in ("minmax", "zscore"):
             output["scaling"] = {"method": method}
             if method == "minmax" and "range" in step:

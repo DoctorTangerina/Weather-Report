@@ -141,8 +141,11 @@ def resample_series(
         )
     groups = defaultdict(list)
     source_buckets = set()
+    filled = series.get("filled", [False] * len(series["values"]))
     try:
-        for stamp, value in zip(series["timestamps"], series["values"]):
+        for stamp, value, was_filled in zip(
+            series["timestamps"], series["values"], filled
+        ):
             text = stamp + "-01" if len(stamp) == 7 else stamp
             instant = datetime.fromisoformat(text)
             instant = instant.replace(tzinfo=UTC) if instant.tzinfo is None else instant
@@ -155,19 +158,23 @@ def resample_series(
                     timestamp=stamp,
                 )
             source_buckets.add(source_key)
-            groups[_floor(local, target).astimezone(UTC)].append(value)
+            groups[_floor(local, target).astimezone(UTC)].append((value, was_filled))
         first, last = min(groups), max(groups)
         output_times, output_values, counts, valid_counts = [], [], [], []
+        output_filled = []
         cursor = first.astimezone(zone)
         while cursor.astimezone(UTC) <= last:
             key = cursor.astimezone(UTC)
             bucket = groups.get(key, [])
-            valid = [value for value in bucket if value is not None]
+            valid = [value for value, _ in bucket if value is not None]
             label = cursor.isoformat()
             output_times.append(label)
             output_values.append(_aggregate(valid, reducer, label))
             counts.append(len(bucket))
             valid_counts.append(len(valid))
+            output_filled.append(
+                any(flag for value, flag in bucket if value is not None)
+            )
             if key == last:
                 break
             cursor = _next(cursor, target)
@@ -182,6 +189,7 @@ def resample_series(
         "timestamps": output_times,
         "values": output_values,
         "frequency": target,
+        "filled": output_filled,
         "resampling": {
             "source_frequency": source,
             "frequency": target,
