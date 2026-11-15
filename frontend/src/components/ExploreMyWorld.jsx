@@ -1,6 +1,5 @@
 import { AGGREGATIONS, describeAggregation } from '../aggregations.js'
-import { TIME_STEPS } from '../timeSteps.js'
-import { FIRST_MONTH, MAX_VARIABLES } from '../useExploreView.js'
+import { MAX_VARIABLES } from '../useExploreView.js'
 import Chart from './Chart.jsx'
 
 const exclusion = (code, noun) =>
@@ -87,55 +86,11 @@ export default function ExploreMyWorld({
         {view.removed && <p className="notice" role="status">{view.removed}</p>}
       </fieldset>
 
-      <div className="catalog-controls">
-        <label htmlFor="explore-time-step">Time step</label>
-        <select
-          id="explore-time-step"
-          value={view.timeStep}
-          onChange={(event) => view.setTimeStep(event.target.value)}
-        >
-          {TIME_STEPS.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </div>
       <p className="chart-note">
         {view.utcNote}
         {view.limits && ` ${view.limits}`}
       </p>
 
-      <fieldset className="explore-choices explore-period">
-        <legend>Period</legend>
-        <span className="explore-month">
-          <label htmlFor="explore-start">From</label>
-          <input
-            id="explore-start"
-            type="month"
-            min={FIRST_MONTH}
-            max={view.latest ?? undefined}
-            value={view.start}
-            onChange={(event) => view.setStart(event.target.value)}
-          />
-        </span>
-        <span className="explore-month">
-          <label htmlFor="explore-end">To</label>
-          <input
-            id="explore-end"
-            type="month"
-            min={FIRST_MONTH}
-            max={view.latest ?? undefined}
-            value={view.end}
-            onChange={(event) => view.setEnd(event.target.value)}
-          />
-        </span>
-      </fieldset>
-      {view.periodError ? (
-        <p className="notice" role="status">{view.periodError}</p>
-      ) : (
-        <p className="chart-note">{view.range}</p>
-      )}
       <div className="catalog-controls">
         <label htmlFor="explore-aggregation">Aggregation</label>
         <select

@@ -109,12 +109,9 @@ test('a Selected area opens the same view as a Region, with stacked charts', asy
   expect(axes[0].length).toBeGreaterThan(0)
   expect(axes[1]).toEqual(axes[0])
   // The same choices as a Region's view: Variables, a period and its limits.
-  await expect(page.getByLabel('From', { exact: true })).toHaveValue('2024-03')
-  await expect(page.getByLabel('To', { exact: true })).toHaveValue('2025-02')
-  await page.getByLabel('From', { exact: true }).fill('1999-12')
-  await expect(page.locator('.explore [role="status"]').first()).toHaveText(
-    'Periods run from 2000-01 to 2025-02, the latest available month.',
-  )
+  await expect(page.getByRole('slider', { name: 'Range start', exact: true })).toHaveAttribute('aria-valuetext', '2024-03')
+  await expect(page.getByRole('slider', { name: 'Range end', exact: true })).toHaveAttribute('aria-valuetext', '2025-02')
+  await expect(page.locator('.timeline-endpoints')).toHaveText('2000-012025-02')
   await expect(page.getByRole('checkbox', { name: /vegetation/i })).toHaveCount(0)
 })
 
