@@ -1,7 +1,7 @@
 # Manual data processing
 
-Public Python methods for issue #46's arithmetic, scaling, simple resampling and
-missing-value management. Everything in this
+Public Python methods for issue #46's arithmetic, scaling, simple resampling,
+missing-value management and Pearson comparison. Everything in this
 package is independent of the API and automatic engine. It performs no downloads
 or file reads, needs no Earthdata token, and adds no third-party dependencies.
 
@@ -43,6 +43,8 @@ The returned object contains:
 - `series`: every new output, keyed by operation ID. Each has `timestamps`,
   `values`, `units`, `calendar`, `expression`, `inputs`, `provenance`, `recipe`
   and `warnings`.
+- `comparisons`: every Pearson comparison, keyed by operation ID (see
+  [Pearson comparison](#pearson-comparison)); empty when none was requested.
 - `recipe`: ordered instructions under `operations`, ready to replay with
   compatible replacement inputs.
 - `warnings`: unit warnings/conversions, tagged with the producing operation ID.
@@ -260,6 +262,59 @@ or changing the source. Removing all observations returns an empty Derived serie
 subsequent numeric operations require nonempty inputs. Failed acquisition quality
 cannot be repaired by filling: excluded sources remain excluded.
 
+## Pearson comparison
+
+Compare two named series (Source or Derived) with an exploratory Pearson
+correlation:
+
+```python
+response = process_series(
+    {
+        "series": {"A": rainfall, "B": temperature},
+        "operations": [
+            {"id": "A_filled", "operation": "missing", "input": "A", "policy": "mean"},
+            {"id": "AB", "operation": "pearson", "inputs": ["A_filled", "B"]},
+        ],
+    }
+)
+comparison = response["comparisons"]["AB"]
+```
+
+- Inputs may come from different Regions or Selected areas and different
+  Variables and units; there is no geographic pairing restriction and no unit
+  acknowledgement, because r does not depend on units.
+- Both inputs must have the same declared Time step and calendar; mixed Time steps
+  raise `unaligned_series` (resample first). Unlike arithmetic, the inputs may
+  cover different periods: observations pair only at **exactly equal** UTC
+  instants (`2024-01-02` pairs with `2024-01-01T21:00:00-03:00`; 00:00 never pairs
+  with 00:01). Nothing is filled, shifted, interpolated or resampled implicitly.
+- A pair is jointly valid when both values are present. Pearson needs at least
+  three jointly valid pairs and inputs that vary over those pairs.
+- No Mirror preprocessing, thresholds or Evidence labels are applied, and scaling
+  is not a prerequisite.
+
+A comparison is reported, not raised, when r is undefined, so its sample stays
+visible:
+
+- `method`: `"pearson"`.
+- `r`: the correlation in [-1, 1], or `None`.
+- `valid_pairs`: jointly valid pairs used; `filled_pairs`: those in which at
+  least one value was explicitly filled by an earlier `missing` step (`filled`).
+- `analyzed_period`: `{start, end}` of the jointly valid pairs, or `None`.
+- `overlap`: `{start, end, timestamps}` over the shared instants (including pairs
+  with a missing side), or `None` when no instant is shared.
+- `explanation`: `None` when r is returned; otherwise `insufficient_pairs` (with
+  `required_pairs: 3`) or `constant_input` (with the constant input IDs).
+- `sample`: the shared `timestamps` (labels of the first input), a per-pair
+  `valid` flag, and per input its `values`, `filled` flags and `units`, for
+  raw-versus-processed overlays.
+- `calendar`, `inputs`, `provenance`, `recipe` and `warnings`, as for Derived
+  series.
+
+A comparison is not a series: later steps cannot use its ID as an input, and its
+ID cannot be reused. Large finite values do not overflow the calculation. No
+maximum sample size is enforced; that limit was left open in the specification.
+
 ## Input requirements
 
 Each used input needs nonempty, equal-length `timestamps` and `values` lists,
@@ -334,5 +389,5 @@ From the repository root with the project's local environment:
 .venv/bin/ruff check data/data_processing
 ```
 
-Tests exercise the public method and preview with deterministic fixtures. No API,
-engine or correlation implementation is included here.
+Tests exercise the public method and preview with deterministic fixtures. No API
+or engine implementation is included here.
