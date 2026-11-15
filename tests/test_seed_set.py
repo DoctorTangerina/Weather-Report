@@ -245,7 +245,6 @@ def test_the_committed_seed_set_has_a_series_for_each_offered_pair(catalog):
         for region in catalog.regions
         for variable in catalog.variables
         if variable.variable_id in region.variable_ids
-        and variable.variable_id != "vegetation-index"  # not acquired yet (#41)
     }
 
     assert stored == offered

@@ -1,0 +1,245 @@
+{
+  "discovery_id": "arabian-peninsula--southeast-australia",
+  "region_ids": [
+    "arabian-peninsula",
+    "southeast-australia"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "vegetation-index",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.0008595182529953268,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.0005203054763353256,
+            0.002239341982325979
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.0008595182529953268,
+              "p_value": 0.00025837329914633525,
+              "r_squared": 0.04402752056977022
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.0008681346098055883,
+              "p_value": 0.1581659121144927
+            },
+            "robust": {
+              "slope_per_decade": 0.0009618585696697251,
+              "p_value": 1.0545014221365804e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.000928610920291188
+            },
+            "mann_kendall": {
+              "tau": 0.16114116405916817,
+              "p_value": 3.249230106186313e-05
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2001-01",
+              "slope_per_decade": 0.0009649845871027911,
+              "p_value": 2.2875981710144004e-05
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.35145660502156467,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.7898776537781368,
+            "effective_sample_size": 35.10104804522284
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southeast-australia",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.019280649206832718,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.014623265949595367,
+            0.0531845643632608
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.019280649206832718,
+              "p_value": 4.2492595440204574e-06,
+              "r_squared": 0.06884355305844891
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.018665491434244078,
+              "p_value": 0.09738681065505128
+            },
+            "robust": {
+              "slope_per_decade": 0.021609543519504722,
+              "p_value": 4.7701936698543895e-08
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.02134803856354298
+            },
+            "mann_kendall": {
+              "tau": 0.17945725124015174,
+              "p_value": 3.699937302683505e-06
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2018-09",
+              "slope_per_decade": 0.01977873154709395,
+              "p_value": 2.0788021570437975e-06
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.37904675277003524,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.8774638397780407,
+            "effective_sample_size": 19.514789648730243
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 4.487481542204236,
+  "score_components": {
+    "opposite_sign": 0.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 4.487481542204236,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Vegetation index (NDVI) seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think vegetation index (ndvi) is changing faster?",
+          "options": [
+            {
+              "option_id": "arabian-peninsula",
+              "label": "Arabian Peninsula"
+            },
+            {
+              "option_id": "southeast-australia",
+              "label": "Southeast Australia"
+            }
+          ],
+          "answer_option_id": "southeast-australia",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "arabian-peninsula",
+              "variable_id": "vegetation-index"
+            },
+            {
+              "region_id": "southeast-australia",
+              "variable_id": "vegetation-index"
+            }
+          ],
+          "comparison": "Arabian Peninsula: 0.001 NDVI/decade (95% interval -0.001 to 0.002). Southeast Australia: 0.019 NDVI/decade (95% interval -0.015 to 0.053). Southeast Australia is changing faster. Evidence label for Arabian Peninsula: Not enough evidence yet. Evidence label for Southeast Australia: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make vegetation index (ndvi) change this way?",
+          "possible_causes": [
+            {
+              "text": "Plants grow more when there is more rain and soil water.",
+              "kind": "context"
+            },
+            {
+              "text": "A longer warm season gives plants more time to grow.",
+              "kind": "context"
+            },
+            {
+              "text": "Clearing forests for farms or towns removes plant cover.",
+              "kind": "context"
+            },
+            {
+              "text": "Droughts and fires cut back plant growth.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "southeast-australia",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

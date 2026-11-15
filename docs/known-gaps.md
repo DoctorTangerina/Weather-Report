@@ -15,11 +15,9 @@ State of the repo at `4044420` (2026-11-15). Each gap was checked in the repo or
 
 | Gap | Detail |
 | --- | --- |
-| Vegetation index (NDVI) not in the seed set | Updated by #41: the gathering package now acquires MOD13C2, converts its HDF4 granules and builds `vegetation-index` series, and `config.json` has its `CATALOG_SERIES` entry. But the seed set still has no series for it: the 2000–2024 granules (about 29 GB) have not been acquired for a seed rebuild. |
-| 4 Region-Variable pairs missing from the seed | Soil moisture for `greenland-coast`, `antarctic-peninsula`, `equatorial-pacific` and `north-atlantic`. The seed has 71 series, not 75. |
+| 4 Region-Variable pairs missing from the seed | Soil moisture for `greenland-coast`, `antarctic-peninsula`, `equatorial-pacific` and `north-atlantic`. The seed has 92 series, not 96. |
 | One period only | Every seed series covers 2000-01 to 2024-12. The UI has no period control. |
 | Seed contains many weak results | Of 264 Discoveries, 177 are "Not enough evidence yet"; only the 87 rated Strong (69) or Some (18) evidence are eligible as Surprise Me! headlines. |
-| Real catalog content | #23 (real Region and Variable catalog content) is still open. |
 
 ## Product and UI
 
@@ -35,7 +33,6 @@ State of the repo at `4044420` (2026-11-15). Each gap was checked in the repo or
 
 | Gap | Detail |
 | --- | --- |
-| Lint errors | `ruff check .` reports 13 errors (9 auto-fixable), including a real one: `available_series` is defined twice in `src/engine/store.py` (lines 38 and 77). |
 | Stale README | `README.md` says `python -m pytest  # 30 tests`; the suite now has 258. Its layout table also has a broken row for `data/seed/`. |
 | Formatting, type checking, static analysis | Not run for this ticket. |
 | Open feature work | Correlation map (#56, #60–#62), manual time-series processing (#46–#53) are separate, unbuilt epics and not part of this demo. |

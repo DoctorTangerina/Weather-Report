@@ -58,8 +58,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.1984588751795747,
+            "family_size": 92,
+            "adjusted_p_value": 0.2126498673375941,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -121,8 +121,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.7469451043794052,
+            "family_size": 92,
+            "adjusted_p_value": 0.7667561598275512,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -135,6 +135,138 @@
             "dataset": "GLDAS_NOAH025_M v2.1",
             "variable": "SoilMoi0_10cm_inst",
             "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "vegetation-index",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "great-plains",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.0048219896291276125,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.007935122872682623,
+            0.01757910213093785
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.0048219896291276125,
+              "p_value": 0.06211145251864176,
+              "r_squared": 0.011668578065465953
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.00498974263886479,
+              "p_value": 0.3015591881708808
+            },
+            "robust": {
+              "slope_per_decade": 0.004090766712519074,
+              "p_value": 0.07508802008219113
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.003814275601981194
+            },
+            "mann_kendall": {
+              "tau": 0.061165854862966045,
+              "p_value": 0.11473814522399889
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2012-08",
+              "slope_per_decade": 0.00482891446196738,
+              "p_value": 0.05520780779112857
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.5842117402627127,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.7169644127783211,
+            "effective_sample_size": 49.28910579010838
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southeast-australia",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.019280649206832718,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.014623265949595367,
+            0.0531845643632608
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.019280649206832718,
+              "p_value": 4.2492595440204574e-06,
+              "r_squared": 0.06884355305844891
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.018665491434244078,
+              "p_value": 0.09738681065505128
+            },
+            "robust": {
+              "slope_per_decade": 0.021609543519504722,
+              "p_value": 4.7701936698543895e-08
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.02134803856354298
+            },
+            "mann_kendall": {
+              "tau": 0.17945725124015174,
+              "p_value": 3.699937302683505e-06
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2018-09",
+              "slope_per_decade": 0.01977873154709395,
+              "p_value": 2.0788021570437975e-06
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.37904675277003524,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.8774638397780407,
+            "effective_sample_size": 19.514789648730243
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
           },
           "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
           "engine_version": "0.1.0"
@@ -190,8 +322,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.7638115900603604,
+            "family_size": 92,
+            "adjusted_p_value": 0.7867066286934444,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -253,8 +385,8 @@
           },
           "multiple_comparisons": {
             "q": 0.05,
-            "family_size": 71,
-            "adjusted_p_value": 0.45524051660938564,
+            "family_size": 92,
+            "adjusted_p_value": 0.47412207545736174,
             "significant": false,
             "method": "benjamini-hochberg"
           },
@@ -275,12 +407,12 @@
     }
   ],
   "mirrors": [],
-  "score": 121.42037222731977,
+  "score": 121.99945317678946,
   "score_components": {
     "opposite_sign": 100.0,
     "multi_variable": 20.0,
     "surprising_pair": 0.0,
-    "magnitude_gap": 1.4203722273197716,
+    "magnitude_gap": 1.9994531767894619,
     "mirror": 0.0
   },
   "evidence_label": "Not enough evidence yet",
@@ -370,6 +502,26 @@
         },
         {
           "region_id": "great-plains",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "southeast-australia",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "great-plains",
           "variable_id": "precipitation",
           "source": {
             "provider": "GES DISC",
@@ -389,7 +541,7 @@
           }
         }
       ],
-      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
       "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
     }
   },

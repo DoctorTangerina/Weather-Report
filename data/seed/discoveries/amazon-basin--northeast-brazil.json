@@ -1,0 +1,262 @@
+{
+  "discovery_id": "amazon-basin--northeast-brazil",
+  "region_ids": [
+    "amazon-basin",
+    "northeast-brazil"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "vegetation-index",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.0003275415994472156,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.0022570129876217392,
+            0.001601929788727308
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.0003275415994472156,
+              "p_value": 0.4391395525688353,
+              "r_squared": 0.002016610464961278
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.0003250659017492365,
+              "p_value": 0.7426760847040969
+            },
+            "robust": {
+              "slope_per_decade": -0.00018518198035623687,
+              "p_value": 0.6354509107802424
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.00015459197403862646
+            },
+            "mann_kendall": {
+              "tau": -0.014163542905883146,
+              "p_value": 0.714941743331119
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2010-09",
+              "slope_per_decade": -0.0003479142818993923,
+              "p_value": 0.4035316972763816
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.8314635408323291,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.6767974977380333,
+            "effective_sample_size": 57.63221158588928
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "northeast-brazil",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -5.664716132328962e-05,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.022853482042690238,
+            0.022740187720043662
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -5.664716132328962e-05,
+              "p_value": 0.988945598763892,
+              "r_squared": 6.474297595599926e-07
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.0003297100263315667,
+              "p_value": 0.9760580743044976
+            },
+            "robust": {
+              "slope_per_decade": -0.0010633531962524767,
+              "p_value": 0.7714702286845324
+            },
+            "theil_sen": {
+              "slope_per_decade": -9.936830322648831e-05
+            },
+            "mann_kendall": {
+              "tau": -0.0010549707077282216,
+              "p_value": 0.9782970772064659
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2012-05",
+              "slope_per_decade": -7.491528673093295e-05,
+              "p_value": 0.9851251442650851
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.9960109805224359,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.7671923035422739,
+            "effective_sample_size": 39.38988479144593
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [
+    {
+      "series": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "temperature"
+        },
+        {
+          "region_id": "northeast-brazil",
+          "variable_id": "temperature"
+        }
+      ],
+      "correlation": 0.41425516694146985,
+      "p_value": 3.3806641057939204e-06,
+      "adjusted_p_value": 0.00027983619618571714,
+      "significant_after_correction": true
+    }
+  ],
+  "score": 27.531602580592526,
+  "score_components": {
+    "opposite_sign": 0.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 20.0,
+    "magnitude_gap": 2.5316025805925264,
+    "mirror": 5.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Vegetation index (NDVI) seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think vegetation index (ndvi) is changing faster?",
+          "options": [
+            {
+              "option_id": "amazon-basin",
+              "label": "Amazon Basin"
+            },
+            {
+              "option_id": "northeast-brazil",
+              "label": "Northeast Brazil"
+            }
+          ],
+          "answer_option_id": "amazon-basin",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "amazon-basin",
+              "variable_id": "vegetation-index"
+            },
+            {
+              "region_id": "northeast-brazil",
+              "variable_id": "vegetation-index"
+            }
+          ],
+          "comparison": "Amazon Basin: 0 NDVI/decade (95% interval -0.002 to 0.002). Northeast Brazil: 0 NDVI/decade (95% interval -0.023 to 0.023). Amazon Basin is changing faster. Evidence label for Amazon Basin: Not enough evidence yet. Evidence label for Northeast Brazil: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make vegetation index (ndvi) change this way?",
+          "possible_causes": [
+            {
+              "text": "Plants grow more when there is more rain and soil water.",
+              "kind": "context"
+            },
+            {
+              "text": "A longer warm season gives plants more time to grow.",
+              "kind": "context"
+            },
+            {
+              "text": "Clearing forests for farms or towns removes plant cover.",
+              "kind": "context"
+            },
+            {
+              "text": "Droughts and fires cut back plant growth.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "northeast-brazil",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}
