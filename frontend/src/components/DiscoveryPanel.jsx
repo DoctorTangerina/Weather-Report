@@ -1,5 +1,6 @@
 import { formatRate } from '../format.js'
 import Chart from './Chart.jsx'
+import Evidence from './Evidence.jsx'
 
 const LABEL_TONE = {
   'Strong evidence': 'strong',
@@ -92,6 +93,8 @@ export default function DiscoveryPanel({
           </p>
         )}
       </section>
+
+      <Evidence discovery={discovery} catalog={catalog} />
 
       <div className="panel-actions">
         <button className="primary" onClick={onInvestigate}>
