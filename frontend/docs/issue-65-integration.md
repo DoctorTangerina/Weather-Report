@@ -26,9 +26,11 @@ WEATHER_REPORT_PYTHON=/absolute/path/to/.venv/bin/python npm run test:integratio
 npm run build
 ```
 
-`WEATHER_REPORT_PYTHON` defaults to `python3`. The integration runner starts and
-stops its own API on port 8000 and Vite on port 4173; those ports must be free.
-It pins the API to the committed seed and requires no NASA token or downloads.
+The current harness uses the repository virtualenv by default and starts its
+own API on port 8765 and Vite on port 4174; those ports must be free.
+It defaults to the committed seed and requires no NASA token or downloads.
+See [current setup and configurable sources](browser-end-to-end.md) for #74's
+cross-platform command and environment overrides.
 Use `PLAYWRIGHT_BROWSERS_PATH` if Chromium is installed in a custom directory.
 Run the complete Python suite with `python -m pytest -q` from the repo root.
 
