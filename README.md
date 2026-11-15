@@ -122,11 +122,6 @@ stub series and discoveries exist only for four Regions and two Variables. Where
 Variable comes from, and how its NASA units convert to the units students see, is in
 `docs/catalog-sources.md`.
 
-`data/stub/catalog.json` is the exception: it is maintained by hand and the
-generator reads it. It holds 24 placeholder Regions and the four Variables, but
-series and discoveries exist only for four Regions and two Variables. The real
-catalog content is written by the team in its own ticket.
-
 The fixtures are built through `engine.contracts`, so the committed JSON cannot drift
 from the Python contract objects.
 
