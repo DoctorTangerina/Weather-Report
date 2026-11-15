@@ -88,6 +88,14 @@ def reject_outside_catalog(region_id: str, variable_id: str) -> JSONResponse | N
     return None
 
 
+@app.get("/api/series/available")
+def list_available_series() -> dict[str, Any]:
+    """The series held for each Region and Variable, so a client can tell which
+    pairs it can compare before asking. A pair missing here may still be fetched
+    live once #13 lands; the list is what is stored now, not what is possible."""
+    return ok(store.available_series())
+
+
 @app.get("/api/series")
 def get_series(
     region_id: str,

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getCatalog, surpriseMe } from './api.js'
 import { REGION_COLORS } from './palette.js'
-import InvestigationScreen from './screens/InvestigationScreen.jsx'
 import MainScreen from './screens/MainScreen.jsx'
 
 const NEW_SESSION = { shownDiscoveryIds: [], shownRegionIds: [] }
 
 // loading → welcome → drawing → discovery ⇄ drawing … → complete → welcome
-// unreachable when the catalog cannot be fetched; investigation is ticket #15.
+// unreachable when the catalog cannot be fetched. The investigation (#15) runs
+// in the sidebar, beside the globe, from a drawn Discovery.
 export default function App() {
   const [catalog, setCatalog] = useState(null)
   const [phase, setPhase] = useState('loading')
@@ -79,19 +79,6 @@ export default function App() {
     setPhase('welcome')
   }
 
-  if (phase === 'investigation' && discovery) {
-    return (
-      <main className="detail-screen">
-        <InvestigationScreen
-          key={discovery.discovery_id}
-          discovery={discovery}
-          catalog={catalog}
-          onBack={() => setPhase('discovery')}
-        />
-      </main>
-    )
-  }
-
   return (
     <main className="app-home">
       <MainScreen
@@ -105,6 +92,7 @@ export default function App() {
         onSurprise={() => draw('discovery')}
         onDetective={() => draw('investigation')}
         onInvestigate={() => setPhase('investigation')}
+        onBack={() => setPhase('discovery')}
         onNewSession={startOver}
         onRetry={loadCatalog}
       />

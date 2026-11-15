@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import DiscoveryPanel from '../components/DiscoveryPanel.jsx'
 import Explorer from '../components/Explorer.jsx'
 import RegionGlobe from '../components/Globe.jsx'
 import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
 import Timeline from '../components/Timeline.jsx'
 import { REGION_COLORS } from '../palette.js'
-import useSeries from '../useSeries.js'
+import useAvailableSeries from '../useAvailableSeries.js'
 import useComparison from '../useComparison.js'
+import useSeries from '../useSeries.js'
+import InvestigationScreen from './InvestigationScreen.jsx'
 
 const NONE = []
 
@@ -21,6 +23,7 @@ export default function MainScreen({
   onSurprise,
   onDetective,
   onInvestigate,
+  onBack,
   onNewSession,
   onRetry,
 }) {
@@ -28,18 +31,41 @@ export default function MainScreen({
   const [regionId, setRegionId] = useState('')
   const [secondRegionId, setSecondRegionId] = useState('')
   const [variableId, setVariableId] = useState('')
+  const [investigationStep, setInvestigationStep] = useState(0)
 
   const exploring = phase === 'welcome' && Boolean(catalog)
   const showing = phase === 'discovery' && Boolean(discovery)
+  const investigating = phase === 'investigation' && Boolean(discovery)
 
-  const region = catalog?.regions.find((item) => item.region_id === regionId) ?? catalog?.regions[0]
-  const otherRegions = catalog?.regions.filter((item) => item.region_id !== region?.region_id) ?? NONE
-  const secondRegion = otherRegions.find((item) => item.region_id === secondRegionId) ?? otherRegions[0]
+  // Every investigation starts at Predict, however the previous one ended.
+  useEffect(() => {
+    if (investigating) setInvestigationStep(0)
+  }, [investigating, discovery?.discovery_id])
+
+  const available = useAvailableSeries()
+  const defaults = available.defaultPair(catalog)
+  const region =
+    catalog?.regions.find((item) => item.region_id === (regionId || defaults?.[0])) ??
+    catalog?.regions[0]
+  const otherRegions =
+    catalog?.regions.filter((item) => item.region_id !== region?.region_id) ?? NONE
+  const secondRegion =
+    otherRegions.find((item) => item.region_id === (secondRegionId || defaults?.[1])) ??
+    otherRegions[0]
   const variables =
-    catalog?.variables.filter((item) => region?.variable_ids.includes(item.variable_id) && secondRegion?.variable_ids.includes(item.variable_id)) ?? NONE
-  const variable = variables.find((item) => item.variable_id === variableId) ?? variables[0]
+    catalog?.variables.filter(
+      (item) =>
+        region?.variable_ids.includes(item.variable_id) &&
+        secondRegion?.variable_ids.includes(item.variable_id),
+    ) ?? NONE
+  const variable =
+    variables.find((item) => item.variable_id === (variableId || defaults?.[2])) ??
+    variables[0]
 
+  // The investigation charts the Check step's series; the Discovery view charts
+  // its lead Contrast. Both pairs come from the engine's narrative.
   const refs = useMemo(() => {
+    if (investigating) return discovery.narrative.investigation.steps[1].series
     if (showing) {
       return discovery.contrasts[0].trends.map(({ region_id, variable_id }) => ({
         region_id,
@@ -47,25 +73,39 @@ export default function MainScreen({
       }))
     }
     return NONE
-  }, [showing, discovery])
+  }, [investigating, showing, discovery])
 
   const explored = useMemo(
-    () => (exploring ? [region, secondRegion].filter(Boolean).map((region, index) => ({ region, color: REGION_COLORS[index] })) : NONE),
+    () =>
+      exploring
+        ? [region, secondRegion]
+            .filter(Boolean)
+            .map((item, index) => ({ region: item, color: REGION_COLORS[index] }))
+        : NONE,
     [exploring, region, secondRegion],
   )
 
   const discoverySeries = useSeries(refs)
+  // Wait for the list of stored series before comparing, so the first request
+  // is the data-backed default pair rather than whatever the catalog lists first.
+  const comparing = exploring && available.settled
   const comparison = useComparison(
-    exploring ? region?.region_id : null,
-    exploring ? secondRegion?.region_id : null,
-    exploring ? variable?.variable_id : null,
+    comparing ? region?.region_id : null,
+    comparing ? secondRegion?.region_id : null,
+    comparing ? variable?.variable_id : null,
   )
   const { loading: seriesLoading, series, notice: seriesNotice, error: seriesError } =
     exploring ? comparison : discoverySeries
   const banner = notice ?? seriesNotice
-  const timelineKey = showing
-    ? discovery.discovery_id
-    : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
+  const timelineKey =
+    discovery && !exploring
+      ? `${phase}/${discovery.discovery_id}`
+      : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
+
+  // Before the student predicts, nothing may hint at the answer: the timeline
+  // stays empty until the Check step shows the charts (BS-006).
+  const timelineSeries =
+    seriesLoading || (investigating && investigationStep !== 1) ? NONE : series
 
   return (
     <div className="main-screen">
@@ -82,13 +122,14 @@ export default function MainScreen({
       </header>
 
       <section className="globe-panel" aria-label="Interactive Earth globe">
-        <RegionGlobe highlights={showing ? highlights : explored} />
+        <RegionGlobe highlights={showing || investigating ? highlights : explored} />
         <p className="globe-hint">Drag to explore · Scroll or pinch to zoom</p>
       </section>
 
       <aside
         className="sidebar"
         tabIndex={0}
+        aria-label={investigating ? 'Become a Detective' : undefined}
         aria-busy={phase === 'loading' || phase === 'drawing' || seriesLoading}
       >
         {banner && (
@@ -101,7 +142,7 @@ export default function MainScreen({
             {error.message}
           </p>
         )}
-        {seriesError && (
+        {seriesError && showing && (
           <p className="error" role="alert">
             The analysis could not be loaded: {seriesError.message}
           </p>
@@ -121,8 +162,10 @@ export default function MainScreen({
               onRegion={setRegionId}
               onSecondRegion={setSecondRegionId}
               onVariable={setVariableId}
+              hasData={available.has}
               series={series}
               seriesLoading={seriesLoading}
+              error={comparison.error}
               timestamp={timestamp}
               highlights={explored}
               trends={comparison.trends}
@@ -143,12 +186,27 @@ export default function MainScreen({
             onSurprise={onSurprise}
           />
         )}
+        {investigating && (
+          <InvestigationScreen
+            key={discovery.discovery_id}
+            discovery={discovery}
+            catalog={catalog}
+            highlights={highlights}
+            onBack={onBack}
+            stepIndex={investigationStep}
+            onStepChange={setInvestigationStep}
+            loading={seriesLoading}
+            series={seriesLoading ? NONE : series}
+            error={seriesError}
+            timestamp={timestamp}
+          />
+        )}
       </aside>
 
-      {(showing || exploring) && (
+      {(showing || exploring || investigating) && (
         <Timeline
           key={timelineKey}
-          series={seriesLoading ? NONE : series}
+          series={timelineSeries}
           loading={seriesLoading}
           onTimestampChange={setTimestamp}
         />
