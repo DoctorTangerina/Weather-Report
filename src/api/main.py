@@ -12,6 +12,7 @@ that distinguishes live, cached and preloaded data.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import math
 import os
@@ -22,7 +23,8 @@ from functools import partial
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Query
+from fastapi import Depends, FastAPI, Query, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -56,6 +58,7 @@ from .explore import (
 )
 from .grid_source import GridAcquisitionSource
 from .jobs import SeriesJobs
+from .processing import run_recipe
 from .results import example_response, select_example, usable
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -103,10 +106,13 @@ def ok(data: Any, notice: dict[str, str] | None = None) -> dict[str, Any]:
     return {"data": data, "notice": notice}
 
 
-def error(status: int, code: str, message: str) -> JSONResponse:
-    return JSONResponse(
-        status_code=status, content={"error": {"code": code, "message": message}}
-    )
+def error(
+    status: int, code: str, message: str, details: dict | None = None
+) -> JSONResponse:
+    body = {"code": code, "message": message}
+    if details is not None:
+        body["details"] = details
+    return JSONResponse(status_code=status, content={"error": body})
 
 
 @app.get("/api/health")
@@ -385,6 +391,19 @@ def get_explore_options() -> Any:
             ],
         }
     )
+
+
+@app.post("/api/explore/process")
+async def process_explore_series(request: Request) -> Any:
+    """Apply a Processing recipe to Source or Derived series (#83). Stateless."""
+    try:
+        body = json.loads(await request.body())
+    except ValueError:
+        return error(422, "invalid_processing_request", "Send the request as JSON.")
+    try:
+        return ok(await run_in_threadpool(run_recipe, body))
+    except Refusal as refusal:
+        return error(refusal.status, refusal.code, refusal.message, refusal.details)
 
 
 @app.get("/api/explore/jobs/{job_id}")

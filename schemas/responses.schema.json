@@ -364,8 +364,125 @@
         }
       ]
     },
+    "processingRequest": {
+      "description": "Body of POST /api/explore/process (#83): named inputs and an ordered Processing recipe, applied by the data-layer processing of #46 (#47-#53). Nothing is kept between requests; replay means sending the same body again. Each input is a Source series exactly as /api/explore/series returned it, with that view's Time step and Aggregation, or a Derived series from an earlier response.",
+      "type": "object",
+      "properties": {
+        "series": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "description": "A Source series. Its timestamps are laid out from period.start: one per month, UTC day or UTC 3-hour interval.",
+                "type": "object",
+                "properties": {
+                  "time_step": { "type": "string", "enum": ["3-hourly", "daily", "monthly"] },
+                  "aggregation": {
+                    "$ref": "#/$defs/exploreSeriesResponse/properties/data/properties/aggregation"
+                  },
+                  "series": {
+                    "oneOf": [
+                      { "$ref": "series.schema.json" },
+                      { "$ref": "series.schema.json#/$defs/areaSeries" }
+                    ]
+                  }
+                },
+                "required": ["time_step", "aggregation", "series"],
+                "additionalProperties": false
+              },
+              {
+                "description": "A Derived series returned by an earlier request, sent back unchanged.",
+                "type": "object",
+                "properties": { "derived": { "$ref": "#/$defs/derivedSeries" } },
+                "required": ["derived"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "operations": {
+          "description": "The Processing recipe: steps applied in order, each naming a new output id that later steps may use. The data layer's README lists the operations and their parameters.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": { "id": { "type": "string" }, "operation": { "type": "string" } },
+            "required": ["id"]
+          }
+        }
+      },
+      "required": ["series", "operations"],
+      "additionalProperties": false
+    },
+    "derivedSeries": {
+      "description": "A Series made by a Processing recipe. It carries the recipe that made it, a snapshot of every input's metadata (`provenance`, including the Source series' Region or area, Variable, period, source and Quality gate verdict), its warnings, and the step's own metadata, such as resampling sample counts or scaling parameters.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamps": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "values": { "type": "array", "items": { "type": ["number", "null"] } },
+        "units": { "type": "string", "minLength": 1 },
+        "inputs": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "provenance": { "type": "object" },
+        "recipe": { "$ref": "#/$defs/processingRecipe" },
+        "warnings": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["id", "timestamps", "values", "units", "inputs", "provenance", "recipe", "warnings"]
+    },
+    "processingRecipe": {
+      "type": "object",
+      "properties": {
+        "operations": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["operations"],
+      "additionalProperties": false
+    },
+    "processingResponse": {
+      "description": "Result of POST /api/explore/process (#83): every Derived series by id, every comparison by id, the whole recipe and all warnings, each warning naming its step.",
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "series": {
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/derivedSeries" }
+            },
+            "comparisons": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "inputs": { "type": "array", "items": { "type": "string" } },
+                  "provenance": { "type": "object" },
+                  "recipe": { "$ref": "#/$defs/processingRecipe" }
+                },
+                "required": ["id", "inputs", "provenance", "recipe"]
+              }
+            },
+            "recipe": { "$ref": "#/$defs/processingRecipe" },
+            "warnings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": { "operation": { "type": "string" }, "code": { "type": "string" } },
+                "required": ["operation", "code"]
+              }
+            }
+          },
+          "required": ["series", "comparisons", "recipe", "warnings"],
+          "additionalProperties": false
+        },
+        "notice": { "$ref": "common.schema.json#/$defs/notice" }
+      },
+      "required": ["data", "notice"],
+      "additionalProperties": false
+    },
     "errorResponse": {
-      "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region. Explore My World refuses a malformed view with 422 (invalid_variable_count, duplicate_variable, invalid_aggregation, invalid_time_step, invalid_period, period_out_of_range, period_too_long, invalid_area, variable_not_available_for_area, variable_not_available_at_time_step); unknown job references return 404 job_not_found.",
+      "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region. Explore My World refuses a malformed view with 422 (invalid_variable_count, duplicate_variable, invalid_aggregation, invalid_time_step, invalid_period, period_out_of_range, period_too_long, invalid_area, variable_not_available_for_area, variable_not_available_at_time_step); unknown job references return 404 job_not_found. The Processing recipe endpoint answers 422 invalid_processing_request for a body that does not match processingRequest, and 422 processing_refused when the data layer refuses a step; `details.reason` then names the data layer's own code.",
       "type": "object",
       "properties": {
         "error": {
@@ -390,10 +507,18 @@
                 "invalid_area",
                 "variable_not_available_for_area",
                 "variable_not_available_at_time_step",
-                "job_not_found"
+                "job_not_found",
+                "invalid_processing_request",
+                "processing_refused"
               ]
             },
-            "message": { "type": "string", "minLength": 1 }
+            "message": { "type": "string", "minLength": 1 },
+            "details": {
+              "description": "Set by processing_refused: `reason` is the data layer's code, with any step index or input name it gave.",
+              "type": "object",
+              "properties": { "reason": { "type": "string", "minLength": 1 } },
+              "required": ["reason"]
+            }
           },
           "required": ["code", "message"],
           "additionalProperties": false
