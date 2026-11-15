@@ -2,6 +2,23 @@
 
 State of the repo at `4044420` (2026-11-15). Each gap was checked in the repo or by a command; where something was not checked, it says so.
 
+## Backend follow-up (#65)
+
+The current backend reads `EARTHDATA_TOKEN` from the exported environment or
+`.env` (repository root, then `data/data_gathering/`), and its default live-fetch
+timeout is 120 seconds. Automated HTTP tests cover credential precedence and a
+12-month synthetic fetch lasting longer than 15 seconds; authenticated NASA
+performance has not been remeasured in this change.
+
+The reported four missing soil-moisture Series are outside the current catalog:
+those ocean/ice Regions offer only temperature and precipitation. The 71 seed
+Series cover every offered pair with acquired data (NDVI remains #41), as checked
+by `test_the_committed_seed_set_has_a_series_for_each_offered_pair`. See
+`docs/catalog-sources.md` for the prior catalog decision. No Quality gate
+fractions or exclusion records have been invented for unavailable products.
+
+The historical findings below describe the revision above, not this follow-up.
+
 ## Not verified
 
 | Gap | Detail |
