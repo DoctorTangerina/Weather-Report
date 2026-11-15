@@ -396,3 +396,6 @@ button.experience-quiet:hover { box-shadow: 0 6px 18px #16202a14; }
 .catalog-controls select:focus-visible { outline: 3px solid #47b5d7; outline-offset: 2px; }
 .variable-definition { margin: 0.75rem 0 0.25rem; font-size: 0.88rem; }
 .chart-note { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.8rem; }
+
+/* #15: the Evidence label caveat after a prediction (#10, Q7) */
+.feedback-caveat { display: block; margin-top: 0.35rem; color: var(--muted); font-size: 0.9rem; }

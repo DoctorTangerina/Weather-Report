@@ -6,10 +6,21 @@ function regionName(catalog, regionId) {
   return catalog.regions.find((region) => region.region_id === regionId)?.name ?? regionId
 }
 
-export default function InvestigationScreen({ discovery, catalog, onBack, stepIndex, onStepChange, loading, series, error, timestamp }) {
+// When the evidence is not strong, the feedback says so in the student's own
+// terms, so a matching guess is never read as a settled answer (#10, Q7).
+const EVIDENCE_CAVEAT = {
+  'Some evidence':
+    'Evidence label: Some evidence. The data lean this way, but not strongly enough to be sure.',
+  'Not enough evidence yet':
+    'Evidence label: Not enough evidence yet. The data cannot yet tell this difference apart from chance.',
+}
+
+export default function InvestigationScreen({ discovery, catalog, highlights = [], onBack, stepIndex, onStepChange, loading, series, error, timestamp }) {
   const [guess, setGuess] = useState(null)
 
   const [predict, check, reason] = discovery.narrative.investigation.steps
+  const caveat = EVIDENCE_CAVEAT[discovery.evidence_label]
+  const colorOf = (regionId) => highlights.find((h) => h.region.region_id === regionId)?.color
 
   return (
     <section>
@@ -28,7 +39,7 @@ export default function InvestigationScreen({ discovery, catalog, onBack, stepIn
 
       {stepIndex === 0 && (
         <div>
-          <h2>{predict.question}</h2>
+          <h3>{predict.question}</h3>
           <div className="actions">
             {predict.options.map((option) => (
               <button
@@ -49,11 +60,12 @@ export default function InvestigationScreen({ discovery, catalog, onBack, stepIn
 
       {stepIndex === 1 && (
         <div>
-          <h2>What the data show</h2>
-          <p className={guess === predict.answer_option_id ? 'match' : 'mismatch'}>
+          <h3>What the data show</h3>
+          <p className={guess === predict.answer_option_id ? 'match' : 'mismatch'} role="status">
             {guess === predict.answer_option_id
               ? 'Your guess matches the computed Trends.'
               : 'Your guess does not match the computed Trends.'}
+            {caveat && <span className="feedback-caveat"> {caveat}</span>}
           </p>
           <p>{check.comparison}</p>
 
@@ -64,6 +76,7 @@ export default function InvestigationScreen({ discovery, catalog, onBack, stepIn
               key={`${item.region_id}-${item.variable_id}`}
               series={item}
               timestamp={timestamp}
+              color={colorOf(item.region_id)}
               label={regionName(catalog, item.region_id)}
             />
           ))}
@@ -75,7 +88,7 @@ export default function InvestigationScreen({ discovery, catalog, onBack, stepIn
 
       {stepIndex === 2 && (
         <div>
-          <h2>{reason.prompt}</h2>
+          <h3>{reason.prompt}</h3>
           <p>These possible causes are context from scientists. The data show changes, but do not establish what caused them.</p>
           <ul className="causes">
             {reason.possible_causes.map((cause) => (
