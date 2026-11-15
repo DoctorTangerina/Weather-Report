@@ -1,0 +1,245 @@
+{
+  "discovery_id": "congo-basin--siberia",
+  "region_ids": [
+    "congo-basin",
+    "siberia"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "congo-basin",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.20456373311089973,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.5557946510931577,
+            0.14666718487135824
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.20456373311089973,
+              "p_value": 0.00015505788581271843,
+              "r_squared": 0.04696121734014877
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.20488928303338452,
+              "p_value": 0.18463714733536998
+            },
+            "robust": {
+              "slope_per_decade": -0.21162482255135057,
+              "p_value": 5.24675006144036e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.1720639480619882
+            },
+            "mann_kendall": {
+              "tau": -0.12878483835005575,
+              "p_value": 0.0008793918476677827
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2007-01",
+              "slope_per_decade": -0.19559663695040913,
+              "p_value": 0.00021410854897670702
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.35874913429229033,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.8228203493059468,
+            "effective_sample_size": 29.16024896718687
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.5130040132497568,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.01823590361026961,
+            1.0442439301097832
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.5130040132497568,
+              "p_value": 0.013115209156582302,
+              "r_squared": 0.020471508157633215
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.513820425886582,
+              "p_value": 0.08948348076892775
+            },
+            "robust": {
+              "slope_per_decade": 0.46776781168781345,
+              "p_value": 0.00787677935531578
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.4559277726699857
+            },
+            "mann_kendall": {
+              "tau": 0.09364548494983278,
+              "p_value": 0.015569016245467481
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2007-01",
+              "slope_per_decade": 0.5435626230850665,
+              "p_value": 0.00755313249850132
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.106146819813052,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.26317059707539997,
+            "effective_sample_size": 174.99522343947135
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Air temperature seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "congo-basin",
+              "label": "Congo Basin"
+            },
+            {
+              "option_id": "siberia",
+              "label": "Siberia"
+            }
+          ],
+          "answer_option_id": "siberia",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "congo-basin",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "siberia",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Congo Basin: -0.205 \u00b0C/decade (95% interval -0.556 to 0.147). Siberia: 0.513 \u00b0C/decade (95% interval -0.018 to 1.044). Siberia is changing faster. Evidence label for Congo Basin: Not enough evidence yet. Evidence label for Siberia: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "congo-basin",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

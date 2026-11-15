@@ -1,0 +1,397 @@
+{
+  "discovery_id": "horn-of-africa--tibetan-plateau",
+  "region_ids": [
+    "horn-of-africa",
+    "tibetan-plateau"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "soil-moisture",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.6927172756106158,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -1.1731398819995529,
+            -0.21229466922167883
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.6927172756106158,
+              "p_value": 1.0137741426089475e-05,
+              "r_squared": 0.06339727997045527
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.6938196902564048,
+              "p_value": 0.005223390916349476
+            },
+            "robust": {
+              "slope_per_decade": -0.7094836057677573,
+              "p_value": 9.337624864182971e-08
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.6965506982606959
+            },
+            "mann_kendall": {
+              "tau": -0.1839464882943144,
+              "p_value": 2.0207101886706143e-06
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2010-03",
+              "slope_per_decade": -0.6807624630103621,
+              "p_value": 8.060405186790354e-06
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.014418320491579328,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.4243982834227619,
+            "effective_sample_size": 121.23049920997396
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "tibetan-plateau",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.5134565508636046,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            0.22466590059451513,
+            0.8022472011326942
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.5134565508636046,
+              "p_value": 4.95850202129597e-08,
+              "r_squared": 0.09510930564302802
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.5142736836847112,
+              "p_value": 0.0008330448150830266
+            },
+            "robust": {
+              "slope_per_decade": 0.49040738854170657,
+              "p_value": 6.32143605831297e-09
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.4886380352415989
+            },
+            "mann_kendall": {
+              "tau": 0.204726867335563,
+              "p_value": 1.2359363214527187e-07
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2022-10",
+              "slope_per_decade": 0.4842722338427032,
+              "p_value": 1.460583249565457e-07
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 0.0027233635023574112,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.43280671648188956,
+            "effective_sample_size": 118.75850601345493
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "precipitation",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 11.972874148914736,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            6.916277684936922,
+            17.02947061289255
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 11.972874148914736,
+              "p_value": 4.075904652495514e-07,
+              "r_squared": 0.08263000291777825
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 11.991928202103141,
+              "p_value": 6.660392312594152e-05
+            },
+            "robust": {
+              "slope_per_decade": 7.891337584923026,
+              "p_value": 2.7678137154494915e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": 7.470496853053577
+            },
+            "mann_kendall": {
+              "tau": 0.17868450390189522,
+              "p_value": 3.922920212961596e-06
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2023-11",
+              "slope_per_decade": 10.878266767255754,
+              "p_value": 1.5389959134962962e-06
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 4.5589753419830444e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.1046851991231487,
+            "effective_sample_size": 243.14115955953244
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "tibetan-plateau",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 3.9844803261891486,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            2.399744286394577,
+            5.569216365983721
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 3.9844803261891486,
+              "p_value": 2.3645556546588744e-07,
+              "r_squared": 0.08586644006104754
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 3.9908213683749287,
+              "p_value": 3.726462903163251e-06
+            },
+            "robust": {
+              "slope_per_decade": 2.8937320692330575,
+              "p_value": 1.992610291225702e-07
+            },
+            "theil_sen": {
+              "slope_per_decade": 2.786779871732648
+            },
+            "mann_kendall": {
+              "tau": 0.21404682274247494,
+              "p_value": 3.2236558901291645e-08
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-07",
+              "slope_per_decade": 4.070245185709404,
+              "p_value": 4.809226948046937e-08
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 71,
+            "adjusted_p_value": 2.3574773727662552e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.06628925633917387,
+            "effective_sample_size": 262.6990954217653
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md).",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 121.5873060412542,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 1.587306041254197,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Soil moisture is rising in one of these places and falling in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think soil moisture is changing faster?",
+          "options": [
+            {
+              "option_id": "horn-of-africa",
+              "label": "Horn of Africa"
+            },
+            {
+              "option_id": "tibetan-plateau",
+              "label": "Tibetan Plateau"
+            }
+          ],
+          "answer_option_id": "horn-of-africa",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "horn-of-africa",
+              "variable_id": "soil-moisture"
+            },
+            {
+              "region_id": "tibetan-plateau",
+              "variable_id": "soil-moisture"
+            }
+          ],
+          "comparison": "Horn of Africa: -0.693 mm/decade (95% interval -1.173 to -0.212). Tibetan Plateau: 0.513 mm/decade (95% interval 0.225 to 0.802). Horn of Africa is changing faster. Evidence label for Horn of Africa: Strong evidence. Evidence label for Tibetan Plateau: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make soil moisture change this way?",
+          "possible_causes": [
+            {
+              "text": "Less rain means less water soaks into the soil.",
+              "kind": "context"
+            },
+            {
+              "text": "Hotter air pulls more water out of the soil through evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Farming and irrigation change how much water the soil holds.",
+              "kind": "context"
+            },
+            {
+              "text": "Melting snow and ice add water to the soil in spring.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "tibetan-plateau",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "horn-of-africa",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "tibetan-plateau",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 71 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Time-series analysis of remotely sensed SeaWiFS chlorophyll in river-influenced coastal regions (see docs/challenge-brief.md)."
+    }
+  },
+  "engine_version": "0.1.0"
+}

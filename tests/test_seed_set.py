@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -211,3 +212,63 @@ def test_the_command_refuses_a_seed_set_missing_an_evidence_label(tmp_path):
 
     assert allowed.returncode == 0, allowed.stderr
     assert (output / "discoveries" / "amazon-basin--sahel.json").exists()
+
+
+SEED_DIR = Path(__file__).resolve().parents[1] / "data" / "seed"
+
+
+def seed_files(kind: str) -> list[Path]:
+    return sorted((SEED_DIR / kind).glob("*.json"))
+
+
+def test_the_committed_seed_set_matches_the_schemas(validator_for):
+    assert seed_files("series") and seed_files("discoveries")
+    for path in seed_files("series"):
+        validator_for("series.schema.json").validate(json.loads(path.read_text()))
+    for path in seed_files("discoveries"):
+        validator_for("discovery.schema.json").validate(json.loads(path.read_text()))
+
+
+def test_the_committed_seed_set_shows_strong_and_weak_cases():
+    labels = {
+        json.loads(path.read_text())["evidence_label"]
+        for path in seed_files("discoveries")
+    }
+
+    assert labels == {STRONG_EVIDENCE, "Some evidence", NOT_ENOUGH_EVIDENCE}
+
+
+def test_the_committed_seed_set_has_a_series_for_each_offered_pair(catalog):
+    stored = {path.stem for path in seed_files("series")}
+    offered = {
+        f"{region.region_id}__{variable.variable_id}"
+        for region in catalog.regions
+        for variable in catalog.variables
+        if variable.variable_id in region.variable_ids
+        and variable.variable_id != "vegetation-index"  # not acquired yet (#41)
+    }
+
+    assert stored == offered
+
+
+def test_the_results_service_serves_the_seed_set_by_default():
+    root = Path(__file__).resolve().parents[1]
+    env = {k: v for k, v in os.environ.items() if k != "WEATHER_REPORT_DATA_DIR"}
+    probe = (
+        "from fastapi.testclient import TestClient; from api.main import app;"
+        "r = TestClient(app).get('/api/series', params="
+        "{'region_id': 'sahara', 'variable_id': 'temperature'});"
+        "print(r.status_code, len(TestClient(app).get('/api/discoveries').json()['data']))"
+    )
+
+    run = subprocess.run(
+        [sys.executable, "-c", probe],
+        cwd=root,
+        env={**env, "PYTHONPATH": str(root / "src")},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    expected = len(seed_files("discoveries"))
+    assert run.stdout.split() == ["200", str(expected)], run.stderr
