@@ -48,12 +48,13 @@ repository root are supported; absolute paths are useful in automation.
 | `WEATHER_REPORT_CACHE_DIR` | API default | Separate results cache for a scenario |
 | `WEATHER_REPORT_E2E_API_APP` | `api.main:app` | Importable ASGI app with scenario-specific acquisition configuration |
 
-For example, run the happy path against the existing synthetic result set:
+For example, run the happy path against the existing synthetic result set. The
+API runs from the repository root, so the path is `data/stub` even from `frontend/`:
 
 PowerShell, from `frontend/`:
 
 ```powershell
-$env:WEATHER_REPORT_DATA_DIR = '../data/stub'
+$env:WEATHER_REPORT_DATA_DIR = 'data/stub'
 npm run test:integration -- --grep 'real Surprise'
 Remove-Item Env:WEATHER_REPORT_DATA_DIR
 ```
@@ -61,7 +62,7 @@ Remove-Item Env:WEATHER_REPORT_DATA_DIR
 POSIX shell:
 
 ```sh
-WEATHER_REPORT_DATA_DIR=../data/stub npm run test:integration -- --grep 'real Surprise'
+WEATHER_REPORT_DATA_DIR=data/stub npm run test:integration -- --grep 'real Surprise'
 ```
 
 The full suite's manual-selection test assumes Amazon Basin and Sahel exist,
