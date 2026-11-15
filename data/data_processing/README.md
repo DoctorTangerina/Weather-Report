@@ -174,10 +174,19 @@ A Series can declare `time_step` (`3-hourly`, `daily`, `monthly`) and `aggregati
 
 ```python
 series_a = {**hourly_series, "time_step": "hourly", "aggregation": "maximum"}
-response = process_series({
-    "series": {"A": series_a},
-    "operations": [{"id": "result", "operation": "resample", "input": "A", "frequency": "daily"}],
-})
+response = process_series(
+    {
+        "series": {"A": series_a},
+        "operations": [
+            {
+                "id": "result",
+                "operation": "resample",
+                "input": "A",
+                "frequency": "daily",
+            }
+        ],
+    }
+)
 ```
 
 Resampling inherits that Series' Aggregation; an explicit conflicting aggregation
