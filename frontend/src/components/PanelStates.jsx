@@ -1,4 +1,4 @@
-export function Welcome({ catalog, onSurprise, onDetective }) {
+export function Welcome({ catalog, onSurprise, onDetective, detectiveError, checkingDiscovery }) {
   return (
     <article className="welcome" aria-labelledby="welcome-heading">
       <p className="eyebrow">NASA Earth science · Trend detective</p>
@@ -9,18 +9,19 @@ export function Welcome({ catalog, onSurprise, onDetective }) {
         that contrast. Pick how you want to start.
       </p>
       <div className="experiences">
-        <button className="experience" onClick={onSurprise}>
+        <button className="experience" onClick={onSurprise} disabled={checkingDiscovery}>
           <span className="experience-title">Surprise Me!</span>
           <span className="experience-text">
             The engine picks a contrast it found in the data and shows you where.
           </span>
         </button>
-        <button className="experience experience-quiet" onClick={onDetective}>
+        <button className="experience experience-quiet" onClick={onDetective} disabled={checkingDiscovery} aria-busy={checkingDiscovery} aria-describedby={detectiveError ? 'detective-error' : undefined}>
           <span className="experience-title">Become a Detective</span>
           <span className="experience-text">
             Make a guess first, then check it against the evidence.
           </span>
         </button>
+        {detectiveError && <p id="detective-error" className="error" role="alert">{detectiveError.message}</p>}
       </div>
     </article>
   )

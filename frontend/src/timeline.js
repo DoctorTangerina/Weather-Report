@@ -21,3 +21,16 @@ export function seriesIndexAt(series, timestamp) {
   const index = monthIndex(timestamp) - monthIndex(series.period.start)
   return index >= 0 && index < series.values.length ? index : -1
 }
+
+// Slice both boundaries inclusively, preserving missing months and metadata.
+export function seriesInRange(series, range) {
+  if (!range) return series
+  const origin = monthIndex(series.period.start)
+  const start = Math.max(0, monthIndex(range.start) - origin)
+  const end = Math.min(series.values.length - 1, monthIndex(range.end) - origin)
+  return {
+    ...series,
+    period: { start: monthTimestamp(origin + start), end: monthTimestamp(origin + end) },
+    values: series.values.slice(start, Math.max(start, end + 1)),
+  }
+}

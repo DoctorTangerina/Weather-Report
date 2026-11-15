@@ -1,9 +1,15 @@
-import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Globe from 'react-globe.gl'
 import { AREA_COLOR, withAlpha } from '../palette.js'
 import { rectangleFromCorners, unwrapped } from '../selectedArea.js'
 
 const FLIGHT_MS = 1600
+const polygonSideColor = ({ properties: { kind, color } }) =>
+  withAlpha(color, kind === 'catalog' ? 0.06 : 0.18)
+const polygonStrokeColor = ({ properties: { kind, color } }) =>
+  kind === 'catalog' ? withAlpha(color, 0.6) : color
+const polygonLabel = ({ properties }) => properties.name
+const ringColor = (ring) => (t) => withAlpha(ring.color, Math.max(0, 0.85 - t))
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 class GlobeBoundary extends Component {
@@ -90,8 +96,9 @@ const NO_REGIONS = []
 // Catalog boxes stay faint until hovered; the others are always clearly visible.
 const CAP_ALPHA = { highlight: 0.42, area: 0.3, sketch: 0.2 }
 const ALTITUDE = { catalog: 0.006, highlight: 0.012, area: 0.016, sketch: 0.018 }
+const polygonAltitude = ({ properties: { kind } }) => ALTITUDE[kind]
 
-export default function RegionGlobe({
+function RegionGlobe({
   highlights: requestedHighlights = [],
   regions = NO_REGIONS,
   onRegionClick,
@@ -125,15 +132,37 @@ export default function RegionGlobe({
     return () => observer.disconnect()
   }, [])
 
+  const layerCache = useRef(new Map())
+  const highlightLayers = useMemo(() => {
+    const next = new Map()
+    const result = highlights.map((highlight) => {
+      const key = JSON.stringify(highlight)
+      // Keep an unchanged Region's geometry, label and ring alive when the
+      // other Region changes. Replacing them restarts their entrance animation.
+      const layer = layerCache.current.get(key) ?? {
+        polygon: regionPolygon(highlight.region, highlight.color, 'highlight'),
+        label: { ...highlight, lat: highlight.region.bbox.north, lng: centre(highlight.region).lng },
+        ring: { ...centre(highlight.region), color: highlight.color },
+      }
+      next.set(key, layer)
+      return layer
+    })
+    layerCache.current = next
+    return result
+  }, [highlights])
+  // Likewise keep each catalog box's geometry across highlight changes.
+  const catalogPolygons = useMemo(
+    () => regions.map((region) => regionPolygon(region, CATALOG_COLOR, 'catalog')),
+    [regions],
+  )
+
   const sketched = sketch && rectangleFromCorners(...sketch)
   const sketchKey = sketched?.join() ?? ''
   const polygons = useMemo(() => {
     const highlighted = new Set(highlights.map(({ region }) => region.region_id))
     return [
-      ...regions
-        .filter((region) => !highlighted.has(region.region_id))
-        .map((region) => regionPolygon(region, CATALOG_COLOR, 'catalog')),
-      ...highlights.map(({ region, color }) => regionPolygon(region, color, 'highlight')),
+      ...catalogPolygons.filter(({ properties }) => !highlighted.has(properties.regionId)),
+      ...highlightLayers.map((layer) => layer.polygon),
       ...(selectedArea ?? []).map((rectangle) =>
         boxPolygon(unwrapped(rectangle), { color: AREA_COLOR, kind: 'area', name: 'Selected area' }),
       ),
@@ -141,24 +170,22 @@ export default function RegionGlobe({
         ? [boxPolygon(unwrapped(sketchKey.split(',').map(Number)), { color: AREA_COLOR, kind: 'sketch' })]
         : []),
     ]
-  }, [highlights, regions, selectedArea, sketchKey])
+  }, [highlights, highlightLayers, catalogPolygons, selectedArea, sketchKey])
   const labels = useMemo(() => {
-    const regionLabels = highlights.map((highlight) => ({
-      ...highlight,
-      lat: highlight.region.bbox.north,
-      lng: centre(highlight.region).lng,
-    }))
+    const regionLabels = highlightLayers.map((layer) => layer.label)
     if (!selectedArea) return regionLabels
     const [west, , east, north] = unwrapped(selectedArea[0])
     const area = { region: { name: 'Selected area' }, color: AREA_COLOR }
     return [...regionLabels, { ...area, lat: north, lng: (west + east) / 2 }]
-  }, [highlights, selectedArea])
+  }, [highlightLayers, selectedArea])
   const rings = useMemo(
-    () =>
-      reducedMotion()
-        ? []
-        : highlights.map((highlight) => ({ ...centre(highlight.region), color: highlight.color })),
-    [highlights],
+    () => (reducedMotion() ? [] : highlightLayers.map((layer) => layer.ring)),
+    [highlightLayers],
+  )
+  const polygonCapColor = useCallback(
+    ({ properties: { kind, color, regionId } }) =>
+      withAlpha(color, CAP_ALPHA[kind] ?? (regionId === hovered ? 0.4 : 0.12)),
+    [hovered],
   )
 
   // A new Selected area may be on the far side, as typed edges often are: face it.
@@ -179,6 +206,11 @@ export default function RegionGlobe({
 
     const duration = reducedMotion() ? 0 : FLIGHT_MS
     const aspect = dimensions.width / Math.max(1, dimensions.height)
+    // globe.gl ends an in-flight tween at its old destination when a new
+    // pointOfView starts. Restore the visible position synchronously first,
+    // so selecting another Region redirects the flight without a snap.
+    const currentView = globe.pointOfView()
+    globe.pointOfView(currentView, 0)
     if (highlights.length === 2) {
       const centres = highlights.map(({ region }) => centre(region))
       globe.pointOfView(framing(centres, aspect), duration)
@@ -257,14 +289,11 @@ export default function RegionGlobe({
             animateIn={false}
             onGlobeReady={() => setReady(true)}
             polygonsData={polygons}
-            polygonCapColor={({ properties: { kind, color, regionId } }) =>
-              withAlpha(color, CAP_ALPHA[kind] ?? (regionId === hovered ? 0.4 : 0.12))}
-            polygonSideColor={({ properties: { kind, color } }) =>
-              withAlpha(color, kind === 'catalog' ? 0.06 : 0.18)}
-            polygonStrokeColor={({ properties: { kind, color } }) =>
-              kind === 'catalog' ? withAlpha(color, 0.6) : color}
-            polygonAltitude={({ properties: { kind } }) => ALTITUDE[kind]}
-            polygonLabel={clickable ? ({ properties }) => properties.name : undefined}
+            polygonCapColor={polygonCapColor}
+            polygonSideColor={polygonSideColor}
+            polygonStrokeColor={polygonStrokeColor}
+            polygonAltitude={polygonAltitude}
+            polygonLabel={clickable ? polygonLabel : undefined}
             onPolygonHover={clickable ? hover : undefined}
             onPolygonClick={clickable ? click : undefined}
             polygonsTransitionDuration={reducedMotion() ? 0 : 700}
@@ -272,7 +301,7 @@ export default function RegionGlobe({
             htmlElement={labelElement}
             htmlAltitude={0.02}
             ringsData={rings}
-            ringColor={(ring) => (t) => withAlpha(ring.color, Math.max(0, 0.85 - t))}
+            ringColor={ringColor}
             ringMaxRadius={4.5}
             ringPropagationSpeed={2.2}
             ringRepeatPeriod={1500}
@@ -292,3 +321,17 @@ export default function RegionGlobe({
     </div>
   )
 }
+
+// Timeline playback and filtering do not change what the globe shows. Avoid
+// restarting globe layer transitions when only the surrounding controls update.
+// Callers pass fresh callback closures each render; those only call state
+// setters, so the globe compares whether each is given, not its identity.
+const CALLBACKS = ['onRegionClick', 'onAreaClick', 'onDrawn', 'onDrawCancel']
+const sameJson = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+export default memo(RegionGlobe, (previous, next) =>
+  sameJson(previous.highlights, next.highlights) &&
+  previous.regions === next.regions &&
+  sameJson(previous.selectedArea, next.selectedArea) &&
+  previous.drawing === next.drawing &&
+  CALLBACKS.every((name) => Boolean(previous[name]) === Boolean(next[name])),
+)

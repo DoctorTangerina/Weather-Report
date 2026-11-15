@@ -46,6 +46,7 @@ export default function DiscoveryPanel({
   substituted,
   seriesError,
   seriesLoading,
+  timeRange,
   timestamp,
   onInvestigate,
   onSurprise,
@@ -59,7 +60,7 @@ export default function DiscoveryPanel({
       <article className="discovery" aria-labelledby="example-heading">
         <p className="eyebrow">Preloaded examples</p>
         <h2 id="example-heading">These examples cannot answer the original investigation.</h2>
-        <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
+        <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} timeRange={timeRange} highlights={highlights} />
         <div className="panel-actions">
           <button className="primary" disabled>Become a Detective</button>
           <button className="ghost" onClick={onSurprise}>Surprise me again</button>
@@ -94,7 +95,7 @@ export default function DiscoveryPanel({
       <section className="discovery-charts" aria-label="Monthly series">
         {leadVariable && <p className="variable-definition">{leadVariable.definition}</p>}
         {seriesLoading && <div className="skeleton skeleton-chart" aria-hidden="true" />}
-        <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} highlights={highlights} />
+        <SeriesResults responses={responses} catalog={catalog} timestamp={timestamp} timeRange={timeRange} highlights={highlights} />
         {!seriesLoading && series.length > 1 && (
           <p className="chart-note">
             Each chart has its own vertical scale. Compare the direction of the Trends.
