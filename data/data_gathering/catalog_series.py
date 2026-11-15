@@ -345,8 +345,11 @@ def build_series_files(
     catalog_path: Path = DEFAULT_CATALOG,
     config_path: Path = DEFAULT_CONFIG,
     progress: Callable[[str], None] | None = None,
+    aggregation: str = "mean",
 ) -> list[dict]:
     """Write one series file per Region and Variable and report each outcome.
+
+    Every series is built with `aggregation` (see `get_catalog_series`).
 
     Files are named `<region>__<variable>.json`, like the committed stub set.
     A series the data cannot provide is reported and skipped, not fatal. Each
@@ -366,6 +369,7 @@ def build_series_files(
                 period,
                 catalog_path=catalog_path,
                 config_path=config_path,
+                aggregation=aggregation,
                 on_file=lambda done, total, path, v=variable_id: (
                     say(f"{v}: file {done}/{total}")
                     if done in (1, total) or done % 25 == 0

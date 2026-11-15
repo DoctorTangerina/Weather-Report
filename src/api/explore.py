@@ -1,8 +1,10 @@
 """Explore My World Series: seed/cache lookup, validation and acquisition requests.
 
-The seed set answers monthly means only. Any other monthly Series absent from
-the cache, whatever its Aggregation (#78), is built by #77's background jobs.
-Sub-monthly Time steps remain owned by their follow-up ticket.
+The seed set answers monthly Series for every Aggregation (#78): means beside
+the Discoveries, the other Aggregations in their own folders. Monthly Series
+neither the seed set nor the cache holds, such as months after the seed set ends,
+are built by #77's background jobs. Sub-monthly Time steps remain owned by their
+follow-up ticket.
 """
 
 from __future__ import annotations
@@ -155,11 +157,14 @@ def explore_series(
     end: str | None,
     *,
     cache: ResultStore | None = None,
+    seed: ResultStore | None = None,
     latest: str | None = None,
 ) -> dict[str, Any]:
     """The view's Series, or a Refusal saying why it cannot be given.
 
-    `cache` holds Series built with this `aggregation` only.
+    `store` is the seed set of means, which also sets the default end month.
+    `seed` and `cache` hold Series built with this `aggregation` only; for the
+    mean, `seed` defaults to `store`.
     """
     latest = latest or latest_month(store)
     end = latest_month(store) if end is None else end
@@ -173,12 +178,12 @@ def explore_series(
             "Only monthly Series are available so far. Finer Time steps need "
             "data fetched from NASA, which is not built yet.",
         )
-    # The seed set holds area-weighted means only (BS-013 keeps it that way).
+    if seed is None and aggregation == "mean":
+        seed = store
     covering = {
         item["variable_id"]: item["period"]
-        for item in store.available_series()
-        if aggregation == "mean"
-        and item["region_id"] == region_id
+        for item in (seed.available_series() if seed is not None else [])
+        if item["region_id"] == region_id
         and item["period"]["start"] <= start
         and item["period"]["end"] >= end
     }
@@ -203,7 +208,7 @@ def explore_series(
             series.append(cached[variable_id])
             continue
         period = Period(**covering[variable_id])
-        payload = store.series(region_id, variable_id, period)
+        payload = seed.series(region_id, variable_id, period)
         assert payload is not None
         series.append(_cut(payload, start, end))
     return {

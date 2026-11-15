@@ -457,6 +457,19 @@ def test_series_files_are_written_per_region_and_variable_named_like_the_stub_se
     ]
 
 
+def test_series_files_can_be_built_with_another_aggregation(tmp_path):
+    # Issue #78: the seed build writes non-mean Aggregations the same way.
+    paths = make_setup(tmp_path)
+    out = tmp_path / "out"
+    build_series_files(
+        ["test-region"], ["temperature"], PERIOD, out, aggregation="maximum", **paths
+    )
+    written = json.loads((out / "test-region__temperature.json").read_text())
+    assert written == get_catalog_series(
+        "test-region", "temperature", PERIOD, aggregation="maximum", **paths
+    )
+
+
 def test_one_unavailable_series_does_not_stop_the_others_and_is_reported(tmp_path):
     paths = make_setup(tmp_path, mask=False)  # soil moisture has no land mask
     report = build_series_files(

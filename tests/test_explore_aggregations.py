@@ -5,8 +5,11 @@ expected values: cells on one latitude row with equal one-degree bounds have
 equal areas, and explicit longitude bounds make one cell three times another.
 """
 
+import json
 import math
+import shutil
 import time
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -16,6 +19,7 @@ from engine import ENGINE_VERSION, JsonResultStore
 from tests.fake_acquisition import FakeGridAcquisitionSource
 
 RESPONSES = "responses.schema.json"
+SEED = Path(__file__).resolve().parents[1] / "data" / "seed"
 
 
 class CountingSource(FakeGridAcquisitionSource):
@@ -136,25 +140,99 @@ def test_a_mean_in_the_seed_period_is_answered_from_the_seed_set(api, validator_
     assert source.calls == 0
 
 
-def test_other_aggregations_in_the_seed_period_are_acquired_not_seeded(
-    api, validator_for
+@pytest.fixture
+def seed_with_maximum(tmp_path, monkeypatch):
+    """The committed mean seed set plus a maximum Series of Sahel temperature.
+
+    The maximum values (1000 + month index) differ from any mean in the seed.
+    """
+    root = tmp_path / "seed"
+    shutil.copytree(SEED / "series", root / "series")
+    mean = json.loads((SEED / "series" / "sahel__temperature.json").read_text())
+    maximum = {**mean, "values": [1000.0 + i for i in range(len(mean["values"]))]}
+    folder = root / "aggregations" / "maximum" / "series"
+    folder.mkdir(parents=True)
+    (folder / "sahel__temperature.json").write_text(json.dumps(maximum))
+    monkeypatch.setattr(main, "store", JsonResultStore(root, ENGINE_VERSION))
+    return maximum
+
+
+def test_a_seeded_aggregation_is_answered_from_the_seed_set(
+    api, seed_with_maximum, validator_for
 ):
-    # The seed set holds area-weighted means only (issue #78).
+    client, use = api
+    source = use(two_cells(-1.0, 3.0))
+    response = explore(client, "maximum", start="2000-01", end="2024-12")
+    assert response.status_code == 200, response.json()
+    validator_for(RESPONSES, "#/$defs/exploreSeriesResponse").validate(response.json())
+    assert response.json()["provenance"] == "preloaded"
+    assert response.json()["data"]["series"][0]["values"] == seed_with_maximum["values"]
+    assert source.calls == 0
+
+
+def test_a_shorter_period_is_cut_from_the_seeded_aggregation(
+    api, seed_with_maximum, validator_for
+):
+    client, use = api
+    use(two_cells(-1.0, 3.0))
+    response = explore(client, "maximum", start="2024-11", end="2024-12")
+    assert response.status_code == 200, response.json()
+    assert (
+        response.json()["data"]["series"][0]["values"]
+        == (seed_with_maximum["values"][-2:])
+    )
+
+
+def test_a_period_beyond_the_seed_set_is_acquired_in_a_job(
+    api, seed_with_maximum, validator_for
+):
+    # The seed set ends in 2024-12; later months are not on this computer.
+    client, use = api
+    source = use(two_cells(-1.0, 3.0))
+    response = explore(client, "maximum")
+    assert response.status_code == 202
+    assert series_of(client, response, validator_for)["series"][0]["values"] == [
+        pytest.approx(3)
+    ]
+    assert source.calls == 1
+
+
+def test_a_variable_missing_from_the_seeded_aggregation_is_acquired_in_a_job(
+    api, seed_with_maximum, validator_for
+):
+    # Only temperature is seeded for maximum; the mean seed has no say in it.
     client, use = api
     source = use(
         CountingSource(
             timestamps=["2024-12-01T00:00:00"],
             latitudes=[15.0],
             longitudes=[0.0, 1.0],
-            values=[[[-1.0, 3.0]]],
-            units="°C",
+            values=[[[1.0, 5.0]]],
+            units="mm/month",
         )
     )
-    response = explore(client, "maximum", start="2024-12", end="2024-12")
+    response = explore(
+        client,
+        "maximum",
+        start="2024-12",
+        end="2024-12",
+        variables=["precipitation"],
+    )
     assert response.status_code == 202
     data = series_of(client, response, validator_for)
-    assert data["series"][0]["values"] == [pytest.approx(3)]
+    assert data["series"][0]["values"] == [pytest.approx(5)]
     assert source.calls == 1
+
+
+def test_seeded_aggregations_leave_the_discoveries_untouched(api, seed_with_maximum):
+    client, _ = api
+    before = client.get("/api/discoveries").json()
+    explore(client, "maximum", start="2000-01", end="2024-12")
+    assert client.get("/api/discoveries").json() == before
+    stored = client.get(
+        "/api/series", params={"region_id": "sahel", "variable_id": "temperature"}
+    ).json()["data"]
+    assert stored["values"] != seed_with_maximum["values"]
 
 
 def test_a_cached_series_answers_only_its_own_aggregation(api, validator_for):

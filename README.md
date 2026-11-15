@@ -48,6 +48,7 @@ See [browser end-to-end setup and configuration](frontend/docs/browser-end-to-en
 ```sh
 python scripts/build_seed_set.py                  # from the acquired NASA files
 python scripts/build_seed_set.py --series-dir DIR # from Series files already built
+python scripts/build_seed_set.py --only-aggregations # only the non-mean Aggregations
 ```
 
 The command builds the monthly Series for every catalog Region and Variable the
@@ -57,6 +58,13 @@ Discoveries) and writes `data/seed/series/` and `data/seed/discoveries/`. Commit
 the result. It refuses to overwrite the seed set when no Candidate carries one of
 the three Evidence labels (`--allow-missing-labels` overrides). Rerun it whenever
 the engine or the data changes.
+
+From the acquired files it also builds every other Aggregation (median, minimum,
+maximum, root mean square, standard deviation, mean absolute value) into
+`data/seed/aggregations/<aggregation>/series/`. Explore My World answers from
+those directly; only what the seed set does not hold, such as months after it
+ends, is fetched from NASA in a background job. The Discovery engine never reads
+them. `--skip-aggregations` leaves them out; `--series-dir` implies it.
 
 The seed contains 71 Series: temperature and precipitation for all 25 Regions,
 and soil moisture for the 21 Regions that offer it. Soil moisture is not offered

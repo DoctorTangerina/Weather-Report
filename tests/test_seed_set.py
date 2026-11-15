@@ -8,6 +8,7 @@ and `scripts/build_seed_set.py` only wires the two together.
 from __future__ import annotations
 
 import dataclasses
+import importlib.util
 import json
 import os
 import subprocess
@@ -26,6 +27,7 @@ from engine import (
     write_seed_set,
 )
 from engine.contracts import NOT_ENOUGH_EVIDENCE, STRONG_EVIDENCE
+from tests.fake_acquisition import FakeGridAcquisitionSource
 
 
 @pytest.fixture(scope="module")
@@ -214,6 +216,53 @@ def test_the_command_refuses_a_seed_set_missing_an_evidence_label(tmp_path):
     assert (output / "discoveries" / "amazon-basin--sahel.json").exists()
 
 
+def load_script():
+    spec = importlib.util.spec_from_file_location("build_seed_set", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_other_aggregations_are_written_beside_the_seed_set(tmp_path):
+    # Issue #78: one folder per non-mean Aggregation, which no Discovery reads.
+    source = FakeGridAcquisitionSource(
+        timestamps=["2024-12-01T00:00:00"],
+        latitudes=[15.0],
+        longitudes=[0.0, 1.0],
+        values=[[[-1.0, 3.0]]],
+        units="°C",
+    )
+    workspace = tmp_path / "grid"
+    workspace.mkdir()
+    config = source.prepare({"workspace": workspace, "variable_id": "temperature"})
+    output = tmp_path / "seed"
+    stale = output / "aggregations" / "maximum" / "series" / "gone__temperature.json"
+    stale.parent.mkdir(parents=True)
+    stale.write_text("{}")
+    (output / "series").mkdir()
+    mean = output / "series" / "sahel__temperature.json"
+    mean.write_text("{}")
+
+    load_script().build_aggregation_seed(
+        output,
+        Period("2024-12", "2024-12"),
+        catalog_path=SCRIPT.parents[1] / "data" / "catalog.json",
+        config_path=config,
+        aggregations=("minimum", "maximum"),
+        region_ids=["sahel"],
+        variable_ids=["temperature"],
+    )
+
+    def values(aggregation):
+        folder = output / "aggregations" / aggregation / "series"
+        assert [path.name for path in folder.iterdir()] == ["sahel__temperature.json"]
+        return json.loads((folder / "sahel__temperature.json").read_text())["values"]
+
+    assert values("minimum") == [pytest.approx(-1)]
+    assert values("maximum") == [pytest.approx(3)]
+    assert mean.read_text() == "{}"
+
+
 SEED_DIR = Path(__file__).resolve().parents[1] / "data" / "seed"
 
 
@@ -250,6 +299,24 @@ def test_the_committed_seed_set_has_a_series_for_each_offered_pair(catalog):
     assert stored == offered
 
 
+def test_the_committed_seed_set_has_every_other_aggregation(catalog, validator_for):
+    # Issue #78: Explore My World answers these without a background job.
+    script = load_script()
+    offered = {
+        f"{region.region_id}__{variable.variable_id}"
+        for region in catalog.regions
+        for variable in catalog.variables
+        if variable.variable_id in region.variable_ids
+    }
+    for aggregation in script.OTHER_AGGREGATIONS:
+        paths = sorted((SEED_DIR / "aggregations" / aggregation / "series").glob("*"))
+        assert {path.stem for path in paths} == offered, aggregation
+        for path in paths:
+            payload = json.loads(path.read_text())
+            validator_for("series.schema.json").validate(payload)
+            assert payload["period"] == {"start": "2000-01", "end": "2024-12"}
+
+
 def test_the_results_service_serves_the_seed_set_by_default():
     root = Path(__file__).resolve().parents[1]
     env = {k: v for k, v in os.environ.items() if k != "WEATHER_REPORT_DATA_DIR"}
@@ -271,3 +338,38 @@ def test_the_results_service_serves_the_seed_set_by_default():
 
     expected = len(seed_files("discoveries"))
     assert run.stdout.split() == ["200", str(expected)], run.stderr
+
+
+def test_the_explore_view_serves_a_seeded_aggregation_without_a_job():
+    # Issue #78: against the committed seed set, not the stub the API tests use.
+    root = Path(__file__).resolve().parents[1]
+    env = {k: v for k, v in os.environ.items() if k != "WEATHER_REPORT_DATA_DIR"}
+    probe = (
+        "import json; from fastapi.testclient import TestClient;"
+        "from api.main import app; c = TestClient(app);"
+        "q = {'region_id': 'sahel', 'variable_id': 'temperature',"
+        " 'period_start': '2000-01', 'period_end': '2024-12'};"
+        "r = c.get('/api/explore/series', params={**q, 'aggregation': 'maximum'});"
+        "m = c.get('/api/explore/series', params={**q, 'aggregation': 'mean'});"
+        "print(json.dumps([r.status_code, r.json().get('provenance'),"
+        " r.json()['data']['series'][0]['values'],"
+        " m.json()['data']['series'][0]['values']]))"
+    )
+
+    run = subprocess.run(
+        [sys.executable, "-c", probe],
+        cwd=root,
+        env={**env, "PYTHONPATH": os.pathsep.join([str(root / "src"), str(root)])},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    status, provenance, maximum, mean = json.loads(run.stdout)
+    assert (status, provenance) == (200, "preloaded"), run.stderr
+    seeded = (
+        SEED_DIR / "aggregations" / "maximum" / "series" / "sahel__temperature.json"
+    )
+    assert maximum == json.loads(seeded.read_text())["values"]
+    assert all(high >= average for high, average in zip(maximum, mean))
+    assert maximum != mean

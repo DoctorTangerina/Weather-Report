@@ -63,6 +63,7 @@ CATALOG_PATH = Path(
 
 explore_jobs = SeriesJobs()
 _aggregation_caches: dict[Path, JsonResultStore] = {}
+_aggregation_seeds: dict[Path, JsonResultStore] = {}
 
 
 @asynccontextmanager
@@ -252,6 +253,7 @@ async def get_explore_series(
             period_start,
             period_end,
             cache=explore_cache(aggregation),
+            seed=explore_seed(aggregation),
             latest=explore_latest_month(),
         )
     except AcquisitionNeeded as needed:
@@ -271,6 +273,22 @@ async def get_explore_series(
         for v in variable_id or []
     )
     return {**ok(data), "provenance": "cache" if cached else "preloaded"}
+
+
+def explore_seed(aggregation: str) -> JsonResultStore | None:
+    """The seed set's Series built with `aggregation`.
+
+    Means are the seed set the Discoveries come from. Every other Aggregation
+    lives in its own folder under it, which the Discovery engine never reads.
+    """
+    if aggregation == "mean":
+        return store
+    if aggregation not in AGGREGATIONS:
+        return None
+    root = store.root / "aggregations" / aggregation
+    if root not in _aggregation_seeds:
+        _aggregation_seeds[root] = JsonResultStore(root, ENGINE_VERSION)
+    return _aggregation_seeds[root]
 
 
 def explore_cache(aggregation: str) -> JsonResultStore:
