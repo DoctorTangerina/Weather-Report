@@ -422,6 +422,23 @@ button.experience-quiet:hover { box-shadow: 0 6px 18px #16202a14; }
 
 /* Selected areas (#79): drawn in their own colour, never a Region's */
 .globe-draw { cursor: crosshair; touch-action: none; }
+/* #81: resize handles of a Selected area's rectangles, centred on their point. */
+.area-handle {
+  transform: translate(-50%, -50%);
+  width: 0.8rem; height: 0.8rem;
+  box-sizing: border-box;
+  border: 2px solid var(--region);
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px #070e1d99;
+  pointer-events: auto;
+  touch-action: none;
+}
+.area-handle-n, .area-handle-s { width: 1rem; height: 0.6rem; cursor: ns-resize; }
+.area-handle-e, .area-handle-w { width: 0.6rem; height: 1rem; cursor: ew-resize; }
+.area-handle-nw, .area-handle-se { cursor: nwse-resize; }
+.area-handle-ne, .area-handle-sw { cursor: nesw-resize; }
+.area-panel .area-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .area-panel { margin-top: 1.25rem; }
 .area-panel h4 { margin: 0 0 0.25rem; font-size: 0.92rem; }
 .area-panel .actions { align-items: center; }
@@ -430,7 +447,7 @@ button.experience-quiet:hover { box-shadow: 0 6px 18px #16202a14; }
 .area-edges form { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: 0.5rem; align-items: end; margin-top: 0.5rem; }
 .area-edges label { display: grid; gap: 0.2rem; font-weight: 600; font-size: 0.82rem; }
 .area-edges input { min-width: 0; padding: 0.4rem; border: 1px solid #aab8c4; border-radius: 0.3rem; font: inherit; }
-.area-edges form button { grid-column: 1 / -1; justify-self: start; }
+.area-edges form .area-actions { grid-column: 1 / -1; }
 .area-summary { margin-top: 0.9rem; padding: 0.75rem; border: 1px solid #e7c3dd; border-radius: 0.4rem; background: #fdf4fa; }
 .area-summary p { margin: 0 0 0.6rem; }
 .area-swatch { display: inline-block; width: 0.7rem; height: 0.7rem; margin-right: 0.4rem; border-radius: 2px; background: #d65db1; }
