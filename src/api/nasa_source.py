@@ -16,24 +16,7 @@ from data.data_gathering.datasets import cmr_entries, temporal_range
 from data.data_gathering.download import download, load_token
 from data.data_gathering.selection import SeriesSelectionError, TimeWindow
 
-# Explicit product versions prevent selecting GLDAS 2.0 (ends in 2014).
-PRODUCTS = {
-    "temperature": ("M2TMNXSLV", "M2T1NXSLV", "5.12.4", "T2M", "kelvin_to_celsius"),
-    "precipitation": (
-        "M2TMNXFLX",
-        "M2T1NXFLX",
-        "5.12.4",
-        "PRECTOTCORR",
-        "rate_per_second_to_per_month",
-    ),
-    "soil-moisture": (
-        "GLDAS_NOAH025_M",
-        "GLDAS_NOAH025_3H",
-        "2.1",
-        "SoilMoi0_10cm_inst",
-        "identity",
-    ),
-}
+from .products import PRODUCTS
 
 
 class NasaGridAcquisitionSource:

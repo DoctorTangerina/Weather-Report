@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from data.data_gathering import SeriesSelectionError, get_catalog_series
-from data.data_gathering.catalog_series import DEFAULT_CATALOG
+from data.data_gathering.catalog_series import DEFAULT_CATALOG, get_area_series
 
 from .nasa_source import NasaGridAcquisitionSource
 
@@ -18,6 +18,14 @@ def run(request: dict) -> dict:
         if "config_path" in request
         else NasaGridAcquisitionSource().prepare(request)
     )
+    if "region_id" not in request:
+        return get_area_series(
+            request["rectangles"],
+            request["variable_id"],
+            request["period"],
+            catalog_path=catalog,
+            config_path=config,
+        )
     args = (request["region_id"], request["variable_id"], request["period"])
     return get_catalog_series(*args, catalog_path=catalog, config_path=config)
 

@@ -12,6 +12,7 @@ from engine.contracts import Catalog, Period
 from engine.store import ResultStore
 
 from .acquisition import AcquisitionUnavailable, acquire_series
+from .area_cache import AreaSeriesCache
 from .grid_source import GridAcquisitionSource
 
 logger = logging.getLogger(__name__)
@@ -30,9 +31,11 @@ class SeriesJobs:
         cache: ResultStore,
         source: GridAcquisitionSource | None,
         timeout: float,
+        area_cache: AreaSeriesCache | None = None,
     ) -> dict[str, Any]:
+        area = view.get("area")
         key = (
-            view["region_id"],
+            view.get("region_id") or tuple(tuple(box) for box in area["rectangles"]),
             tuple(view["variable_ids"]),
             view["aggregation"],
             view["time_step"],
@@ -53,37 +56,50 @@ class SeriesJobs:
         self.jobs[job_id] = job
         self.pending[key] = job_id
         task = asyncio.create_task(
-            self._run(job, key, view, catalog, cache, source, timeout)
+            self._run(job, key, view, catalog, cache, source, timeout, area_cache)
         )
         self.tasks.add(task)
         task.add_done_callback(self.tasks.discard)
         return job
 
-    async def _run(self, job, key, view, catalog, cache, source, timeout):
+    async def _run(self, job, key, view, catalog, cache, source, timeout, area_cache):
         job["status"] = "running"
+        area = view.get("area")
+        # A Selected area is never a Region: its Series have their own cache.
+        store = cache if area is None else area_cache
+        place = view["region_id"] if area is None else area["rectangles"]
+        identity = "region_id" if area is None else "area"
         try:
             async with asyncio.timeout(timeout):
-                region = catalog.region(view["region_id"])
+                region = None
+                if area is None:
+                    region = catalog.region(view["region_id"])
+                    assert region is not None
                 period = Period(**view["period"])
                 series = []
                 token = settings().get("EARTHDATA_TOKEN", "")
                 for variable_id in view["variable_ids"]:
-                    payload = cache.series(view["region_id"], variable_id, period)
+                    payload = store.series(place, variable_id, period)
                     if payload is None:
                         if source is None and not token:
                             raise AcquisitionUnavailable("Server token unavailable")
                         variable = catalog.variable(variable_id)
-                        assert region is not None and variable is not None
+                        assert variable is not None
                         payload = await acquire_series(
-                            region, variable, period, token=token, source=source
+                            region,
+                            variable,
+                            period,
+                            token=token,
+                            source=source,
+                            rectangles=None if area is None else area["rectangles"],
                         )
                         if (
-                            payload["region_id"] != view["region_id"]
+                            payload.get(identity) != view[identity]
                             or payload["variable_id"] != variable_id
                             or payload["period"] != view["period"]
                         ):
                             raise AcquisitionUnavailable("Unexpected acquired Series")
-                        cache.save_series(payload)
+                        store.save_series(payload)
                     series.append(payload)
                     job["progress"] = int(100 * len(series) / len(view["variable_ids"]))
                 job["result"] = {

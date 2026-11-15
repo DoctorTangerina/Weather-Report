@@ -41,7 +41,9 @@ from engine.contracts import Discovery, as_dict
 from engine.discovery import SessionHistory
 
 from .acquisition import AcquisitionUnavailable, acquire_series
+from .area_cache import AreaSeriesCache
 from .explore import (
+    AREA_VARIABLES,
     FIRST_MONTH,
     AcquisitionNeeded,
     Refusal,
@@ -73,10 +75,10 @@ app = FastAPI(title="Weather Report", version=ENGINE_VERSION, lifespan=lifespan)
 
 catalog = load_catalog(CATALOG_PATH)
 store = JsonResultStore(DATA_DIR, ENGINE_VERSION)
-live_store = JsonResultStore(
-    Path(os.environ.get("WEATHER_REPORT_CACHE_DIR", ".scratch/results-cache")),
-    ENGINE_VERSION,
-)
+CACHE_DIR = Path(os.environ.get("WEATHER_REPORT_CACHE_DIR", ".scratch/results-cache"))
+live_store = JsonResultStore(CACHE_DIR, ENGINE_VERSION)
+# Selected areas (#79) are never Regions, so their Series are cached apart.
+area_cache = AreaSeriesCache(CACHE_DIR / "areas")
 LIVE_TIMEOUT_SECONDS = float(
     os.environ.get("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS", "120")
 )
@@ -228,7 +230,8 @@ async def get_series(
 
 @app.get("/api/explore/series")
 async def get_explore_series(
-    region_id: str,
+    region_id: str | None = None,
+    rectangle: Annotated[list[str] | None, Query()] = None,
     variable_id: Annotated[list[str] | None, Query()] = None,
     aggregation: str = "mean",
     time_step: str = "monthly",
@@ -238,7 +241,10 @@ async def get_explore_series(
         GridAcquisitionSource | None, Depends(get_acquisition_source)
     ] = None,
 ) -> Any:
-    """Explore My World: one Region's Series for one to five Variables."""
+    """Explore My World: the Series of one catalog Region or one Selected area.
+
+    A Selected area is one or more `rectangle=west,south,east,north` values.
+    """
     try:
         data = explore_series(
             catalog,
@@ -249,17 +255,25 @@ async def get_explore_series(
             time_step,
             period_start,
             period_end,
+            rectangles=rectangle,
             cache=live_store,
+            area_cache=area_cache,
             latest=explore_latest_month(),
         )
     except AcquisitionNeeded as needed:
         job = explore_jobs.start(
-            needed.view, catalog, live_store, acquisition_source, LIVE_TIMEOUT_SECONDS
+            needed.view,
+            catalog,
+            live_store,
+            acquisition_source,
+            LIVE_TIMEOUT_SECONDS,
+            area_cache=area_cache,
         )
         return JSONResponse(status_code=202, content=ok({"job": dict(job)}))
     except Refusal as refusal:
         return error(refusal.status, refusal.code, refusal.message)
-    cached = any(
+    # A Selected area is only ever answered directly from its own cache.
+    cached = "area" in data or any(
         live_store.series(region_id, v, Period(**data["period"])) is not None
         for v in variable_id or []
     )
@@ -283,7 +297,16 @@ def explore_latest_month() -> str:
 
 @app.get("/api/explore/options")
 def get_explore_options() -> Any:
-    return ok({"latest_month": explore_latest_month()})
+    return ok(
+        {
+            "latest_month": explore_latest_month(),
+            "area_variable_ids": [
+                variable.variable_id
+                for variable in catalog.variables
+                if variable.variable_id in AREA_VARIABLES
+            ],
+        }
+    )
 
 
 @app.get("/api/explore/jobs/{job_id}")

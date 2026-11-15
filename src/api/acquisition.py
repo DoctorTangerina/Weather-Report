@@ -27,13 +27,15 @@ class AcquisitionUnavailable(Exception):
 
 
 async def acquire_series(
-    region: Region,
+    region: Region | None,
     variable: Variable,
     period: Period,
     *,
     token: str,
     source: GridAcquisitionSource | None = None,
+    rectangles: list[list[float]] | None = None,
 ) -> dict[str, Any]:
+    """A catalog Region's Series, or with `region` None a Selected area's."""
     root = Path(__file__).resolve().parents[2]
     env = {
         **os.environ,
@@ -41,16 +43,23 @@ async def acquire_series(
         "PYTHONPATH": os.pathsep.join((str(root), str(root / "src"))),
     }
     with tempfile.TemporaryDirectory(prefix="weather-acquisition-") as workspace:
+        geometry = (
+            {"rectangles": rectangles, "bbox": rectangles[0]}
+            if region is None
+            else {
+                "region_id": region.region_id,
+                "bbox": [
+                    region.bbox.west,
+                    region.bbox.south,
+                    region.bbox.east,
+                    region.bbox.north,
+                ],
+            }
+        )
         request = {
-            "region_id": region.region_id,
+            **geometry,
             "variable_id": variable.variable_id,
             "period": {"start": period.start, "end": period.end},
-            "bbox": [
-                region.bbox.west,
-                region.bbox.south,
-                region.bbox.east,
-                region.bbox.north,
-            ],
             "dataset": variable.source.dataset,
             "time_step": "monthly",
             "workspace": workspace,

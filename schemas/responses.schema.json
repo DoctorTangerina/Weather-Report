@@ -106,13 +106,14 @@
       "additionalProperties": false
     },
     "exploreSeriesResponse": {
-      "description": "Explore My World (#75): one catalog Region's Series for one to five Variables, built with one Aggregation and one Time step over one period. Each Series covers exactly the requested period, and its quality is the Quality gate's verdict on that period.",
+      "description": "Explore My World (#75, #79): the Series of one catalog Region or one Selected area for one to five Variables, built with one Aggregation and one Time step over one period. Each Series covers exactly the requested period, and its quality is the Quality gate's verdict on that period.",
       "type": "object",
       "properties": {
         "data": {
           "type": "object",
           "properties": {
             "region_id": { "$ref": "common.schema.json#/$defs/regionId" },
+            "area": { "$ref": "common.schema.json#/$defs/selectedArea" },
             "aggregation": {
               "type": "string",
               "enum": [
@@ -129,12 +130,18 @@
             "period": { "$ref": "common.schema.json#/$defs/period" },
             "series": {
               "type": "array",
-              "items": { "$ref": "series.schema.json" },
+              "items": {
+                "oneOf": [
+                  { "$ref": "series.schema.json" },
+                  { "$ref": "series.schema.json#/$defs/areaSeries" }
+                ]
+              },
               "minItems": 1,
               "maxItems": 5
             }
           },
-          "required": ["region_id", "aggregation", "time_step", "period", "series"],
+          "required": ["aggregation", "time_step", "period", "series"],
+          "oneOf": [{ "required": ["region_id"] }, { "required": ["area"] }],
           "additionalProperties": false
         },
         "provenance": { "type": "string", "enum": ["live", "cache", "preloaded"] },
@@ -152,10 +159,17 @@
             "latest_month": {
               "type": "string",
               "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+            },
+            "area_variable_ids": {
+              "description": "The Variables a Selected area can have: those NASA data can be fetched for on demand.",
+              "type": "array",
+              "items": { "$ref": "common.schema.json#/$defs/variableId" },
+              "uniqueItems": true
             }
           },
           "required": [
-            "latest_month"
+            "latest_month",
+            "area_variable_ids"
           ],
           "additionalProperties": false
         },
@@ -352,6 +366,8 @@
                 "period_out_of_range",
                 "period_too_long",
                 "not_available_yet",
+                "invalid_area",
+                "variable_not_available_for_area",
                 "job_not_found"
               ]
             },
