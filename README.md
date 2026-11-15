@@ -39,6 +39,10 @@ cd frontend && npm install && npm run dev         # UI on :5173, /api proxied to
 `data/seed/`, the committed seed set. The catalog does not move with it: `WEATHER_REPORT_CATALOG` overrides
 `data/catalog.json` if needed.
 
+Run the browser suite against the real API and committed seed with
+`npm run test:integration` from `frontend/`. It starts and stops both servers.
+See [browser end-to-end setup and configuration](frontend/docs/browser-end-to-end.md).
+
 ## The seed set
 
 ```sh

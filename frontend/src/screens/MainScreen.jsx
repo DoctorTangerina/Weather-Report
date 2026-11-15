@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import DiscoveryPanel from '../components/DiscoveryPanel.jsx'
 import Explorer from '../components/Explorer.jsx'
 import RegionGlobe from '../components/Globe.jsx'
@@ -32,6 +32,7 @@ export default function MainScreen({
   const [secondRegionId, setSecondRegionId] = useState('')
   const [variableId, setVariableId] = useState('')
   const [investigationStep, setInvestigationStep] = useState(0)
+  const previousHighlights = useRef(NONE)
 
   const exploring = phase === 'welcome' && Boolean(catalog)
   const showing = phase === 'discovery' && Boolean(discovery)
@@ -43,15 +44,10 @@ export default function MainScreen({
   }, [investigating, discovery?.discovery_id])
 
   const available = useAvailableSeries()
-  const defaults = available.defaultPair(catalog)
-  const region =
-    catalog?.regions.find((item) => item.region_id === (regionId || defaults?.[0])) ??
-    catalog?.regions[0]
+  const region = catalog?.regions.find((item) => item.region_id === regionId)
   const otherRegions =
     catalog?.regions.filter((item) => item.region_id !== region?.region_id) ?? NONE
-  const secondRegion =
-    otherRegions.find((item) => item.region_id === (secondRegionId || defaults?.[1])) ??
-    otherRegions[0]
+  const secondRegion = otherRegions.find((item) => item.region_id === secondRegionId)
   const variables =
     catalog?.variables.filter(
       (item) =>
@@ -59,7 +55,7 @@ export default function MainScreen({
         secondRegion?.variable_ids.includes(item.variable_id),
     ) ?? NONE
   const variable =
-    variables.find((item) => item.variable_id === (variableId || defaults?.[2])) ??
+    variables.find((item) => item.variable_id === variableId) ??
     variables[0]
 
   // The investigation charts the Check step's series; the Discovery view charts
@@ -89,8 +85,7 @@ export default function MainScreen({
     refs,
     showing || investigating ? discovery.period : undefined,
   )
-  // Wait for the list of stored series before comparing, so the first request
-  // is the data-backed default pair rather than whatever the catalog lists first.
+  // Wait for availability and an explicit pair before requesting a comparison.
   const comparing = exploring && available.settled
   const comparison = useComparison(
     comparing ? region?.region_id : null,
@@ -110,6 +105,10 @@ export default function MainScreen({
           }))
           .filter((item) => item.region)
       : highlights
+  const globeHighlights = showing || investigating ? displayedHighlights : explored
+  useEffect(() => {
+    if (phase !== 'drawing') previousHighlights.current = globeHighlights
+  }, [phase, globeHighlights])
   // Notices for a Discovery's series are shown beside each chart (SeriesResults),
   // so only the Explorer's notice goes in the banner.
   const banner = notice ?? (exploring ? seriesNotice : null)
@@ -138,7 +137,7 @@ export default function MainScreen({
       </header>
 
       <section className="globe-panel" aria-label="Interactive Earth globe">
-        <RegionGlobe highlights={showing || investigating ? displayedHighlights : explored} />
+        <RegionGlobe highlights={phase === 'drawing' ? previousHighlights.current : globeHighlights} />
         <p className="globe-hint">Drag to explore · Scroll or pinch to zoom</p>
       </section>
 
@@ -168,7 +167,11 @@ export default function MainScreen({
         {phase === 'unreachable' && <Unreachable onRetry={onRetry} />}
         {exploring && (
           <>
-            <Welcome catalog={catalog} onSurprise={onSurprise} onDetective={onDetective} />
+            <Welcome
+              catalog={catalog}
+              onSurprise={onSurprise}
+              onDetective={() => onDetective([region, secondRegion].filter(Boolean).map((item) => item.region_id))}
+            />
             <Explorer
               catalog={catalog}
               region={region}
@@ -223,7 +226,7 @@ export default function MainScreen({
         )}
       </aside>
 
-      {(showing || exploring || investigating) && (
+      {(showing || exploring || investigating || phase === 'drawing') && (
         <Timeline
           key={timelineKey}
           series={timelineSeries}

@@ -38,6 +38,7 @@ export default function Explorer({
           value={region?.region_id ?? ''}
           onChange={(event) => onRegion(event.target.value)}
         >
+          <option value="">Choose a Region</option>
           {catalog.regions.filter((item) => item.region_id !== secondRegion?.region_id).map((item) => (
             <option key={item.region_id} value={item.region_id}>
               {label(item)}
@@ -50,6 +51,7 @@ export default function Explorer({
           value={secondRegion?.region_id ?? ''}
           onChange={(event) => onSecondRegion(event.target.value)}
         >
+          <option value="">Choose a Region</option>
           {catalog.regions.filter((item) => item.region_id !== region?.region_id).map((item) => (
             <option key={item.region_id} value={item.region_id}>{label(item)}</option>
           ))}
@@ -77,7 +79,7 @@ export default function Explorer({
       )}
       {region && <p className="muted">{region.description}</p>}
       {secondRegion && <p className="muted">{secondRegion.description}</p>}
-      {variables.length === 0 && <p role="status">These Regions have no shared Variable.</p>}
+      {region && secondRegion && variables.length === 0 && <p role="status">These Regions have no shared Variable.</p>}
       {variable && <p className="variable-definition">{variable.definition}</p>}
       <ul className="region-rates" aria-label="How fast each Region is changing">
         {trends.map((trend) => (
