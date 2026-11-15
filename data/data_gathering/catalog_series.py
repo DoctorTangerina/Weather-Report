@@ -25,7 +25,7 @@ from pathlib import Path
 import numpy as np
 
 from .aggregation import AGGREGATIONS, combine
-from .models import Bbox, Period
+from .models import Bbox, Period, SelectedArea
 from .quality_gate import assess_quality, months_in
 from .selection import SeriesSelectionError, TimeWindow
 from .series import DEFAULT_CONFIG, ROOT, load_series_config, open_source
@@ -132,11 +132,7 @@ def get_catalog_series_many(
     the period or the data as a whole is raised, as it would be for one Region.
     `on_file(done, total, path)` is called after each file is read.
     """
-    if aggregation not in AGGREGATIONS:
-        raise SeriesSelectionError(
-            "invalid_aggregation",
-            "Choose an Aggregation from " + ", ".join(AGGREGATIONS) + ".",
-        )
+    _check_aggregation(aggregation)
     catalog = _load_catalog(catalog_path)
     variable = _find(catalog["variables"], "variable_id", variable_id)
     if variable is None:
@@ -167,13 +163,6 @@ def get_catalog_series_many(
     entry = (configuration.get("CATALOG_SERIES") or {}).get(variable_id, {})
     field = entry.get("variable", variable["source"]["variable"])
     window = TimeWindow.create(selected.start, selected.end)
-    conversions: dict[str, Conversion] = {}
-
-    def convert_cells(cells, timestamp, units):
-        if units not in conversions:
-            conversions[units] = _conversion(entry, units, variable["units"])
-        return conversions[units](cells, timestamp[:7])
-
     natives = open_source(config_path).select_many(
         {region_id: Bbox(**region["bbox"]) for region_id, region in regions.items()},
         field,
@@ -181,7 +170,7 @@ def get_catalog_series_many(
         entry.get("dataset_id"),
         on_file,
         aggregation=aggregation,
-        cell_conversion=convert_cells,
+        cell_conversion=_cell_conversion(entry, variable["units"]),
     )
 
     for region_id, native in natives.items():
@@ -189,7 +178,7 @@ def get_catalog_series_many(
             if isinstance(native, SeriesSelectionError):
                 raise native
             results[region_id] = _series(
-                region_id,
+                {"region_id": region_id},
                 variable,
                 native,
                 entry,
@@ -205,8 +194,80 @@ def get_catalog_series_many(
     return {region_id: results[region_id] for region_id in region_ids}
 
 
+def get_area_series(
+    rectangles: list[tuple[float, float, float, float]],
+    variable_id: str,
+    period: Period | Mapping[str, str],
+    *,
+    catalog_path: Path = DEFAULT_CATALOG,
+    config_path: Path = DEFAULT_CONFIG,
+    aggregation: str = "mean",
+    withhold_excluded: bool = True,
+) -> dict:
+    """The monthly Series for a Selected area, built like a catalog Region's.
+
+    The area replaces the Region: `area` stands where `region_id` would, so the
+    result can never be mistaken for a Region's Series. `aggregation` and
+    `withhold_excluded` mean what they do for `get_catalog_series`.
+    """
+    _check_aggregation(aggregation)
+    catalog = _load_catalog(catalog_path)
+    variable = _find(catalog["variables"], "variable_id", variable_id)
+    if variable is None:
+        raise SeriesSelectionError(
+            "not_in_catalog", "Choose a Variable from the catalog."
+        )
+    selected = period if isinstance(period, Period) else _period(period)
+    configuration = load_series_config(config_path)
+    entry = (configuration.get("CATALOG_SERIES") or {}).get(variable_id, {})
+    window = TimeWindow.create(selected.start, selected.end)
+    area = SelectedArea(tuple(tuple(box) for box in rectangles))
+    native = open_source(config_path).select_many(
+        {"area": area},
+        entry.get("variable", variable["source"]["variable"]),
+        window,
+        entry.get("dataset_id"),
+        aggregation=aggregation,
+        cell_conversion=_cell_conversion(entry, variable["units"]),
+    )["area"]
+    if isinstance(native, SeriesSelectionError):
+        raise native
+    return _series(
+        {"area": {"rectangles": [list(box) for box in rectangles]}},
+        variable,
+        native,
+        entry,
+        selected,
+        window,
+        _months(selected),
+        catalog["engine_version"],
+        aggregation,
+        withhold_excluded,
+    )
+
+
+def _check_aggregation(aggregation: str) -> None:
+    if aggregation not in AGGREGATIONS:
+        raise SeriesSelectionError(
+            "invalid_aggregation",
+            "Choose an Aggregation from " + ", ".join(AGGREGATIONS) + ".",
+        )
+
+
+def _cell_conversion(entry: dict, catalog_units: str):
+    """Convert one native time step's cells to catalog units, by the file's units."""
+    conversions: dict[str, Conversion] = {}
+
+    def convert_cells(cells, timestamp, units):
+        if units not in conversions:
+            conversions[units] = _conversion(entry, units, catalog_units)
+        return conversions[units](cells, timestamp[:7])
+
+    return convert_cells
+
+
 def _series(
-    region_id,
+    identity,
     variable,
     native,
     entry,
@@ -223,7 +284,7 @@ def _series(
             "land_mask_unavailable",
             "This land-only Variable has no configured land mask in the acquired data.",
         )
-    # The cells are already in catalog units (see `convert_cells`).
+    # The cells are already in catalog units (see `_cell_conversion`).
     buckets: dict[str, list[float]] = {}
     for stamp, value in native.observations.items():
         if window.contains(stamp) and value is not None and math.isfinite(value):
@@ -243,7 +304,7 @@ def _series(
             "This Variable requires verified land-mask metadata before its series can be returned.",
         ) from None
     return {
-        "region_id": region_id,
+        **identity,
         "variable_id": variable["variable_id"],
         "period": {"start": selected.start, "end": selected.end},
         "units": variable["units"],

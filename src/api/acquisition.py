@@ -27,7 +27,7 @@ class AcquisitionUnavailable(Exception):
 
 
 async def acquire_series(
-    region: Region,
+    region: Region | None,
     variable: Variable,
     period: Period,
     *,
@@ -35,8 +35,12 @@ async def acquire_series(
     source: GridAcquisitionSource | None = None,
     aggregation: str = "mean",
     keep_values: bool = False,
+    rectangles: list[list[float]] | None = None,
 ) -> dict[str, Any]:
-    """One acquired Series. keep_values keeps an excluded Series' values."""
+    """A catalog Region's Series, or with `region` None a Selected area's.
+
+    keep_values keeps an excluded Series' values.
+    """
     root = Path(__file__).resolve().parents[2]
     env = {
         **os.environ,
@@ -44,16 +48,23 @@ async def acquire_series(
         "PYTHONPATH": os.pathsep.join((str(root), str(root / "src"))),
     }
     with tempfile.TemporaryDirectory(prefix="weather-acquisition-") as workspace:
+        geometry = (
+            {"rectangles": rectangles, "bbox": rectangles[0]}
+            if region is None
+            else {
+                "region_id": region.region_id,
+                "bbox": [
+                    region.bbox.west,
+                    region.bbox.south,
+                    region.bbox.east,
+                    region.bbox.north,
+                ],
+            }
+        )
         request = {
-            "region_id": region.region_id,
+            **geometry,
             "variable_id": variable.variable_id,
             "period": {"start": period.start, "end": period.end},
-            "bbox": [
-                region.bbox.west,
-                region.bbox.south,
-                region.bbox.east,
-                region.bbox.north,
-            ],
             "dataset": variable.source.dataset,
             "time_step": "monthly",
             "aggregation": aggregation,

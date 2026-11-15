@@ -1,14 +1,19 @@
 """Explore My World Series: seed/cache lookup, validation and acquisition requests.
 
-The seed set answers monthly Series for every Aggregation (#78): means beside
-the Discoveries, the other Aggregations in their own folders. Months the seed
-set does not hold, such as those after it ends, are acquired by #77's background
-jobs, and only those months: the Series joins the seeded months to them.
-Sub-monthly Time steps remain owned by their follow-up ticket.
+A view is a catalog Region or a Selected area (#79), never both.
+
+The seed set answers a Region's monthly Series for every Aggregation (#78):
+means beside the Discoveries, the other Aggregations in their own folders.
+Months the seed set does not hold, such as those after it ends, are acquired by
+#77's background jobs, and only those months: the Series joins the seeded months
+to them. A Selected area is always built by a background job, with the
+requested Aggregation. Sub-monthly Time steps remain owned by their follow-up
+ticket.
 """
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any
 
@@ -18,12 +23,17 @@ from engine import Period, applies_to
 from engine.contracts import Catalog
 from engine.store import ResultStore
 
+from .area_cache import AreaSeriesCache
+from .products import PRODUCTS
+
 FIRST_MONTH = "2000-01"
 MAX_VARIABLES = 5
 TIME_STEPS = ("3-hourly", "daily", "monthly")
 # ADR 0004: how many months a sub-monthly request may span.
 LIMITS = {"3-hourly": (12, "1 year"), "daily": (120, "10 years")}
 _MONTH = re.compile(r"[0-9]{4}-(0[1-9]|1[0-2])")
+# A Selected area can only have Variables NASA can subset on demand (ADR 0004).
+AREA_VARIABLES = tuple(PRODUCTS)
 
 
 class AcquisitionNeeded(Exception):
@@ -52,20 +62,82 @@ def _months(start: str, end: str) -> int:
     return (int(end[:4]) - int(start[:4])) * 12 + int(end[5:]) - int(start[5:]) + 1
 
 
-def _validate(
+def _invalid_area(message: str) -> Refusal:
+    return Refusal(422, "invalid_area", message)
+
+
+def _longitudes(box: list[float]) -> tuple[float, float]:
+    """A box's longitude span, unwrapped so that east > west."""
+    west, _, east, _ = box
+    return west, east if east > west else east + 360
+
+
+def _touch(a: list[float], b: list[float]) -> bool:
+    if max(a[1], b[1]) > min(a[3], b[3]):
+        return False
+    (a_west, a_east), (b_west, b_east) = _longitudes(a), _longitudes(b)
+    return any(
+        max(a_west, b_west + turn) <= min(a_east, b_east + turn)
+        for turn in (-360, 0, 360)
+    )
+
+
+def parse_area(texts: list[str]) -> list[list[float]]:
+    """Rectangles given as "west,south,east,north" in degrees, joined into one area."""
+    boxes = []
+    for text in texts:
+        try:
+            west, south, east, north = (float(part) for part in text.split(","))
+        except ValueError:
+            raise _invalid_area(
+                "Give each rectangle as west,south,east,north in degrees."
+            ) from None
+        if not (
+            all(math.isfinite(value) for value in (west, south, east, north))
+            and -180 <= west <= 180
+            and -180 <= east <= 180
+            and west != east
+            and -90 <= south < north <= 90
+        ):
+            raise _invalid_area(
+                "Longitudes run from -180 to 180 and latitudes from -90 to 90, "
+                "with south below north and west different from east."
+            )
+        boxes.append([west, south, east, north])
+    joined, waiting = boxes[:1], boxes[1:]
+    while waiting:
+        reached = [box for box in waiting if any(_touch(box, j) for j in joined)]
+        if not reached:
+            raise _invalid_area(
+                "The rectangles of a Selected area must touch or overlap. "
+                "Move the new rectangle against the area, or start a new one."
+            )
+        joined += reached
+        waiting = [box for box in waiting if box not in reached]
+    return boxes
+
+
+def _validate_geometry(
     catalog: Catalog,
-    region_id: str,
+    region_id: str | None,
+    rectangles: list[str],
     variable_ids: list[str],
-    aggregation: str,
-    time_step: str,
-    start: str,
-    end: str,
-    latest: str,
-) -> None:
-    if catalog.region(region_id) is None:
+) -> list[list[float]] | None:
+    """The Selected area's rectangles, or None for a valid catalog Region."""
+    if (region_id is None) == (not rectangles):
+        raise _invalid_area("Choose either a catalog Region or a Selected area.")
+    if region_id is not None and catalog.region(region_id) is None:
         raise Refusal(
             422, "region_not_in_catalog", f"{region_id} is not in the Region catalog."
         )
+    area = parse_area(rectangles) if rectangles else None
+    _validate_variables(catalog, region_id, variable_ids)
+    return area
+
+
+def _validate_variables(
+    catalog: Catalog, region_id: str | None, variable_ids: list[str]
+) -> None:
     if not 1 <= len(variable_ids) <= MAX_VARIABLES:
         raise Refusal(
             422,
@@ -81,12 +153,23 @@ def _validate(
                 "variable_not_in_catalog",
                 f"{variable_id} is not in the Variable catalog.",
             )
-        if not applies_to(catalog, region_id, variable_id):
+        if region_id is None and variable_id not in AREA_VARIABLES:
+            raise Refusal(
+                422,
+                "variable_not_available_for_area",
+                f"{variable_id} cannot be fetched for a Selected area yet.",
+            )
+        if region_id is not None and not applies_to(catalog, region_id, variable_id):
             raise Refusal(
                 422,
                 "variable_not_available_for_region",
                 f"{variable_id} is not offered for {region_id}.",
             )
+
+
+def _validate_view(
+    aggregation: str, time_step: str, start: str, end: str, latest: str
+) -> None:
     if aggregation not in AGGREGATIONS:
         raise Refusal(
             422,
@@ -201,19 +284,22 @@ def _seed_head(
 def explore_series(
     catalog: Catalog,
     store: ResultStore,
-    region_id: str,
+    region_id: str | None,
     variable_ids: list[str],
     aggregation: str,
     time_step: str,
     start: str,
     end: str | None,
     *,
+    rectangles: list[str] | None = None,
     cache: ResultStore | None = None,
     seed: ResultStore | None = None,
+    area_cache: AreaSeriesCache | None = None,
     latest: str | None = None,
 ) -> tuple[dict[str, Any], str]:
     """The view's Series and their provenance, or a Refusal saying why not.
 
+    A view is a catalog Region (`region_id`) or a Selected area (`rectangles`).
     `store` is the seed set of means, which also sets the default end month.
     `seed` holds seeded Series built with this `aggregation` (for the mean it
     defaults to `store`). `cache` holds acquired Series pieces built with it,
@@ -221,12 +307,13 @@ def explore_series(
     takes its first months from the seed set and the rest from a piece. When a
     piece is missing, AcquisitionNeeded names only the months to acquire.
     Provenance is "cache" when any piece was used, otherwise "preloaded".
+    A Selected area's Series come whole from `area_cache`, built with this
+    `aggregation`, so their provenance is always "cache".
     """
     latest = latest or latest_month(store)
     end = latest_month(store) if end is None else end
-    _validate(
-        catalog, region_id, variable_ids, aggregation, time_step, start, end, latest
-    )
+    area = _validate_geometry(catalog, region_id, rectangles or [], variable_ids)
+    _validate_view(aggregation, time_step, start, end, latest)
     if time_step != "monthly":
         raise Refusal(
             501,
@@ -234,6 +321,30 @@ def explore_series(
             "Only monthly Series are available so far. Finer Time steps need "
             "data fetched from NASA, which is not built yet.",
         )
+    geometry = (
+        {"region_id": region_id} if area is None else {"area": {"rectangles": area}}
+    )
+    view = {
+        **geometry,
+        "aggregation": aggregation,
+        "time_step": time_step,
+        "period": {"start": start, "end": end},
+    }
+    if area is not None:
+        stored = {
+            v: area_cache.series(area, v, Period(start, end)) if area_cache else None
+            for v in variable_ids
+        }
+        acquire = {
+            v: {"start": start, "end": end}
+            for v, payload in stored.items()
+            if payload is None
+        }
+        if acquire:
+            raise AcquisitionNeeded(
+                {**view, "variable_ids": variable_ids, "acquire": acquire}
+            )
+        return {**view, "series": [stored[v] for v in variable_ids]}, "cache"
     if seed is None and aggregation == "mean":
         seed = store
     parts = {}
@@ -254,25 +365,11 @@ def explore_series(
         parts[variable_id] = (head, piece)
     if acquire:
         raise AcquisitionNeeded(
-            {
-                "region_id": region_id,
-                "variable_ids": variable_ids,
-                "aggregation": aggregation,
-                "time_step": time_step,
-                "period": {"start": start, "end": end},
-                "acquire": acquire,
-            }
+            {**view, "variable_ids": variable_ids, "acquire": acquire}
         )
     series = [
         _cut(head, start, end) if piece is None else _stitch(head, piece, start, end)
         for head, piece in (parts[variable_id] for variable_id in variable_ids)
     ]
-    data = {
-        "region_id": region_id,
-        "aggregation": aggregation,
-        "time_step": time_step,
-        "period": {"start": start, "end": end},
-        "series": series,
-    }
     used_cache = any(piece is not None for _, piece in parts.values())
-    return data, "cache" if used_cache else "preloaded"
+    return {**view, "series": series}, "cache" if used_cache else "preloaded"

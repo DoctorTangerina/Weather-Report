@@ -27,7 +27,7 @@ Python 3.11 or newer, Node 18 or newer.
 
 ```sh
 pip install -e ".[api,dev]"
-python -m pytest                                  # 607 tests, no network
+python -m pytest                                  # the whole suite, no network
 python -m uvicorn api.main:app --port 8000        # API on :8000
 ```
 
@@ -109,9 +109,9 @@ fixtures still do.
 | `GET /api/catalog` | `catalogResponse` |
 | `GET /api/series?region_id=&variable_id=&period_start=&period_end=` | `seriesResponse` |
 | `GET /api/comparison?region_a=&region_b=&variable_id=&period_start=&period_end=` | `comparisonResponse`: two computed Trends and their monthly series, in requested Region order |
-| `GET /api/explore/series?region_id=&variable_id=…&aggregation=&time_step=&period_start=&period_end=` | `exploreSeriesResponse` (200) or `exploreJobResponse` (202): Explore My World, one Series per Variable (1–5, `variable_id` repeated) for a catalog Region over 2000-01 to the latest month. Only monthly means are answered so far; other Aggregations and Time steps return 501 `not_available_yet` |
+| `GET /api/explore/series?region_id=&variable_id=…&aggregation=&time_step=&period_start=&period_end=` | `exploreSeriesResponse` (200) or `exploreJobResponse` (202): Explore My World, one Series per Variable (1–5, `variable_id` repeated) for a catalog Region, or for a Selected area given as `rectangle=west,south,east,north` (repeatable) instead of `region_id`, over 2000-01 to the latest month. Only monthly means are answered so far; other Aggregations and Time steps return 501 `not_available_yet` |
 | `GET /api/explore/jobs/{id}` | `exploreJobResponse`: status, progress, result or failure |
-| `GET /api/explore/options` | `exploreOptionsResponse`: latest requestable month |
+| `GET /api/explore/options` | `exploreOptionsResponse`: latest requestable month, and the Variables a Selected area can have |
 | `GET /api/discoveries` | `discoveryListResponse`, highest score first |
 | `GET /api/discoveries/{discovery_id}` | `discoveryResponse` |
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |
@@ -244,6 +244,14 @@ Explore My World displays progress, then the chart or acquisition failure.
 default it is the last complete UTC calendar month. This default is a request
 limit, not a guarantee NASA has published every Variable: unavailable months
 produce an acquisition failure. The view still opens on the seed period.
+
+A Selected area (#79) replaces `region_id` with one or more
+`rectangle=west,south,east,north` values that touch or overlap; west > east
+crosses the antimeridian. A grid cell belongs to the area when its centre lies in
+any rectangle. Its Series are always built by a job (only Variables listed in
+`area_variable_ids`), carry `area` where a Region's carry `region_id`, and are
+cached under `WEATHER_REPORT_CACHE_DIR/areas`, apart from every Region Series,
+so they never reach the catalog or a Discovery.
 
 Jobs use `EARTHDATA_TOKEN`, `WEATHER_REPORT_LIVE_TIMEOUT_SECONDS` and
 `WEATHER_REPORT_CACHE_DIR` as described above. Completed Series persist in the

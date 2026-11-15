@@ -335,7 +335,10 @@ def write_manifest(
     earlier = []
     if manifest.exists():
         earlier = json.loads(manifest.read_text(encoding="utf-8")).get("files", [])
-    identity = lambda item: (item.get("collection_id"), item["file"])
+
+    def identity(item):
+        return item.get("collection_id"), item["file"]
+
     replaced = {identity(item) for item in records}
     manifest.write_text(
         json.dumps(

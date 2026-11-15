@@ -37,15 +37,18 @@ export const getSeries = (regionId, variableId, period) => {
   return request(`/api/series?${params}`)
 }
 
-// Explore My World: monthly Series, returned directly or through a background job.
-export const getExploreSeries = (regionId, variableIds, period, aggregation) => {
+// Explore My World: the Series of a catalog Region (`regionId`) or a
+// Selected area (`rectangles`) with one Aggregation: monthly Series, returned
+// directly or through a background job.
+export const getExploreSeries = (place, variableIds, period, aggregation) => {
   const params = new URLSearchParams({
-    region_id: regionId,
     aggregation,
     time_step: 'monthly',
     period_start: period.start,
     period_end: period.end,
   })
+  if (place.regionId) params.set('region_id', place.regionId)
+  for (const rectangle of place.rectangles ?? []) params.append('rectangle', rectangle.join(','))
   for (const variableId of variableIds) params.append('variable_id', variableId)
   return request(`/api/explore/series?${params}`)
 }

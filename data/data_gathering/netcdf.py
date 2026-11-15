@@ -127,14 +127,32 @@ def geography(
         raise ValueError(
             "Both latitude and longitude coordinates are required to select a box."
         )
-    west, south, east, north = area.bbox
+    boxes = _split_at_antimeridian(getattr(area, "boxes", ()) or (area.bbox,))
     lat_values = np.asarray(lat[:], dtype=float)
     lon_values = (np.asarray(lon[:], dtype=float) + 180) % 360 - 180
+
+    def centres_in(lat_part, lon_part):
+        # A cell belongs to the area when its centre lies in any of the boxes.
+        return np.any(
+            [
+                (lat_part >= south)
+                & (lat_part <= north)
+                & (lon_part >= west)
+                & (lon_part <= east)
+                for west, south, east, north in boxes
+            ],
+            axis=0,
+        )
+
     if lat.ndim == lon.ndim == 1 and lat.dimensions != lon.dimensions:
-        rows = np.flatnonzero((lat_values >= south) & (lat_values <= north))
-        cols = np.flatnonzero((lon_values >= west) & (lon_values <= east))
+        inside = centres_in(lat_values[:, None], lon_values[None, :])
+        rows = np.flatnonzero(inside.any(axis=1))
+        cols = np.flatnonzero(inside.any(axis=0))
         if not rows.size or not cols.size:
             raise ValueError("No grid-cell centres lie inside the configured box.")
+        inside = inside[np.ix_(rows, cols)]
+        # One box selects whole rows and columns; joined boxes may not.
+        inside = None if inside.all() else inside
         dims = (lat.dimensions[0], lon.dimensions[0])
         weights = np.ones((rows.size, cols.size))
         if aggregation == "area-mean":
@@ -165,16 +183,11 @@ def geography(
             "weights": weights,
             "coords": {dims[0]: lat_values, dims[1]: lon_values},
             "names": {lat_name, lon_name},
-            "inside": None,
+            "inside": inside,
         }
     if lat.dimensions != lon.dimensions or lat_values.shape != lon_values.shape:
         raise ValueError("Latitude and longitude must describe the same cells.")
-    inside = (
-        (lat_values >= south)
-        & (lat_values <= north)
-        & (lon_values >= west)
-        & (lon_values <= east)
-    )
+    inside = centres_in(lat_values, lon_values)
     if not inside.any():
         raise ValueError("No coordinate points lie inside the configured box.")
     weights = np.ones(lat_values.shape)
@@ -209,6 +222,17 @@ def geography(
         "names": {lat_name, lon_name},
         "inside": inside,
     }
+
+
+def _split_at_antimeridian(boxes):
+    """(west, south, east, north) boxes, each crossing box cut in two at 180°."""
+    result = []
+    for west, south, east, north in boxes:
+        if west > east:
+            result += [(west, south, 180.0, north), (-180.0, south, east, north)]
+        else:
+            result.append((west, south, east, north))
+    return result
 
 
 def extract(
