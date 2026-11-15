@@ -23,6 +23,17 @@ _AGGREGATIONS = {
     "max": "max",
     "maximum": "max",
     "median": "median",
+    # The remaining Aggregations from CONTEXT.md, so that any Series' own rule can
+    # also combine its values over time (space first, then time).
+    "rms": "rms",
+    "root_mean_square": "rms",
+    "root mean square": "rms",
+    "std": "std",
+    "standard_deviation": "std",
+    "standard deviation": "std",
+    "mean_absolute": "mean_absolute",
+    "mean_absolute_value": "mean_absolute",
+    "mean absolute value": "mean_absolute",
 }
 _ORDER = {
     name: index
@@ -72,6 +83,19 @@ def _aggregate(values, aggregation, timestamp):
             value = min(values)
         elif aggregation == "max":
             value = max(values)
+        elif aggregation == "rms":
+            # Scale by the largest magnitude first so squaring cannot overflow.
+            largest = max(abs(v) for v in values)
+            value = (
+                0.0
+                if largest == 0
+                else largest
+                * math.sqrt(statistics.fmean((v / largest) ** 2 for v in values))
+            )
+        elif aggregation == "std":
+            value = statistics.pstdev(values)  # population, per CONTEXT.md
+        elif aggregation == "mean_absolute":
+            value = statistics.fmean(abs(v) for v in values)
         else:
             value = statistics.median(values)
             if not math.isfinite(value):
@@ -103,12 +127,33 @@ def resample_series(
         else None
     )
     target = _FREQUENCIES.get(frequency) if isinstance(frequency, str) else None
-    reducer = _AGGREGATIONS.get(aggregation) if isinstance(aggregation, str) else None
+    # A Series built with an Aggregation is combined over time by the same rule,
+    # so the step may omit it and may not contradict it.
+    declared_name = series.get("aggregation")
+    declared = None
+    if declared_name is not None:
+        declared = (
+            _AGGREGATIONS.get(declared_name) if isinstance(declared_name, str) else None
+        )
+        if declared is None:
+            raise ProcessingError(
+                "invalid_series_aggregation",
+                "The input declares an Aggregation this operation does not know.",
+            )
+    requested = _AGGREGATIONS.get(aggregation) if isinstance(aggregation, str) else None
+    reducer = requested if aggregation is not None else declared
     if source is None or target is None or reducer is None:
         raise ProcessingError(
             "invalid_resampling_parameters",
-            "Choose source_frequency and frequency from second, minute, hour, day, month, year; "
-            "choose aggregation from mean, sum, min, max, median.",
+            "Choose source_frequency and frequency from second, minute, hour, day, "
+            "month, year; choose aggregation from mean, sum, min, max, median, "
+            "root mean square, standard deviation, mean absolute value.",
+        )
+    if declared is not None and reducer != declared:
+        raise ProcessingError(
+            "aggregation_mismatch",
+            f"This Series was built with the {declared_name} Aggregation; "
+            "resampling over time must use the same rule.",
         )
     if _ORDER[target] < _ORDER[source]:
         raise ProcessingError(
@@ -185,7 +230,9 @@ def resample_series(
             "invalid_resampling_timestamps",
             "Timestamps cannot be resampled in the chosen time zone.",
         ) from None
+    travelling = {} if declared_name is None else {"aggregation": declared_name}
     return {
+        **travelling,
         "timestamps": output_times,
         "values": output_values,
         "frequency": target,

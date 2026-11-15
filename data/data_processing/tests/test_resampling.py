@@ -315,3 +315,84 @@ def test_summing_a_quantity_that_is_not_a_rate_does_not_warn(units):
     payload = request(HOURS, [1, 5, 9], aggregation="sum")
     payload["series"]["A"]["units"] = units
     assert process_series(payload)["warnings"] == []
+
+
+# #48 amendment: resampling to a longer Time step uses the Series' Aggregation
+# over time, so an area is combined over space first and then over time by the
+# same rule (see Aggregation in CONTEXT.md).
+def declaring(aggregation, values, step_aggregation=None):
+    payload = request(HOURS, values)
+    payload["series"]["A"]["aggregation"] = aggregation
+    step = payload["operations"][0]
+    del step["aggregation"]
+    if step_aggregation is not None:
+        step["aggregation"] = step_aggregation
+    return payload
+
+
+def test_a_declared_aggregation_is_used_when_the_step_names_none():
+    result = process_series(declaring("maximum", [1, 5, 9]))["series"]["daily"]
+    assert result["values"] == [9]
+    assert result["resampling"]["aggregation"] == "max"
+
+
+def test_a_step_that_contradicts_the_declared_aggregation_is_refused():
+    with pytest.raises(ProcessingError) as error:
+        process_series(declaring("maximum", [1, 5, 9], step_aggregation="mean"))
+    assert error.value.code == "aggregation_mismatch"
+
+
+def test_a_step_naming_the_same_rule_differently_is_accepted():
+    payload = declaring("maximum", [1, 5, 9], step_aggregation="max")
+    assert process_series(payload)["series"]["daily"]["values"] == [9]
+
+
+@pytest.mark.parametrize(
+    "aggregation, values, expected",
+    # Standard deviation is the population form, per CONTEXT.md.
+    [
+        ("root mean square", [1, 5, 9], (107 / 3) ** 0.5),
+        ("rms", [1, 5, 9], (107 / 3) ** 0.5),
+        ("standard deviation", [1, 5, 9], (32 / 3) ** 0.5),
+        ("std", [1, 5, 9], (32 / 3) ** 0.5),
+        ("mean absolute value", [-1, 5, -9], 5.0),
+        ("mean_absolute", [-1, 5, -9], 5.0),
+    ],
+)
+def test_every_glossary_aggregation_combines_over_time(aggregation, values, expected):
+    result = process_series(declaring(aggregation, values))["series"]["daily"]
+    assert result["values"] == [pytest.approx(expected, rel=1e-12)]
+
+
+def test_the_declared_aggregation_travels_with_the_result():
+    payload = declaring("maximum", [1, 5, 9])
+    monthly = {"id": "monthly", "operation": "resample", "frequency": "month"}
+    payload["operations"].append({**monthly, "input": "daily"})
+    result = process_series(payload)["series"]
+    assert result["daily"]["aggregation"] == "maximum"
+    assert result["monthly"]["values"] == [9]
+
+
+def test_an_unknown_declared_aggregation_is_refused():
+    with pytest.raises(ProcessingError) as error:
+        process_series(declaring("mode", [1, 5, 9]))
+    assert error.value.code == "invalid_series_aggregation"
+
+
+def test_without_a_declared_or_chosen_aggregation_resampling_is_refused():
+    payload = request(HOURS, [1, 5, 9])
+    del payload["operations"][0]["aggregation"]
+    with pytest.raises(ProcessingError) as error:
+        process_series(payload)
+    assert error.value.code == "invalid_resampling_parameters"
+
+
+def test_declared_aggregation_survives_filling_missing_values():
+    payload = declaring("maximum", [1, None, 9], step_aggregation="mean")
+    payload["operations"].insert(
+        0, {"id": "filled", "operation": "missing", "input": "A", "policy": "mean"}
+    )
+    payload["operations"][1]["input"] = "filled"
+    with pytest.raises(ProcessingError) as error:
+        process_series(payload)
+    assert error.value.code == "aggregation_mismatch"

@@ -452,6 +452,8 @@ def process_series(request: Mapping) -> dict:
             output.update(resampled)
         elif managed is not None:
             output.update(managed)
+            if "aggregation" in first:
+                output["aggregation"] = first["aggregation"]
         else:
             input_flags = [series.get("filled") for series in used.values()]
             output["filled"] = [

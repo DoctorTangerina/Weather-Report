@@ -134,7 +134,16 @@ For hourly values `[1, 5, 9]` within one day, the daily result is `5` with `mean
   rejected. Declare the real source frequency; multiple observations in a single
   declared source bucket produce `source_frequency_mismatch`.
 - Aggregations: `mean` (`average`/`avg`), `sum`, `min` (`minimum`), `max`
-  (`maximum`), `median`. An aggregation choice is required.
+  (`maximum`), `median`, and the remaining Aggregations from `CONTEXT.md`:
+  `root mean square` (`rms`), `standard deviation` (`std`, population form) and
+  `mean absolute value` (`mean_absolute`).
+- If the input declares its own `aggregation` (the rule that built it over the
+  Selected area), resampling combines it over time by the same rule: space first,
+  then time. The step may then omit `aggregation`; naming a different rule raises
+  `aggregation_mismatch`, and an unknown declared rule raises
+  `invalid_series_aggregation`. The declared `aggregation` is carried onto the
+  resampled and missing-value outputs. Without a declared rule, the step must
+  choose one.
 - Buckets include their start and exclude their end. Output labels identify the
   start as an ISO timestamp including its UTC offset. `timezone` optionally
   chooses an IANA zone such as `America/Sao_Paulo`; the default is `UTC`.
