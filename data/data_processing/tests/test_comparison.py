@@ -300,6 +300,32 @@ def test_raw_and_processed_series_compare_with_both_sample_values():
     assert response["series"]["A_scaled"]["values"] == [0, 2 / 7, 1]
 
 
+# Integration with #52: a temporal filter's excluded observations leave the overlap.
+def test_temporally_filtered_series_compare_only_on_retained_observations():
+    # 2024-01-03 is a Wednesday; its outlying A value must not enter the sample.
+    sources = {"A": series([1, 2, 100, 3, 4]), "B": series([2, 4, 0, 6, 8])}
+    no_wednesday = {
+        "id": "A_weekdays",
+        "operation": "filter",
+        "input": "A",
+        "timezone": "UTC",
+        "mode": "exclude",
+        "weekdays": ["wednesday"],
+    }
+
+    response = compare(sources, no_wednesday, inputs=("A_weekdays", "B"))
+    result = response["comparisons"]["AB"]
+
+    assert result["r"] == 1
+    assert result["valid_pairs"] == 4
+    assert result["overlap"] == {"start": DAYS[0], "end": DAYS[4], "timestamps": 4}
+    assert DAYS[2] not in result["sample"]["timestamps"]
+    assert [step["id"] for step in result["recipe"]["operations"]] == [
+        "A_weekdays",
+        "AB",
+    ]
+
+
 def test_comparison_keeps_lineage_and_a_replayable_recipe():
     sources = {
         "A": series([1, 2, 4], quality={"included": True, "missing_fraction": 0}),
