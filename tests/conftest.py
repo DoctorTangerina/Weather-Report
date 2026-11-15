@@ -55,3 +55,11 @@ def stub_dir() -> Path:
 @pytest.fixture(scope="session")
 def catalog_path() -> Path:
     return ROOT / "data" / "catalog.json"
+
+
+@pytest.fixture(autouse=True)
+def isolate_local_credentials(monkeypatch):
+    """Tests use explicit credentials, never a developer's real .env secrets."""
+    from data.data_gathering import config
+
+    monkeypatch.setattr(config, "ENV_PATHS", ())

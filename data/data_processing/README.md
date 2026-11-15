@@ -1,7 +1,7 @@
 # Manual data processing
 
 Public Python methods for issue #46's arithmetic, scaling, simple resampling,
-missing-value management and Pearson comparison. Everything in this
+missing-value management, temporal filtering, linear detrending and Pearson comparison. Everything in this
 package is independent of the API and automatic engine. It performs no downloads
 or file reads, needs no Earthdata token, and adds no third-party dependencies.
 
@@ -103,6 +103,58 @@ response = process_series(
 - Scaling results have `expression: None` and a `scaling` object identifying the
   method and, for Z-score, `ddof`. Inputs, provenance and ordered instructions are
   recorded in the same way as arithmetic results.
+
+## Linear detrending
+
+Linear detrending must be explicitly requested in the ordered Processing recipe.
+It fits ordinary least squares with an intercept against actual elapsed UTC time,
+using every valid value in its immediate input, including explicitly filled
+observations. Irregular spacing and the different lengths of calendar months are
+respected; observation index is not used as elapsed time. It supports 3-hourly,
+daily and monthly Series and performs no seasonal or outlier removal.
+
+```python
+response = process_series({
+    "series": {"A": {
+        "timestamps": ["2024-01-01", "2024-01-02", "2024-01-04"],
+        "values": [10, 12, 16],
+        "units": "K",
+        "time_step": "daily",
+    }},
+    "operations": [{
+        "id": "detrended",
+        "operation": "detrend",
+        "input": "A",
+        "preserve_mean": False,
+    }],
+})
+# response["series"]["detrended"]["values"] is approximately [0, 0, 0].
+```
+
+The caller must supply a boolean `preserve_mean`: `False` subtracts the complete
+fitted line to return residuals around zero; `True` removes the slope while
+retaining the mean of valid input observations. For equally spaced `[20, 22, 24]`,
+the respective results are `[0, 0, 0]` and `[22, 22, 22]`, within floating-point
+precision. Missing or non-boolean choices raise `invalid_detrending_parameters`.
+
+Timestamp labels, nulls, filled flags, units, Time step and Aggregation are
+preserved. Source quality and previous processing history remain in provenance;
+no supplied object is modified. Constant inputs are accepted. Fewer than two
+valid observations raise `insufficient_observations`; timestamps must already be
+ordered and distinct, as for other processing operations. Unsupported
+non-Gregorian calendars raise `unsupported_calendar`. An unrepresentable
+nonfinite output raises `nonfinite_result`.
+
+Each Derived series records `expression: None` and
+`detrending: {"method": "ols", "time_basis": "elapsed_utc_seconds", "preserve_mean": ...}`.
+The reusable Processing recipe retains the explicit mean convention. Replay
+fits the replacement input anew. Place a missing-value or temporal-filter step
+before detrending to change its fitting sample; later steps do not alter the
+earlier fit. Source series and Derived series can both be used by subsequent
+arithmetic operations or Pearson comparisons with their visible sample values
+and filled flags.
+
+The agreed behavior is recorded in [the issue #53 design](../../docs/linear-detrending.md).
 
 ## Resampling
 
