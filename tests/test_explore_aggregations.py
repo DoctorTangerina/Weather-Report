@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api import main
-from engine import ENGINE_VERSION, JsonResultStore
+from engine import ENGINE_VERSION, JsonResultStore, Period
 from tests.fake_acquisition import FakeGridAcquisitionSource
 
 RESPONSES = "responses.schema.json"
@@ -27,6 +27,7 @@ class CountingSource(FakeGridAcquisitionSource):
 
     def prepare(self, request, *, fetch=False):
         self.calls += 1
+        self.__dict__.setdefault("periods", []).append(request["period"])
         return super().prepare(request, fetch=fetch)
 
 
@@ -195,6 +196,113 @@ def test_a_period_beyond_the_seed_set_is_acquired_in_a_job(
         pytest.approx(3)
     ]
     assert source.calls == 1
+
+
+def test_a_period_partly_in_the_seed_set_acquires_only_the_missing_months(
+    api, seed_with_maximum, validator_for
+):
+    # 2024-11 and 2024-12 come from the seed set; only 2025-01 is fetched.
+    client, use = api
+    source = use(two_cells(-1.0, 3.0))
+    response = explore(client, "maximum", start="2024-11", end="2025-01")
+    assert response.status_code == 202, response.json()
+    data = series_of(client, response, validator_for)
+    assert data["period"] == {"start": "2024-11", "end": "2025-01"}
+    assert data["series"][0]["period"] == {"start": "2024-11", "end": "2025-01"}
+    assert data["series"][0]["values"] == [
+        *seed_with_maximum["values"][-2:],
+        pytest.approx(3),
+    ]
+    assert source.periods == [{"start": "2025-01", "end": "2025-01"}]
+
+
+def test_a_repeated_partial_request_is_answered_from_the_seed_and_the_cache(
+    api, seed_with_maximum, validator_for
+):
+    client, use = api
+    source = use(two_cells(-1.0, 3.0))
+    first = series_of(
+        client,
+        explore(client, "maximum", start="2024-11", end="2025-01"),
+        validator_for,
+    )
+    again = explore(client, "maximum", start="2024-11", end="2025-01")
+    assert again.status_code == 200, again.json()
+    assert again.json()["provenance"] == "cache"
+    assert again.json()["data"] == first
+    assert source.calls == 1
+
+
+def test_the_quality_gate_judges_the_whole_stitched_period(
+    api, seed_with_maximum, validator_for
+):
+    # The fetched months alone (one of two missing) would be excluded; with six
+    # seeded months, one missing month in eight passes the gate.
+    client, use = api
+    source = use(
+        CountingSource(
+            timestamps=["2025-01-01T00:00:00", "2025-02-01T00:00:00"],
+            latitudes=[15.0],
+            longitudes=[0.0, 1.0],
+            values=[[[-1.0, 3.0]], [[None, None]]],
+            units="°C",
+        )
+    )
+    response = explore(client, "maximum", start="2024-07", end="2025-02")
+    series = series_of(client, response, validator_for)["series"][0]
+    assert series["quality"]["included"] is True
+    assert series["quality"]["missing_fraction"] == pytest.approx(1 / 8)
+    assert series["values"] == [
+        *seed_with_maximum["values"][-6:],
+        pytest.approx(3),
+        None,
+    ]
+    assert source.periods == [{"start": "2025-01", "end": "2025-02"}]
+
+
+def test_an_acquired_piece_is_never_served_as_a_series_of_its_own(api, validator_for):
+    # A piece keeps the values the gate would withhold; /api/series must not
+    # serve it. Here 2025-01..2025-02 alone (one of two months missing) fails.
+    client, use = api
+    use(
+        CountingSource(
+            timestamps=["2025-01-01T00:00:00", "2025-02-01T00:00:00"],
+            latitudes=[15.0],
+            longitudes=[0.0, 1.0],
+            values=[[[-1.0, 3.0]], [[None, None]]],
+            units="°C",
+        )
+    )
+    series_of(
+        client, explore(client, "mean", start="2024-07", end="2025-02"), validator_for
+    )
+    body = client.get(
+        "/api/series",
+        params={
+            "region_id": "sahel",
+            "variable_id": "temperature",
+            "period_start": "2025-01",
+            "period_end": "2025-02",
+        },
+    ).json()
+    assert body.get("provenance") != "cache"
+    data = body.get("data") or {}
+    if data and not data["quality"]["included"]:
+        assert data["values"] == [None, None]
+
+
+def test_a_mean_partly_in_the_seed_set_acquires_only_the_missing_months(
+    api, validator_for
+):
+    client, use = api
+    source = use(two_cells(-1.0, 3.0))
+    # The API's seed set of means (the stub under test), which ends in 2024-12.
+    seeded = main.store.series("sahel", "temperature", Period("2000-01", "2024-12"))
+    response = explore(client, "mean", start="2024-12", end="2025-01")
+    assert response.status_code == 202, response.json()
+    values = series_of(client, response, validator_for)["series"][0]["values"]
+    assert values == [seeded["values"][-1], pytest.approx(1)]
+    assert source.periods == [{"start": "2025-01", "end": "2025-01"}]
 
 
 def test_a_variable_missing_from_the_seeded_aggregation_is_acquired_in_a_job(

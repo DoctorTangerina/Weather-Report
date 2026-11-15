@@ -34,7 +34,9 @@ async def acquire_series(
     token: str,
     source: GridAcquisitionSource | None = None,
     aggregation: str = "mean",
+    keep_values: bool = False,
 ) -> dict[str, Any]:
+    """One acquired Series. keep_values keeps an excluded Series' values."""
     root = Path(__file__).resolve().parents[2]
     env = {
         **os.environ,
@@ -55,6 +57,7 @@ async def acquire_series(
             "dataset": variable.source.dataset,
             "time_step": "monthly",
             "aggregation": aggregation,
+            "keep_values": keep_values,
             "workspace": workspace,
         }
         if source is not None:

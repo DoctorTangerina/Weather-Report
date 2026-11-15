@@ -18,6 +18,7 @@ import os
 import re
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
+from functools import partial
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -242,20 +243,22 @@ async def get_explore_series(
     ] = None,
 ) -> Any:
     """Explore My World: one Region's Series for one to five Variables."""
+    build = partial(
+        explore_series,
+        catalog,
+        store,
+        region_id,
+        variable_id or [],
+        aggregation,
+        time_step,
+        period_start,
+        period_end,
+        cache=explore_cache(aggregation),
+        seed=explore_seed(aggregation),
+        latest=explore_latest_month(),
+    )
     try:
-        data = explore_series(
-            catalog,
-            store,
-            region_id,
-            variable_id or [],
-            aggregation,
-            time_step,
-            period_start,
-            period_end,
-            cache=explore_cache(aggregation),
-            seed=explore_seed(aggregation),
-            latest=explore_latest_month(),
-        )
+        data, provenance = build()
     except AcquisitionNeeded as needed:
         job = explore_jobs.start(
             needed.view,
@@ -263,16 +266,12 @@ async def get_explore_series(
             explore_cache(aggregation),
             acquisition_source,
             LIVE_TIMEOUT_SECONDS,
+            finish=lambda: build()[0],
         )
         return JSONResponse(status_code=202, content=ok({"job": dict(job)}))
     except Refusal as refusal:
         return error(refusal.status, refusal.code, refusal.message)
-    cache = explore_cache(aggregation)
-    cached = any(
-        cache.series(region_id, v, Period(**data["period"])) is not None
-        for v in variable_id or []
-    )
-    return {**ok(data), "provenance": "cache" if cached else "preloaded"}
+    return {**ok(data), "provenance": provenance}
 
 
 def explore_seed(aggregation: str) -> JsonResultStore | None:
@@ -291,16 +290,17 @@ def explore_seed(aggregation: str) -> JsonResultStore | None:
     return _aggregation_seeds[root]
 
 
-def explore_cache(aggregation: str) -> JsonResultStore:
-    """Where Explore My World Series built with `aggregation` are cached.
+def explore_cache(aggregation: str) -> JsonResultStore | None:
+    """Where Explore My World keeps the Series pieces it acquired with `aggregation`.
 
-    Means share the live results cache. The cache is keyed without an
-    Aggregation, so every other Aggregation keeps its own beside it.
+    One folder per Aggregation beside the live results cache, which is keyed
+    without one. A piece keeps its values even when it alone fails the Quality
+    gate, so nothing that serves stored Series directly (`/api/series`) reads it.
     """
-    if aggregation == "mean" or aggregation not in AGGREGATIONS:
+    if aggregation not in AGGREGATIONS:
         # An unknown Aggregation is refused before any cache is read.
-        return live_store
-    root = live_store.root / "aggregations" / aggregation
+        return None
+    root = live_store.root / "explore" / aggregation
     if root not in _aggregation_caches:
         _aggregation_caches[root] = JsonResultStore(root, ENGINE_VERSION)
     return _aggregation_caches[root]

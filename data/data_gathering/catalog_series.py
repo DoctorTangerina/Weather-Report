@@ -86,12 +86,15 @@ def get_catalog_series(
     catalog_path: Path = DEFAULT_CATALOG,
     config_path: Path = DEFAULT_CONFIG,
     aggregation: str = "mean",
+    withhold_excluded: bool = True,
 ) -> dict:
     """The monthly series for a catalog Region and Variable, with its quality.
 
     period: inclusive start/end in YYYY-MM. Default 2000-01 to 2024-12.
     aggregation: one of `aggregation.AGGREGATIONS`; it combines the Region's
     cells (area-weighted, except minimum and maximum), then each month's values.
+    withhold_excluded: False keeps the values of a series the gate excluded,
+    for a caller that joins it to other months and gates the whole again.
     Raises SeriesSelectionError if the ids are not in the catalogs, the Variable
     is not offered for the Region, the data is not acquired, a land-only Variable
     has no land mask, or the file's units cannot be reported in catalog units.
@@ -104,6 +107,7 @@ def get_catalog_series(
         catalog_path=catalog_path,
         config_path=config_path,
         aggregation=aggregation,
+        withhold_excluded=withhold_excluded,
     )[region_id]
     if isinstance(result, SeriesSelectionError):
         raise result
@@ -119,6 +123,7 @@ def get_catalog_series_many(
     config_path: Path = DEFAULT_CONFIG,
     on_file=None,
     aggregation: str = "mean",
+    withhold_excluded: bool = True,
 ) -> dict:
     """`get_catalog_series` for several Regions of one Variable, reading each file once.
 
@@ -193,6 +198,7 @@ def get_catalog_series_many(
                 months,
                 catalog["engine_version"],
                 aggregation,
+                withhold_excluded,
             )
         except SeriesSelectionError as error:
             results[region_id] = error
@@ -209,6 +215,7 @@ def _series(
     months,
     engine_version,
     aggregation="mean",
+    withhold_excluded=True,
 ) -> dict:
     land_only = bool(variable["land_only"] or native.land_only)
     if variable["land_only"] and not native.land_only:
@@ -240,7 +247,9 @@ def _series(
         "variable_id": variable["variable_id"],
         "period": {"start": selected.start, "end": selected.end},
         "units": variable["units"],
-        "values": monthly if quality.included else [None] * len(monthly),
+        "values": monthly
+        if quality.included or not withhold_excluded
+        else [None] * len(monthly),
         "quality": {**asdict(quality), "exclusions": list(quality.exclusions)},
         "source": dict(variable["source"]),
         "engine_version": engine_version,

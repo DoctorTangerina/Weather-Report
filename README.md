@@ -63,7 +63,8 @@ From the acquired files it also builds every other Aggregation (median, minimum,
 maximum, root mean square, standard deviation, mean absolute value) into
 `data/seed/aggregations/<aggregation>/series/`. Explore My World answers from
 those directly; only what the seed set does not hold, such as months after it
-ends, is fetched from NASA in a background job. The Discovery engine never reads
+ends, is fetched from NASA in a background job. A period that runs past the seed
+set fetches only its later months and joins them to the seeded ones. The Discovery engine never reads
 them. `--skip-aggregations` leaves them out; `--series-dir` implies it.
 
 The seed contains 71 Series: temperature and precipitation for all 25 Regions,

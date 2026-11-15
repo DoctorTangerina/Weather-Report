@@ -1,10 +1,10 @@
 """Explore My World Series: seed/cache lookup, validation and acquisition requests.
 
 The seed set answers monthly Series for every Aggregation (#78): means beside
-the Discoveries, the other Aggregations in their own folders. Monthly Series
-neither the seed set nor the cache holds, such as months after the seed set ends,
-are built by #77's background jobs. Sub-monthly Time steps remain owned by their
-follow-up ticket.
+the Discoveries, the other Aggregations in their own folders. Months the seed
+set does not hold, such as those after it ends, are acquired by #77's background
+jobs, and only those months: the Series joins the seeded months to them.
+Sub-monthly Time steps remain owned by their follow-up ticket.
 """
 
 from __future__ import annotations
@@ -119,21 +119,32 @@ def _validate(
             )
 
 
-def _cut(payload: dict[str, Any], start: str, end: str) -> dict[str, Any]:
-    """The stored Series for [start, end], with the Quality gate re-applied."""
-    stored = payload["period"]
-    if stored == {"start": start, "end": end}:
-        return payload
-    offset = _months(stored["start"], start) - 1
-    values = payload["values"][offset : offset + _months(start, end)]
-    land_fraction = payload["quality"]["valid_land_fraction"]
+def _next_month(month: str) -> str:
+    year, number = int(month[:4]), int(month[5:])
+    return f"{year + number // 12:04d}-{number % 12 + 1:02d}"
+
+
+def _values(payload: dict[str, Any], start: str, end: str) -> list[float | None]:
+    """The payload's values for the months [start, end] inside its period."""
+    offset = _months(payload["period"]["start"], start) - 1
+    return payload["values"][offset : offset + _months(start, end)]
+
+
+def _gated(
+    base: dict[str, Any],
+    values: list[float | None],
+    start: str,
+    end: str,
+    land_fraction: float | None,
+) -> dict[str, Any]:
+    """`base` as the Series of `values` over [start, end], judged by the gate."""
     quality = assess_quality(
         values,
         land_only=land_fraction is not None,
         valid_land_fraction=land_fraction,
     )
     return {
-        **payload,
+        **base,
         "period": {"start": start, "end": end},
         # An excluded Series carries no values anything could use.
         "values": values if quality.included else [None] * len(values),
@@ -144,6 +155,47 @@ def _cut(payload: dict[str, Any], start: str, end: str) -> dict[str, Any]:
             "exclusions": list(quality.exclusions),
         },
     }
+
+
+def _cut(payload: dict[str, Any], start: str, end: str) -> dict[str, Any]:
+    """The stored Series for [start, end], with the Quality gate re-applied."""
+    if payload["period"] == {"start": start, "end": end}:
+        return payload
+    land_fraction = payload["quality"]["valid_land_fraction"]
+    return _gated(payload, _values(payload, start, end), start, end, land_fraction)
+
+
+def _stitch(
+    head: dict[str, Any] | None, piece: dict[str, Any], start: str, end: str
+) -> dict[str, Any]:
+    """Seeded months from `start`, then the acquired `piece` up to `end`.
+
+    The piece keeps its values even if it alone would fail the gate, so the
+    Quality gate judges the whole period at once.
+    """
+    values = list(piece["values"])
+    if head is not None:
+        values = _values(head, start, head["period"]["end"]) + values
+    base = head or piece
+    land_fraction = base["quality"]["valid_land_fraction"]
+    return _gated(base, values, start, end, land_fraction)
+
+
+def _seed_head(
+    seed: ResultStore | None, region_id: str, variable_id: str, start: str
+) -> dict[str, Any] | None:
+    """The seeded Series that holds `start`, reaching furthest past it."""
+    periods = [
+        item["period"]
+        for item in (seed.available_series() if seed is not None else [])
+        if item["region_id"] == region_id
+        and item["variable_id"] == variable_id
+        and item["period"]["start"] <= start <= item["period"]["end"]
+    ]
+    if not periods:
+        return None
+    period = max(periods, key=lambda item: item["end"])
+    return seed.series(region_id, variable_id, Period(**period))
 
 
 def explore_series(
@@ -159,12 +211,16 @@ def explore_series(
     cache: ResultStore | None = None,
     seed: ResultStore | None = None,
     latest: str | None = None,
-) -> dict[str, Any]:
-    """The view's Series, or a Refusal saying why it cannot be given.
+) -> tuple[dict[str, Any], str]:
+    """The view's Series and their provenance, or a Refusal saying why not.
 
     `store` is the seed set of means, which also sets the default end month.
-    `seed` and `cache` hold Series built with this `aggregation` only; for the
-    mean, `seed` defaults to `store`.
+    `seed` holds seeded Series built with this `aggregation` (for the mean it
+    defaults to `store`). `cache` holds acquired Series pieces built with it,
+    with their values kept even when a piece alone fails the gate. Each Series
+    takes its first months from the seed set and the rest from a piece. When a
+    piece is missing, AcquisitionNeeded names only the months to acquire.
+    Provenance is "cache" when any piece was used, otherwise "preloaded".
     """
     latest = latest or latest_month(store)
     end = latest_month(store) if end is None else end
@@ -180,19 +236,23 @@ def explore_series(
         )
     if seed is None and aggregation == "mean":
         seed = store
-    covering = {
-        item["variable_id"]: item["period"]
-        for item in (seed.available_series() if seed is not None else [])
-        if item["region_id"] == region_id
-        and item["period"]["start"] <= start
-        and item["period"]["end"] >= end
-    }
-    cached = {
-        v: cache.series(region_id, v, Period(start, end)) if cache else None
-        for v in variable_ids
-    }
-    missing = [v for v in variable_ids if v not in covering and cached[v] is None]
-    if missing:
+    parts = {}
+    acquire = {}
+    for variable_id in variable_ids:
+        head = _seed_head(seed, region_id, variable_id, start)
+        if head is not None and head["period"]["end"] >= end:
+            parts[variable_id] = (head, None)
+            continue
+        piece_start = _next_month(head["period"]["end"]) if head else start
+        piece = (
+            cache.series(region_id, variable_id, Period(piece_start, end))
+            if cache is not None
+            else None
+        )
+        if piece is None:
+            acquire[variable_id] = {"start": piece_start, "end": end}
+        parts[variable_id] = (head, piece)
+    if acquire:
         raise AcquisitionNeeded(
             {
                 "region_id": region_id,
@@ -200,21 +260,19 @@ def explore_series(
                 "aggregation": aggregation,
                 "time_step": time_step,
                 "period": {"start": start, "end": end},
+                "acquire": acquire,
             }
         )
-    series = []
-    for variable_id in variable_ids:
-        if cached[variable_id] is not None:
-            series.append(cached[variable_id])
-            continue
-        period = Period(**covering[variable_id])
-        payload = seed.series(region_id, variable_id, period)
-        assert payload is not None
-        series.append(_cut(payload, start, end))
-    return {
+    series = [
+        _cut(head, start, end) if piece is None else _stitch(head, piece, start, end)
+        for head, piece in (parts[variable_id] for variable_id in variable_ids)
+    ]
+    data = {
         "region_id": region_id,
         "aggregation": aggregation,
         "time_step": time_step,
         "period": {"start": start, "end": end},
         "series": series,
     }
+    used_cache = any(piece is not None for _, piece in parts.values())
+    return data, "cache" if used_cache else "preloaded"

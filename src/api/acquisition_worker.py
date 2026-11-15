@@ -24,6 +24,7 @@ def run(request: dict) -> dict:
         catalog_path=catalog,
         config_path=config,
         aggregation=request.get("aggregation", "mean"),
+        withhold_excluded=not request.get("keep_values", False),
     )
 
 
