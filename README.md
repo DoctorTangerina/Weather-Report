@@ -53,8 +53,10 @@ fixtures still do.
 - **`discovery.schema.json`** — a Region pair with its contrasts, Mirrors, score and
   narrative. `contrasts[].trends` is ordered to match `region_ids`. The investigation
   steps are positional, so Predict, Check and Reason cannot come out of order.
-- **`catalog.schema.json`** — the fixed Region and Variable catalogs, with the
-  plain-language definitions and the labeled possible causes.
+- **`catalog.schema.json`** — the fixed Region and Variable catalogs.
+- **`variable.schema.json`** — one Variable with its plain-language definition,
+  units, NASA source and labeled possible causes. Kept separate so the definition
+  can be reused outside the catalog; the catalog references it.
 - **`responses.schema.json`** — every HTTP body: a resource under `data` plus a
   `notice` that stays null until the service serves something other than a fresh
   result.
@@ -68,6 +70,7 @@ fixtures still do.
 | `GET /api/health` | status and engine version |
 | `GET /api/catalog` | `catalogResponse` |
 | `GET /api/series?region_id=&variable_id=&period_start=&period_end=` | `seriesResponse` |
+| `GET /api/comparison?region_a=&region_b=&variable_id=&period_start=&period_end=` | `comparisonResponse`: two computed Trends and their monthly series, in requested Region order |
 | `GET /api/discoveries` | `discoveryListResponse`, highest score first |
 | `GET /api/discoveries/{discovery_id}` | `discoveryResponse` |
 | `POST /api/discoveries/surprise` | `discoveryResponse`; body carries the session history |
@@ -76,6 +79,15 @@ A Region or Variable outside the catalog is rejected with `422` and an
 `errorResponse`. A request with no stored result gets `404 result_not_available`
 until ticket #13 adds the live fetch.
 
+The welcome screen lets students compare two catalog Regions using a Variable
+offered for both. The comparison endpoint analyzes their stored series with the
+engine's Trend methods and rates the two Trends together as the family for
+multiple-comparison correction. A pair does not need to be a stored Discovery.
+The default period is 2000-01 through 2024-12. Missing series or insufficient
+observations return `404 result_not_available`; the UI clears the old analysis
+and displays the error. The bundled synthetic data covers only four Regions
+and two Variables, so other catalog choices may be unavailable until #12/#13.
+
 ## The stub set
 
 `data/stub/` is synthetic, not NASA data: its `source.provider` says so. Each series
@@ -83,6 +95,11 @@ is generated from an explicit slope and each Trend reports the slope its series 
 built from, so no statistics are implied. It covers all three Evidence labels, an
 opposite-sign contrast, a multi-Variable contrast, a Mirror and a series with missing
 months. Ticket #12 replaces it with the seed set computed from real data.
+
+`data/stub/catalog.json` is the exception: it is maintained by hand and the
+generator reads it. It holds 24 placeholder Regions and the four Variables, but
+series and discoveries exist only for four Regions and two Variables. The real
+catalog content is written by the team in its own ticket.
 
 The fixtures are built through `engine.contracts`, so the committed JSON cannot drift
 from the Python contract objects.
@@ -95,11 +112,25 @@ their ticket number. The seams are in place:
 | Seam | Ticket |
 | --- | --- |
 | `engine.trend.estimate_trend` | #4 trend estimation |
-| `engine.trend.rate_evidence` | #5 evidence labels, corrected across the whole family |
 | `engine.discovery.find_candidate_discoveries` | #7 contrasts |
 | `engine.discovery.find_mirrors` | #8 Mirrors |
-| `engine.discovery.select_surprise` | #9 Surprise Me! selection |
-| `engine.discovery.build_narrative` | #10 explanations and investigation content |
+| `engine.discovery.build_narrative` | #10 explanations and investigation content (built; ticket #7 calls it with each Discovery's Contrasts, period and Evidence label) |
 
-`engine/stub.py` holds the stand-ins that keep the skeleton runnable; delete each one
-as its ticket lands.
+## Surprise Me! selection
+
+`engine.discovery.select_surprise` draws the next headline Discovery from the top
+`TOP_N` eligible Candidates, weighted by score. It never repeats a Discovery within a
+session and never headlines a Candidate labeled "Not enough evidence yet".
+
+Two numbers the spec left open are answered here, and both are easy to change:
+
+- **`TOP_N = 5`.** Enough to vary between sessions while keeping the headline genuinely
+  top-ranked. Because the draw is weighted, raising it costs little quality.
+- **A session that runs out of fresh Regions relaxes the Region rule** rather than
+  returning nothing. BS-005 words its two rules with different force — a Discovery is
+  *never* repeated, a Region is *avoided* — so only a session that has seen every
+  eligible Discovery gets nothing back, and the API answers `404
+  no_discovery_left_in_session`.
+
+Candidates are filtered for eligibility before they are ranked, so a long session works
+its way down the list instead of running dry the moment it has seen a fixed top N.

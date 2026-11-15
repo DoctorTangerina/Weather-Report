@@ -114,7 +114,7 @@
       "additionalProperties": false
     },
     "narrative": {
-      "description": "Everything shown to the student, built from templates over the computed numbers (BS-007). No number appears here that is not also in a Trend or Mirror above.",
+      "description": "Everything shown to the student, built from templates over the computed numbers (BS-007). No number appears here that is not also in a Trend or Mirror above. Numbers in the text are rounded half up to at most three decimals, in decimal arithmetic, with no trailing zeros: 7.0625 is written 7.063, 5.500 is written 5.5, and a value that rounds to zero is written 0. Any screen that lists these numbers again must apply the same rule. The first entry of contrasts is the lead Contrast: it alone drives the question and the Predict, Check and Reason steps.",
       "type": "object",
       "properties": {
         "question": {

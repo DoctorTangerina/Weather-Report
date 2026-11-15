@@ -1,105 +1,216 @@
-import { useMemo, useState } from 'react'
-import Timeline from '../components/Timeline.jsx'
-import Chart from '../components/Chart.jsx'
-import Evidence from '../components/Evidence.jsx'
-import useSeries from '../useSeries.js'
+import { useEffect, useMemo, useState } from 'react'
+import DiscoveryPanel from '../components/DiscoveryPanel.jsx'
+import Explorer from '../components/Explorer.jsx'
 import RegionGlobe from '../components/Globe.jsx'
+import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
+import Timeline from '../components/Timeline.jsx'
+import { REGION_COLORS } from '../palette.js'
+import useAvailableSeries from '../useAvailableSeries.js'
+import useComparison from '../useComparison.js'
+import useSeries from '../useSeries.js'
 import InvestigationScreen from './InvestigationScreen.jsx'
 
-export default function MainScreen({ discovery, catalog, onInvestigate, investigating, onBack, onSurprise, loading, busy, error, discoveryNotice }) {
-  const [investigationStep, setInvestigationStep] = useState(0)
+const NONE = []
+
+export default function MainScreen({
+  phase,
+  catalog,
+  discovery,
+  highlights,
+  notice,
+  error,
+  seen,
+  onSurprise,
+  onDetective,
+  onInvestigate,
+  onBack,
+  onNewSession,
+  onRetry,
+}) {
   const [timestamp, setTimestamp] = useState(null)
   const [regionId, setRegionId] = useState('')
+  const [secondRegionId, setSecondRegionId] = useState('')
   const [variableId, setVariableId] = useState('')
-  const region = catalog?.regions.find((item) => item.region_id === regionId) ?? catalog?.regions[0]
-  const variables = catalog?.variables.filter((item) => region?.variable_ids.includes(item.variable_id)) ?? []
-  const variable = discovery
-    ? catalog?.variables.find((item) => item.variable_id === discovery.contrasts[0].variable_id)
-    : variables.find((item) => item.variable_id === variableId) ?? variables[0]
-  const regions = useMemo(() => discovery?.region_ids.map((id) => catalog.regions.find((item) => item.region_id === id)) ?? [], [discovery, catalog])
-  const refs = investigating ? discovery.narrative.investigation.steps[1].series : discovery
-    ? discovery.contrasts[0].trends.map(({ region_id, variable_id }) => ({ region_id, variable_id }))
-    : region && variable ? [{ region_id: region.region_id, variable_id: variable.variable_id }] : []
-  const { loading: seriesLoading, series, notice, error: seriesError } = useSeries(refs)
-  const ready = Boolean(catalog)
+  const [investigationStep, setInvestigationStep] = useState(0)
+
+  const exploring = phase === 'welcome' && Boolean(catalog)
+  const showing = phase === 'discovery' && Boolean(discovery)
+  const investigating = phase === 'investigation' && Boolean(discovery)
+
+  // Every investigation starts at Predict, however the previous one ended.
+  useEffect(() => {
+    if (investigating) setInvestigationStep(0)
+  }, [investigating, discovery?.discovery_id])
+
+  const available = useAvailableSeries()
+  const defaults = available.defaultPair(catalog)
+  const region =
+    catalog?.regions.find((item) => item.region_id === (regionId || defaults?.[0])) ??
+    catalog?.regions[0]
+  const otherRegions =
+    catalog?.regions.filter((item) => item.region_id !== region?.region_id) ?? NONE
+  const secondRegion =
+    otherRegions.find((item) => item.region_id === (secondRegionId || defaults?.[1])) ??
+    otherRegions[0]
+  const variables =
+    catalog?.variables.filter(
+      (item) =>
+        region?.variable_ids.includes(item.variable_id) &&
+        secondRegion?.variable_ids.includes(item.variable_id),
+    ) ?? NONE
+  const variable =
+    variables.find((item) => item.variable_id === (variableId || defaults?.[2])) ??
+    variables[0]
+
+  // The investigation charts the Check step's series; the Discovery view charts
+  // its lead Contrast. Both pairs come from the engine's narrative.
+  const refs = useMemo(() => {
+    if (investigating) return discovery.narrative.investigation.steps[1].series
+    if (showing) {
+      return discovery.contrasts[0].trends.map(({ region_id, variable_id }) => ({
+        region_id,
+        variable_id,
+      }))
+    }
+    return NONE
+  }, [investigating, showing, discovery])
+
+  const explored = useMemo(
+    () =>
+      exploring
+        ? [region, secondRegion]
+            .filter(Boolean)
+            .map((item, index) => ({ region: item, color: REGION_COLORS[index] }))
+        : NONE,
+    [exploring, region, secondRegion],
+  )
+
+  const discoverySeries = useSeries(refs)
+  // Wait for the list of stored series before comparing, so the first request
+  // is the data-backed default pair rather than whatever the catalog lists first.
+  const comparing = exploring && available.settled
+  const comparison = useComparison(
+    comparing ? region?.region_id : null,
+    comparing ? secondRegion?.region_id : null,
+    comparing ? variable?.variable_id : null,
+  )
+  const { loading: seriesLoading, series, notice: seriesNotice, error: seriesError } =
+    exploring ? comparison : discoverySeries
+  const banner = notice ?? seriesNotice
+  const timelineKey =
+    discovery && !exploring
+      ? `${phase}/${discovery.discovery_id}`
+      : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
+
+  // Before the student predicts, nothing may hint at the answer: the timeline
+  // stays empty until the Check step shows the charts (BS-006).
+  const timelineSeries =
+    seriesLoading || (investigating && investigationStep !== 1) ? NONE : series
 
   return (
     <div className="main-screen">
       <header className="main-header">
-        <h1 className="sr-only">Earth System Trend Detective</h1>
-        <div className="top-actions" aria-label="Explore discoveries">
-          <button onClick={() => { setInvestigationStep(0); onInvestigate() }} disabled={!onInvestigate || busy || investigating}>Become a Detective</button>
-          <button className="secondary" onClick={onSurprise} disabled={!ready || busy || error?.code === 'no_discovery_left_in_session'}>
-            {busy ? 'Looking for a Discovery…' : 'Surprise Me!'}
-          </button>
-        </div>
+        <h1 className="brand">
+          <span className="brand-mark" aria-hidden="true" />
+          Earth System Trend Detective
+        </h1>
+        {seen > 0 && (
+          <p className="session-count" aria-live="polite">
+            {seen === 1 ? '1 Discovery seen' : `${seen} Discoveries seen`}
+          </p>
+        )}
       </header>
+
       <section className="globe-panel" aria-label="Interactive Earth globe">
-        <RegionGlobe regions={regions} />
+        <RegionGlobe highlights={showing || investigating ? highlights : explored} />
         <p className="globe-hint">Drag to explore · Scroll or pinch to zoom</p>
       </section>
-      <aside className="sidebar" tabIndex={0} aria-label={investigating ? 'Become a Detective' : undefined} aria-labelledby={investigating ? undefined : 'explore-heading'} aria-busy={loading || seriesLoading || busy}>
-        {investigating ? (
+
+      <aside
+        className="sidebar"
+        tabIndex={0}
+        aria-label={investigating ? 'Become a Detective' : undefined}
+        aria-busy={phase === 'loading' || phase === 'drawing' || seriesLoading}
+      >
+        {banner && (
+          <p className="notice" role="status">
+            {banner.message}
+          </p>
+        )}
+        {error && (
+          <p className="error" role="alert">
+            {error.message}
+          </p>
+        )}
+        {seriesError && showing && (
+          <p className="error" role="alert">
+            The analysis could not be loaded: {seriesError.message}
+          </p>
+        )}
+
+        {phase === 'loading' && <Drawing />}
+        {phase === 'unreachable' && <Unreachable onRetry={onRetry} />}
+        {exploring && (
+          <>
+            <Welcome catalog={catalog} onSurprise={onSurprise} onDetective={onDetective} />
+            <Explorer
+              catalog={catalog}
+              region={region}
+              secondRegion={secondRegion}
+              variable={variable}
+              variables={variables}
+              onRegion={setRegionId}
+              onSecondRegion={setSecondRegionId}
+              onVariable={setVariableId}
+              hasData={available.has}
+              series={series}
+              seriesLoading={seriesLoading}
+              error={comparison.error}
+              timestamp={timestamp}
+              highlights={explored}
+              trends={comparison.trends}
+            />
+          </>
+        )}
+        {phase === 'drawing' && <Drawing />}
+        {phase === 'complete' && <SessionComplete seen={seen} onNewSession={onNewSession} />}
+        {showing && (
+          <DiscoveryPanel
+            discovery={discovery}
+            catalog={catalog}
+            highlights={highlights}
+            series={series}
+            seriesLoading={seriesLoading}
+            timestamp={timestamp}
+            onInvestigate={onInvestigate}
+            onSurprise={onSurprise}
+          />
+        )}
+        {investigating && (
           <InvestigationScreen
             key={discovery.discovery_id}
             discovery={discovery}
             catalog={catalog}
+            highlights={highlights}
             onBack={onBack}
             stepIndex={investigationStep}
             onStepChange={setInvestigationStep}
             loading={seriesLoading}
-            series={seriesLoading ? [] : series}
+            series={seriesLoading ? NONE : series}
             error={seriesError}
             timestamp={timestamp}
           />
-        ) : <>
-        <p className="eyebrow">{discovery ? 'Your Discovery' : 'Explore Earth'}</p>
-        <h2 id="explore-heading">{discovery ? discovery.narrative.question : 'Explore a Region'}</h2>
-        {discovery ? (
-          <>
-            <p className="label">{discovery.evidence_label}</p>
-            <ol className="region-legend">
-              {regions.map((item) => <li key={item.region_id}><strong>{item.name}</strong><p>{item.description}</p></li>)}
-            </ol>
-          </>
-        ) : <p>Choose a Region and a Variable to view its time series. Try Surprise Me! to discover a contrast between two Regions.</p>}
-        {loading && <p className="muted" role="status">Loading the catalog…</p>}
-        {busy && <p className="muted" role="status">Looking for a Discovery…</p>}
-        {ready && (
-          <>
-            {!discovery && <div className="catalog-controls">
-              <label htmlFor="explore-region">Region</label>
-              <select id="explore-region" value={region?.region_id ?? ''} onChange={(event) => setRegionId(event.target.value)}>
-                {catalog.regions.map((item) => <option key={item.region_id} value={item.region_id}>{item.name}</option>)}
-              </select>
-              <label htmlFor="explore-variable">Variable</label>
-              <select id="explore-variable" value={variable?.variable_id ?? ''} onChange={(event) => setVariableId(event.target.value)}>
-                {variables.map((item) => <option key={item.variable_id} value={item.variable_id}>{item.name}</option>)}
-              </select>
-            </div>}
-            {!discovery && region && <p className="muted">{region.description}</p>}
-            {discovery && <h3>{variable?.name ?? discovery.contrasts[0].variable_id}</h3>}
-            {variable && <p className="muted">{variable.definition}</p>}
-            {seriesLoading && <p className="muted" role="status">Loading the series…</p>}
-            {!seriesLoading && series.map((item) => (
-              <Chart key={`${item.region_id}-${item.variable_id}`} series={item} timestamp={timestamp} label={catalog.regions.find((entry) => entry.region_id === item.region_id)?.name ?? item.region_id} />
-            ))}
-            {discovery && !seriesLoading && <p className="muted">Each chart has its own vertical scale. Compare the direction of the Trends.</p>}
-            {discovery && <Evidence discovery={discovery} catalog={catalog} />}
-          </>
         )}
-        </>}
-        {(error || (!investigating && seriesError)) && <p className="error" role="alert">{(error || seriesError).message}</p>}
-        {notice && <p className="notice" role="status">{notice.message}</p>}
-        {discoveryNotice && <p className="notice" role="status">{discoveryNotice.message}</p>}
-        {!loading && !ready && <p className="muted">Check that the API is running, then reload to try again.</p>}
       </aside>
-      <Timeline
-        key={discovery?.discovery_id ?? `${region?.region_id}/${variable?.variable_id}`}
-        series={seriesLoading || (investigating && investigationStep !== 1) ? [] : series}
-        loading={loading || seriesLoading}
-        onTimestampChange={setTimestamp}
-      />
+
+      {(showing || exploring || investigating) && (
+        <Timeline
+          key={timelineKey}
+          series={timelineSeries}
+          loading={seriesLoading}
+          onTimestampChange={setTimestamp}
+        />
+      )}
     </div>
   )
 }

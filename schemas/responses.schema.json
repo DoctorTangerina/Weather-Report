@@ -13,6 +13,28 @@
       "required": ["data", "notice"],
       "additionalProperties": false
     },
+    "availableSeriesResponse": {
+      "description": "The Region-Variable series the service holds, without their values.",
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "region_id": { "$ref": "common.schema.json#/$defs/regionId" },
+              "variable_id": { "$ref": "common.schema.json#/$defs/variableId" },
+              "period": { "$ref": "common.schema.json#/$defs/period" }
+            },
+            "required": ["region_id", "variable_id", "period"],
+            "additionalProperties": false
+          }
+        },
+        "notice": { "$ref": "common.schema.json#/$defs/notice" }
+      },
+      "required": ["data", "notice"],
+      "additionalProperties": false
+    },
     "seriesResponse": {
       "type": "object",
       "properties": {
@@ -41,6 +63,45 @@
         "notice": { "$ref": "common.schema.json#/$defs/notice" }
       },
       "required": ["data", "notice"],
+      "additionalProperties": false
+    },
+    "comparisonResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "trends": {
+              "type": "array",
+              "items": {
+                "$ref": "trend.schema.json"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "$ref": "series.schema.json"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "trends",
+            "series"
+          ],
+          "additionalProperties": false
+        },
+        "notice": {
+          "$ref": "common.schema.json#/$defs/notice"
+        }
+      },
+      "required": [
+        "data",
+        "notice"
+      ],
       "additionalProperties": false
     },
     "errorResponse": {
