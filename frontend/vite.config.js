@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://127.0.0.1:8000',
+      '/api': process.env.WEATHER_REPORT_API_URL ?? 'http://127.0.0.1:8000',
     },
   },
 })

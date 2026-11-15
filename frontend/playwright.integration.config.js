@@ -1,28 +1,29 @@
 import { defineConfig } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
+import { delimiter, join } from 'node:path'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
-const python = process.env.WEATHER_REPORT_PYTHON ?? 'python3'
-const quotedPython = `'${python.replaceAll("'", "'\\''")}'`
+const apiURL = 'http://127.0.0.1:8765'
 
 export default defineConfig({
   testDir: './integration',
   workers: 1,
-  use: { baseURL: 'http://127.0.0.1:4173', viewport: { width: 1440, height: 1000 } },
+  use: { baseURL: 'http://127.0.0.1:4174', viewport: { width: 1440, height: 1000 } },
   webServer: [
     {
-      command: `${quotedPython} -m uvicorn api.main:app --host 127.0.0.1 --port 8000`,
+      command: 'node frontend/scripts/start-test-api.mjs',
       cwd: root,
       env: {
-        PYTHONPATH: `${root}/src:${root}`,
-        WEATHER_REPORT_DATA_DIR: `${root}/data/seed`,
+        PYTHONPATH: [join(root, 'src'), root, process.env.PYTHONPATH].filter(Boolean).join(delimiter),
+        WEATHER_REPORT_DATA_DIR: process.env.WEATHER_REPORT_DATA_DIR ?? join(root, 'data', 'seed'),
       },
-      url: 'http://127.0.0.1:8000/api/health',
+      url: `${apiURL}/api/health`,
       reuseExistingServer: false,
     },
     {
-      command: 'npm run dev -- --host 127.0.0.1 --port 4173 --strictPort',
-      url: 'http://127.0.0.1:4173',
+      command: 'npm run dev -- --host 127.0.0.1 --port 4174 --strictPort',
+      env: { WEATHER_REPORT_API_URL: apiURL },
+      url: 'http://127.0.0.1:4174',
       reuseExistingServer: false,
     },
   ],
