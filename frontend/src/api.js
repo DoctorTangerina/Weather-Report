@@ -22,6 +22,10 @@ export const getDiscoveries = () => request('/api/discoveries')
 export const getComparison = (regionA, regionB, variableId) =>
   request(`/api/comparison?${new URLSearchParams({ region_a: regionA, region_b: regionB, variable_id: variableId })}`)
 
+export const getExploreOptions = () => request('/api/explore/options')
+
+export const getExploreJob = (url) => request(url)
+
 export const getAvailableSeries = () => request('/api/series/available')
 
 export const getSeries = (regionId, variableId, period) => {
@@ -33,16 +37,18 @@ export const getSeries = (regionId, variableId, period) => {
   return request(`/api/series?${params}`)
 }
 
-// Explore My World (#75): one Region's Series for each chosen Variable. Only
-// monthly means can be answered so far, so those are the settings sent.
-export const getExploreSeries = (regionId, variableIds, period) => {
+// Explore My World: the Series of a catalog Region (`regionId`) or a
+// Selected area (`rectangles`): monthly means, returned directly or through a
+// background job.
+export const getExploreSeries = (place, variableIds, period) => {
   const params = new URLSearchParams({
-    region_id: regionId,
     aggregation: 'mean',
     time_step: 'monthly',
     period_start: period.start,
     period_end: period.end,
   })
+  if (place.regionId) params.set('region_id', place.regionId)
+  for (const rectangle of place.rectangles ?? []) params.append('rectangle', rectangle.join(','))
   for (const variableId of variableIds) params.append('variable_id', variableId)
   return request(`/api/explore/series?${params}`)
 }

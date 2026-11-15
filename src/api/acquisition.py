@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -12,19 +13,29 @@ from engine.contracts import Period, Region, Variable
 
 from .grid_source import GridAcquisitionSource
 
+# netCDF4 preparation in injected sources must not run concurrently in this process.
+_PREPARE_LOCK = threading.Lock()
+
+
+def _prepare(source: GridAcquisitionSource, request: dict) -> Path:
+    with _PREPARE_LOCK:
+        return source.prepare(request)
+
 
 class AcquisitionUnavailable(Exception):
     """Expected upstream/authentication/quality failure, not a programming error."""
 
 
 async def acquire_series(
-    region: Region,
+    region: Region | None,
     variable: Variable,
     period: Period,
     *,
     token: str,
     source: GridAcquisitionSource | None = None,
+    rectangles: list[list[float]] | None = None,
 ) -> dict[str, Any]:
+    """A catalog Region's Series, or with `region` None a Selected area's."""
     root = Path(__file__).resolve().parents[2]
     env = {
         **os.environ,
@@ -32,22 +43,38 @@ async def acquire_series(
         "PYTHONPATH": os.pathsep.join((str(root), str(root / "src"))),
     }
     with tempfile.TemporaryDirectory(prefix="weather-acquisition-") as workspace:
+        geometry = (
+            {"rectangles": rectangles, "bbox": rectangles[0]}
+            if region is None
+            else {
+                "region_id": region.region_id,
+                "bbox": [
+                    region.bbox.west,
+                    region.bbox.south,
+                    region.bbox.east,
+                    region.bbox.north,
+                ],
+            }
+        )
         request = {
-            "region_id": region.region_id,
+            **geometry,
             "variable_id": variable.variable_id,
             "period": {"start": period.start, "end": period.end},
-            "bbox": [
-                region.bbox.west,
-                region.bbox.south,
-                region.bbox.east,
-                region.bbox.north,
-            ],
             "dataset": variable.source.dataset,
             "time_step": "monthly",
             "workspace": workspace,
         }
         if source is not None:
-            request["config_path"] = str(source.prepare(request))
+            preparation = asyncio.create_task(
+                asyncio.to_thread(_prepare, source, request)
+            )
+            try:
+                config = await asyncio.shield(preparation)
+            except asyncio.CancelledError:
+                # Let preparation release its files before cleaning the workspace.
+                await asyncio.gather(preparation, return_exceptions=True)
+                raise
+            request["config_path"] = str(config)
         process = await asyncio.create_subprocess_exec(
             sys.executable,
             "-m",

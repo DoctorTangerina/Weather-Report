@@ -1,6 +1,7 @@
 import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Globe from 'react-globe.gl'
-import { withAlpha } from '../palette.js'
+import { AREA_COLOR, withAlpha } from '../palette.js'
+import { rectangleFromCorners, unwrapped } from '../selectedArea.js'
 
 const FLIGHT_MS = 1600
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -30,20 +31,21 @@ class GlobeBoundary extends Component {
 // Wound clockwise. three-globe triangulates on the sphere with d3-geo, which
 // takes the opposite winding to RFC 7946: a counter-clockwise ring is read as
 // the whole Earth *except* the box, which tints the globe and swaps the colours.
-function boxPolygon({ region, color }, catalog = false) {
-  const { west, east, south, north } = region.bbox
+//
+// `east` may exceed 180 so that a box crossing the antimeridian stays continuous.
+function boxPolygon([west, south, east, north], properties) {
   const ring = []
   for (let lat = south; lat < north; lat += 1) ring.push([west, lat])
   for (let lng = west; lng < east; lng += 1) ring.push([lng, north])
   for (let lat = north; lat > south; lat -= 1) ring.push([east, lat])
   for (let lng = east; lng > west; lng -= 1) ring.push([lng, south])
   ring.push([west, south])
-  return {
-    type: 'Feature',
-    properties: { color, catalog, regionId: region.region_id, name: region.name },
-    geometry: { type: 'Polygon', coordinates: [ring] },
-  }
+  return { type: 'Feature', properties, geometry: { type: 'Polygon', coordinates: [ring] } }
 }
+
+const bounds = ({ bbox }) => [bbox.west, bbox.south, bbox.east, bbox.north]
+const regionPolygon = (region, color, kind) =>
+  boxPolygon(bounds(region), { color, kind, regionId: region.region_id, name: region.name })
 
 function centre({ bbox }) {
   return { lat: (bbox.south + bbox.north) / 2, lng: (bbox.west + bbox.east) / 2 }
@@ -73,7 +75,7 @@ function framing(points, aspect) {
 
 function labelElement({ region, color }) {
   const element = document.createElement('div')
-  element.className = 'globe-label'
+  element.className = region.region_id ? 'globe-label' : 'globe-label globe-label-area'
   element.style.setProperty('--region', color)
   element.textContent = region.name
   return element
@@ -81,13 +83,23 @@ function labelElement({ region, color }) {
 
 // Catalog Regions are drawn faintly, under any highlight, when `onRegionClick` is
 // given: clicking one opens it in Explore My World (#75).
+// A Selected area is drawn in its own colour on top; while `drawing`, a drag on
+// the globe sketches a new rectangle instead of turning the globe (#79).
 const CATALOG_COLOR = '#cfe3ee'
 const NO_REGIONS = []
+// Catalog boxes stay faint until hovered; the others are always clearly visible.
+const CAP_ALPHA = { highlight: 0.42, area: 0.3, sketch: 0.2 }
+const ALTITUDE = { catalog: 0.006, highlight: 0.012, area: 0.016, sketch: 0.018 }
 
 export default function RegionGlobe({
   highlights: requestedHighlights = [],
   regions = NO_REGIONS,
   onRegionClick,
+  selectedArea = null,
+  onAreaClick,
+  drawing = false,
+  onDrawn,
+  onDrawCancel,
 }) {
   // Equivalent highlights can arrive in new arrays as series requests settle.
   // Keep polygons, labels and the camera flight stable across those renders.
@@ -98,6 +110,8 @@ export default function RegionGlobe({
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const [ready, setReady] = useState(false)
   const [hovered, setHovered] = useState(null)
+  const [sketch, setSketch] = useState(null)
+  const still = highlights.length > 0 || Boolean(selectedArea) || drawing || reducedMotion()
 
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
@@ -111,24 +125,34 @@ export default function RegionGlobe({
     return () => observer.disconnect()
   }, [])
 
+  const sketched = sketch && rectangleFromCorners(...sketch)
+  const sketchKey = sketched?.join() ?? ''
   const polygons = useMemo(() => {
     const highlighted = new Set(highlights.map(({ region }) => region.region_id))
     return [
       ...regions
         .filter((region) => !highlighted.has(region.region_id))
-        .map((region) => boxPolygon({ region, color: CATALOG_COLOR }, true)),
-      ...highlights.map((highlight) => boxPolygon(highlight)),
+        .map((region) => regionPolygon(region, CATALOG_COLOR, 'catalog')),
+      ...highlights.map(({ region, color }) => regionPolygon(region, color, 'highlight')),
+      ...(selectedArea ?? []).map((rectangle) =>
+        boxPolygon(unwrapped(rectangle), { color: AREA_COLOR, kind: 'area', name: 'Selected area' }),
+      ),
+      ...(sketchKey
+        ? [boxPolygon(unwrapped(sketchKey.split(',').map(Number)), { color: AREA_COLOR, kind: 'sketch' })]
+        : []),
     ]
-  }, [highlights, regions])
-  const labels = useMemo(
-    () =>
-      highlights.map((highlight) => ({
-        ...highlight,
-        lat: highlight.region.bbox.north,
-        lng: centre(highlight.region).lng,
-      })),
-    [highlights],
-  )
+  }, [highlights, regions, selectedArea, sketchKey])
+  const labels = useMemo(() => {
+    const regionLabels = highlights.map((highlight) => ({
+      ...highlight,
+      lat: highlight.region.bbox.north,
+      lng: centre(highlight.region).lng,
+    }))
+    if (!selectedArea) return regionLabels
+    const [west, , east, north] = unwrapped(selectedArea[0])
+    const area = { region: { name: 'Selected area' }, color: AREA_COLOR }
+    return [...regionLabels, { ...area, lat: north, lng: (west + east) / 2 }]
+  }, [highlights, selectedArea])
   const rings = useMemo(
     () =>
       reducedMotion()
@@ -137,13 +161,21 @@ export default function RegionGlobe({
     [highlights],
   )
 
+  // A new Selected area may be on the far side, as typed edges often are: face it.
+  const areaKey = selectedArea ? JSON.stringify(selectedArea) : ''
+  const areaCentre = useMemo(() => {
+    if (!areaKey) return null
+    const [west, south, east, north] = unwrapped(JSON.parse(areaKey)[0])
+    return { lat: (south + north) / 2, lng: (west + east) / 2 }
+  }, [areaKey])
+
   const aim = useCallback(() => {
     const globe = globeRef.current
     if (!globe || !ready) return
     const controls = globe.controls()
     controls.enableZoom = true
     controls.autoRotateSpeed = 0.45
-    controls.autoRotate = highlights.length === 0 && !reducedMotion()
+    controls.autoRotate = !still
 
     const duration = reducedMotion() ? 0 : FLIGHT_MS
     const aspect = dimensions.width / Math.max(1, dimensions.height)
@@ -153,23 +185,60 @@ export default function RegionGlobe({
     } else if (highlights.length === 1) {
       const altitude = 1.9 * Math.max(1, 1 / aspect) ** 0.6
       globe.pointOfView({ ...centre(highlights[0].region), altitude }, duration)
+    } else if (areaCentre) {
+      globe.pointOfView({ ...areaCentre, altitude: Math.max(2.5, 2.5 / aspect) }, duration)
     } else {
       globe.pointOfView({ lat: 12, altitude: Math.max(2.5, 2.5 / aspect) }, duration)
     }
-  }, [highlights, ready, dimensions.width, dimensions.height])
+  }, [highlights, areaCentre, still, ready, dimensions.width, dimensions.height])
 
   useEffect(() => {
     aim()
   }, [aim])
 
+  // While drawing, a drag sketches a rectangle and Escape stops drawing.
+  useEffect(() => {
+    const globe = globeRef.current
+    if (globe && ready) globe.controls().enabled = !drawing
+    if (!drawing) {
+      setSketch(null)
+      return undefined
+    }
+    const cancel = (event) => event.key === 'Escape' && onDrawCancel?.()
+    window.addEventListener('keydown', cancel)
+    return () => window.removeEventListener('keydown', cancel)
+  }, [drawing, ready, onDrawCancel])
+
+  const pointAt = (event) => {
+    const box = containerRef.current.getBoundingClientRect()
+    return globeRef.current?.toGlobeCoords(event.clientX - box.left, event.clientY - box.top)
+  }
+  const sketchStart = (event) => {
+    const point = pointAt(event)
+    if (!point) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setSketch([point, point])
+  }
+  const sketchMove = (event) => {
+    const point = sketch && pointAt(event)
+    if (point) setSketch([sketch[0], point])
+  }
+  const sketchEnd = () => {
+    if (sketched) onDrawn?.(sketched)
+    setSketch(null)
+  }
+
   // Hold the globe still under the pointer, so the Region being aimed at stays put.
   const hover = (feature) => {
     setHovered(feature?.properties.regionId ?? null)
     const globe = globeRef.current
-    if (globe) {
-      globe.controls().autoRotate = !feature && highlights.length === 0 && !reducedMotion()
-    }
+    if (globe) globe.controls().autoRotate = !feature && !still
   }
+  const click = ({ properties }) => {
+    if (properties.kind === 'area') onAreaClick?.()
+    else if (properties.regionId) onRegionClick?.(properties.regionId)
+  }
+  const clickable = Boolean(onRegionClick || onAreaClick)
 
   return (
     <div ref={containerRef} className="globe-viewport">
@@ -188,19 +257,16 @@ export default function RegionGlobe({
             animateIn={false}
             onGlobeReady={() => setReady(true)}
             polygonsData={polygons}
-            polygonCapColor={({ properties }) =>
-              withAlpha(
-                properties.color,
-                properties.catalog ? (properties.regionId === hovered ? 0.4 : 0.12) : 0.42,
-              )}
-            polygonSideColor={({ properties }) =>
-              withAlpha(properties.color, properties.catalog ? 0.06 : 0.18)}
-            polygonStrokeColor={({ properties }) =>
-              properties.catalog ? withAlpha(properties.color, 0.6) : properties.color}
-            polygonAltitude={({ properties }) => (properties.catalog ? 0.006 : 0.012)}
-            polygonLabel={onRegionClick ? ({ properties }) => properties.name : undefined}
-            onPolygonHover={onRegionClick ? hover : undefined}
-            onPolygonClick={onRegionClick ? ({ properties }) => onRegionClick(properties.regionId) : undefined}
+            polygonCapColor={({ properties: { kind, color, regionId } }) =>
+              withAlpha(color, CAP_ALPHA[kind] ?? (regionId === hovered ? 0.4 : 0.12))}
+            polygonSideColor={({ properties: { kind, color } }) =>
+              withAlpha(color, kind === 'catalog' ? 0.06 : 0.18)}
+            polygonStrokeColor={({ properties: { kind, color } }) =>
+              kind === 'catalog' ? withAlpha(color, 0.6) : color}
+            polygonAltitude={({ properties: { kind } }) => ALTITUDE[kind]}
+            polygonLabel={clickable ? ({ properties }) => properties.name : undefined}
+            onPolygonHover={clickable ? hover : undefined}
+            onPolygonClick={clickable ? click : undefined}
             polygonsTransitionDuration={reducedMotion() ? 0 : 700}
             htmlElementsData={labels}
             htmlElement={labelElement}
@@ -213,6 +279,16 @@ export default function RegionGlobe({
           />
         )}
       </GlobeBoundary>
+      {drawing && (
+        <div
+          className="globe-draw"
+          data-testid="globe-draw"
+          onPointerDown={sketchStart}
+          onPointerMove={sketchMove}
+          onPointerUp={sketchEnd}
+          onPointerCancel={() => setSketch(null)}
+        />
+      )}
     </div>
   )
 }

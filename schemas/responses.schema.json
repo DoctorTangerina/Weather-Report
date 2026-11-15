@@ -106,13 +106,14 @@
       "additionalProperties": false
     },
     "exploreSeriesResponse": {
-      "description": "Explore My World (#75): one catalog Region's Series for one to five Variables, built with one Aggregation and one Time step over one period. Each Series covers exactly the requested period, and its quality is the Quality gate's verdict on that period.",
+      "description": "Explore My World (#75, #79): the Series of one catalog Region or one Selected area for one to five Variables, built with one Aggregation and one Time step over one period. Each Series covers exactly the requested period, and its quality is the Quality gate's verdict on that period.",
       "type": "object",
       "properties": {
         "data": {
           "type": "object",
           "properties": {
             "region_id": { "$ref": "common.schema.json#/$defs/regionId" },
+            "area": { "$ref": "common.schema.json#/$defs/selectedArea" },
             "aggregation": {
               "type": "string",
               "enum": [
@@ -129,12 +130,18 @@
             "period": { "$ref": "common.schema.json#/$defs/period" },
             "series": {
               "type": "array",
-              "items": { "$ref": "series.schema.json" },
+              "items": {
+                "oneOf": [
+                  { "$ref": "series.schema.json" },
+                  { "$ref": "series.schema.json#/$defs/areaSeries" }
+                ]
+              },
               "minItems": 1,
               "maxItems": 5
             }
           },
-          "required": ["region_id", "aggregation", "time_step", "period", "series"],
+          "required": ["aggregation", "time_step", "period", "series"],
+          "oneOf": [{ "required": ["region_id"] }, { "required": ["area"] }],
           "additionalProperties": false
         },
         "provenance": { "type": "string", "enum": ["live", "cache", "preloaded"] },
@@ -143,8 +150,200 @@
       "required": ["data", "notice", "provenance"],
       "additionalProperties": false
     },
+    "exploreOptionsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "latest_month": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+            },
+            "area_variable_ids": {
+              "description": "The Variables a Selected area can have: those NASA data can be fetched for on demand.",
+              "type": "array",
+              "items": { "$ref": "common.schema.json#/$defs/variableId" },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "latest_month",
+            "area_variable_ids"
+          ],
+          "additionalProperties": false
+        },
+        "notice": {
+          "$ref": "common.schema.json#/$defs/notice"
+        }
+      },
+      "required": [
+        "data",
+        "notice"
+      ],
+      "additionalProperties": false
+    },
+    "exploreJobResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "job": {
+              "$ref": "#/$defs/exploreJob"
+            }
+          },
+          "required": [
+            "job"
+          ],
+          "additionalProperties": false
+        },
+        "notice": {
+          "$ref": "common.schema.json#/$defs/notice"
+        }
+      },
+      "required": [
+        "data",
+        "notice"
+      ],
+      "additionalProperties": false
+    },
+    "exploreJob": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^/api/explore/jobs/[a-f0-9]+$"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed"
+          ]
+        },
+        "progress": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "result": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/exploreSeriesResponse/properties/data"
+            }
+          ]
+        },
+        "error": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "const": "acquisition_failed"
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "code",
+                "message"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "status",
+        "progress",
+        "result",
+        "error"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "succeeded"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "type": "object"
+              },
+              "progress": {
+                "const": 100
+              },
+              "error": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "failed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "error": {
+                "type": "object"
+              },
+              "result": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "queued",
+                  "running"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "type": "null"
+              },
+              "error": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
     "errorResponse": {
-      "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region. Explore My World refuses a malformed view with 422 (invalid_variable_count, duplicate_variable, invalid_aggregation, invalid_time_step, invalid_period, period_out_of_range, period_too_long) and answers 501 not_available_yet for Series that need data fetched from NASA.",
+      "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region. Explore My World refuses a malformed view with 422 (invalid_variable_count, duplicate_variable, invalid_aggregation, invalid_time_step, invalid_period, period_out_of_range, period_too_long) and answers 501 not_available_yet for Aggregations or Time steps not yet implemented; unknown job references return 404 job_not_found.",
       "type": "object",
       "properties": {
         "error": {
@@ -166,7 +365,10 @@
                 "invalid_time_step",
                 "period_out_of_range",
                 "period_too_long",
-                "not_available_yet"
+                "not_available_yet",
+                "invalid_area",
+                "variable_not_available_for_area",
+                "job_not_found"
               ]
             },
             "message": { "type": "string", "minLength": 1 }

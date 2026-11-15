@@ -1,31 +1,56 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getExploreOptions } from './api.js'
 import useExploreSeries from './useExploreSeries.js'
 
 export const FIRST_MONTH = '2000-01'
 export const MAX_VARIABLES = 5
 
-// One Explore My World view (#75): a catalog Region, up to five Variables and one
-// period. Only Variables with stored data are offered. A period outside 2000-01 to
-// the latest available month is refused here, before anything is requested.
-export default function useExploreView(catalog, region, available) {
-  const regionId = region?.region_id ?? null
-  const ofRegion = catalog && region
-    ? catalog.variables.filter((item) => region.variable_ids.includes(item.variable_id))
-    : []
-  const offered = ofRegion.filter((item) => available.has(regionId, item.variable_id))
-  const unavailable = ofRegion.filter((item) => !offered.includes(item))
-  const latest = available.latest
+// The month `count` months after `month`, both YYYY-MM.
+function addMonths(month, count) {
+  const index = Number(month.slice(0, 4)) * 12 + Number(month.slice(5, 7)) - 1 + count
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`
+}
 
-  // Choices belong to one Region; opening another starts from its defaults.
+// One Explore My World view: a catalog Region (#75) or a Selected area (#79), up
+// to five Variables and one period. A Region offers the Variables with stored
+// data; a Selected area offers those the API can fetch for any area. The API
+// supplies the last requestable month; a Region's initial period uses the seed set.
+export default function useExploreView(catalog, region, available, area = null) {
+  const [options, setOptions] = useState(null)
+  useEffect(() => {
+    let cancelled = false
+    getExploreOptions().then(({ data }) => {
+      if (!cancelled) setOptions(data)
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+  const latest = options?.latest_month ?? available.latest
+
+  const regionId = region?.region_id ?? null
+  const placeKey = area ? `area:${JSON.stringify(area)}` : regionId
+  const candidates = !catalog
+    ? []
+    : area
+      ? catalog.variables
+      : catalog.variables.filter((item) => region?.variable_ids.includes(item.variable_id))
+  const offered = candidates.filter((item) =>
+    area
+      ? options?.area_variable_ids.includes(item.variable_id)
+      : available.has(regionId, item.variable_id),
+  )
+  const unavailable = candidates.filter((item) => !offered.includes(item))
+
+  // Choices belong to one place; opening another starts from its defaults. Every
+  // Selected-area Series is fetched from NASA, so its first period is one year.
   const [choice, setChoice] = useState(null)
   const current =
-    choice?.regionId === regionId
+    choice?.placeKey === placeKey
       ? choice
       : {
-          regionId,
+          placeKey,
           chosen: offered.slice(0, 1).map((item) => item.variable_id),
-          start: FIRST_MONTH,
-          end: latest ?? '',
+          start: area && latest ? addMonths(latest, -11) : FIRST_MONTH,
+          end: (area ? latest : available.latest) ?? '',
         }
   const update = (change) => setChoice({ ...current, ...change })
 
@@ -53,8 +78,9 @@ export default function useExploreView(catalog, region, available) {
   const chosen = offered
     .filter((item) => current.chosen.includes(item.variable_id))
     .map((item) => item.variable_id)
+  const place = area ? { rectangles: area } : regionId ? { regionId } : null
   const series = useExploreSeries(
-    regionId,
+    place,
     chosen,
     periodError ? null : { start: current.start, end: current.end },
   )

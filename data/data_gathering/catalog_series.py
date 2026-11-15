@@ -20,7 +20,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import asdict
 from pathlib import Path
 
-from .models import Bbox, Period
+from .models import Bbox, Period, SelectedArea
 from .quality_gate import assess_quality, months_in
 from .selection import SeriesSelectionError, TimeWindow
 from .series import DEFAULT_CONFIG, ROOT, load_series_config, open_source
@@ -146,7 +146,7 @@ def get_catalog_series_many(
             if isinstance(native, SeriesSelectionError):
                 raise native
             results[region_id] = _series(
-                region_id,
+                {"region_id": region_id},
                 variable,
                 native,
                 entry,
@@ -160,8 +160,52 @@ def get_catalog_series_many(
     return {region_id: results[region_id] for region_id in region_ids}
 
 
+def get_area_series(
+    rectangles: list[tuple[float, float, float, float]],
+    variable_id: str,
+    period: Period | Mapping[str, str],
+    *,
+    catalog_path: Path = DEFAULT_CATALOG,
+    config_path: Path = DEFAULT_CONFIG,
+) -> dict:
+    """The monthly Series for a Selected area, built like a catalog Region's.
+
+    The area replaces the Region: `area` stands where `region_id` would, so the
+    result can never be mistaken for a Region's Series.
+    """
+    catalog = _load_catalog(catalog_path)
+    variable = _find(catalog["variables"], "variable_id", variable_id)
+    if variable is None:
+        raise SeriesSelectionError(
+            "not_in_catalog", "Choose a Variable from the catalog."
+        )
+    selected = period if isinstance(period, Period) else _period(period)
+    configuration = load_series_config(config_path)
+    entry = (configuration.get("CATALOG_SERIES") or {}).get(variable_id, {})
+    window = TimeWindow.create(selected.start, selected.end)
+    area = SelectedArea(tuple(tuple(box) for box in rectangles))
+    native = open_source(config_path).select_many(
+        {"area": area},
+        entry.get("variable", variable["source"]["variable"]),
+        window,
+        entry.get("dataset_id"),
+    )["area"]
+    if isinstance(native, SeriesSelectionError):
+        raise native
+    return _series(
+        {"area": {"rectangles": [list(box) for box in rectangles]}},
+        variable,
+        native,
+        entry,
+        selected,
+        window,
+        _months(selected),
+        catalog["engine_version"],
+    )
+
+
 def _series(
-    region_id, variable, native, entry, selected, window, months, engine_version
+    identity, variable, native, entry, selected, window, months, engine_version
 ) -> dict:
     land_only = bool(variable["land_only"] or native.land_only)
     if variable["land_only"] and not native.land_only:
@@ -191,7 +235,7 @@ def _series(
             "This Variable requires verified land-mask metadata before its series can be returned.",
         ) from None
     return {
-        "region_id": region_id,
+        **identity,
         "variable_id": variable["variable_id"],
         "period": {"start": selected.start, "end": selected.end},
         "units": variable["units"],

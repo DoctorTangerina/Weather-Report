@@ -16,10 +16,12 @@ import logging
 import math
 import os
 import re
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import FastAPI, Query, Depends
+from fastapi import Depends, FastAPI, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -39,8 +41,16 @@ from engine.contracts import Discovery, as_dict
 from engine.discovery import SessionHistory
 
 from .acquisition import AcquisitionUnavailable, acquire_series
-from .explore import FIRST_MONTH, Refusal, explore_series
+from .area_cache import AreaSeriesCache
+from .explore import (
+    AREA_VARIABLES,
+    FIRST_MONTH,
+    AcquisitionNeeded,
+    Refusal,
+    explore_series,
+)
 from .grid_source import GridAcquisitionSource
+from .jobs import SeriesJobs
 from .results import example_response, select_example, usable
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -52,14 +62,23 @@ CATALOG_PATH = Path(
     os.environ.get("WEATHER_REPORT_CATALOG", str(ROOT / "data" / "catalog.json"))
 )
 
-app = FastAPI(title="Weather Report", version=ENGINE_VERSION)
+explore_jobs = SeriesJobs()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await explore_jobs.close()
+
+
+app = FastAPI(title="Weather Report", version=ENGINE_VERSION, lifespan=lifespan)
 
 catalog = load_catalog(CATALOG_PATH)
 store = JsonResultStore(DATA_DIR, ENGINE_VERSION)
-live_store = JsonResultStore(
-    Path(os.environ.get("WEATHER_REPORT_CACHE_DIR", ".scratch/results-cache")),
-    ENGINE_VERSION,
-)
+CACHE_DIR = Path(os.environ.get("WEATHER_REPORT_CACHE_DIR", ".scratch/results-cache"))
+live_store = JsonResultStore(CACHE_DIR, ENGINE_VERSION)
+# Selected areas (#79) are never Regions, so their Series are cached apart.
+area_cache = AreaSeriesCache(CACHE_DIR / "areas")
 LIVE_TIMEOUT_SECONDS = float(
     os.environ.get("WEATHER_REPORT_LIVE_TIMEOUT_SECONDS", "120")
 )
@@ -168,7 +187,7 @@ async def get_series(
     if payload is not None and usable(payload, catalog):
         return {**ok(payload), "provenance": "preloaded"}
     try:
-        token = os.environ.get("EARTHDATA_TOKEN")
+        token = settings().get("EARTHDATA_TOKEN")
         if not token and acquisition_source is None:
             raise AcquisitionUnavailable("Server token unavailable")
         source_options = (
@@ -210,15 +229,22 @@ async def get_series(
 
 
 @app.get("/api/explore/series")
-def get_explore_series(
-    region_id: str,
+async def get_explore_series(
+    region_id: str | None = None,
+    rectangle: Annotated[list[str] | None, Query()] = None,
     variable_id: Annotated[list[str] | None, Query()] = None,
     aggregation: str = "mean",
     time_step: str = "monthly",
     period_start: str = FIRST_MONTH,
     period_end: str | None = None,
+    acquisition_source: Annotated[
+        GridAcquisitionSource | None, Depends(get_acquisition_source)
+    ] = None,
 ) -> Any:
-    """Explore My World: one Region's Series for one to five Variables."""
+    """Explore My World: the Series of one catalog Region or one Selected area.
+
+    A Selected area is one or more `rectangle=west,south,east,north` values.
+    """
     try:
         data = explore_series(
             catalog,
@@ -229,10 +255,66 @@ def get_explore_series(
             time_step,
             period_start,
             period_end,
+            rectangles=rectangle,
+            cache=live_store,
+            area_cache=area_cache,
+            latest=explore_latest_month(),
         )
+    except AcquisitionNeeded as needed:
+        job = explore_jobs.start(
+            needed.view,
+            catalog,
+            live_store,
+            acquisition_source,
+            LIVE_TIMEOUT_SECONDS,
+            area_cache=area_cache,
+        )
+        return JSONResponse(status_code=202, content=ok({"job": dict(job)}))
     except Refusal as refusal:
         return error(refusal.status, refusal.code, refusal.message)
-    return {**ok(data), "provenance": "preloaded"}
+    # A Selected area is only ever answered directly from its own cache.
+    cached = "area" in data or any(
+        live_store.series(region_id, v, Period(**data["period"])) is not None
+        for v in variable_id or []
+    )
+    return {**ok(data), "provenance": "cache" if cached else "preloaded"}
+
+
+def explore_latest_month() -> str:
+    configured = os.environ.get("WEATHER_REPORT_LATEST_MONTH")
+    if configured is not None:
+        if (
+            re.fullmatch(r"[0-9]{4}-(0[1-9]|1[0-2])", configured) is None
+            or configured < FIRST_MONTH
+        ):
+            raise ValueError(
+                "WEATHER_REPORT_LATEST_MONTH must be YYYY-MM, from 2000-01."
+            )
+        return configured
+    last = datetime.now(UTC).replace(day=1) - timedelta(days=1)
+    return last.strftime("%Y-%m")
+
+
+@app.get("/api/explore/options")
+def get_explore_options() -> Any:
+    return ok(
+        {
+            "latest_month": explore_latest_month(),
+            "area_variable_ids": [
+                variable.variable_id
+                for variable in catalog.variables
+                if variable.variable_id in AREA_VARIABLES
+            ],
+        }
+    )
+
+
+@app.get("/api/explore/jobs/{job_id}")
+async def get_explore_job(job_id: str) -> Any:
+    job = explore_jobs.jobs.get(job_id)
+    if job is None:
+        return error(404, "job_not_found", "No background job with this reference.")
+    return ok({"job": dict(job)})
 
 
 @app.get("/api/comparison")

@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 from netCDF4 import Dataset
 
-from .models import Bbox, Source
+from .models import Bbox, SelectedArea, Source
 from .netcdf import coordinate, extract_many, groups, inherited_variables, load_manifest
 from .selection import NativeSeries, SeriesSelectionError, TimeWindow
 
@@ -19,6 +19,13 @@ _READ_LOCK = threading.RLock()
 @dataclass(frozen=True)
 class _Area:
     bbox: tuple[float, float, float, float]
+    boxes: tuple[tuple[float, float, float, float], ...] = ()
+
+
+def _area(area: Bbox | SelectedArea) -> _Area:
+    if isinstance(area, SelectedArea):
+        return _Area(area.rectangles[0], area.rectangles)
+    return _Area((area.west, area.south, area.east, area.north))
 
 
 def _flag(value) -> bool:
@@ -199,10 +206,7 @@ class NetCDFSeriesSource:
         try:
             extracted = extract_many(
                 normalized,
-                {
-                    name: _Area((area.west, area.south, area.east, area.north))
-                    for name, area in areas.items()
-                },
+                {name: _area(area) for name, area in areas.items()},
                 variables=[raw_name],
                 time_window=(window.lower, window.upper),
                 land_mask_provider=mask_provider,
