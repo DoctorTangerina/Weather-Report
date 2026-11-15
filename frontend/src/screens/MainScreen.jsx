@@ -5,6 +5,7 @@ import RegionGlobe from '../components/Globe.jsx'
 import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
 import Timeline from '../components/Timeline.jsx'
 import { REGION_COLORS } from '../palette.js'
+import useAvailableSeries from '../useAvailableSeries.js'
 import useComparison from '../useComparison.js'
 import useSeries from '../useSeries.js'
 import InvestigationScreen from './InvestigationScreen.jsx'
@@ -41,19 +42,25 @@ export default function MainScreen({
     if (investigating) setInvestigationStep(0)
   }, [investigating, discovery?.discovery_id])
 
+  const available = useAvailableSeries()
+  const defaults = available.defaultPair(catalog)
   const region =
-    catalog?.regions.find((item) => item.region_id === regionId) ?? catalog?.regions[0]
+    catalog?.regions.find((item) => item.region_id === (regionId || defaults?.[0])) ??
+    catalog?.regions[0]
   const otherRegions =
     catalog?.regions.filter((item) => item.region_id !== region?.region_id) ?? NONE
   const secondRegion =
-    otherRegions.find((item) => item.region_id === secondRegionId) ?? otherRegions[0]
+    otherRegions.find((item) => item.region_id === (secondRegionId || defaults?.[1])) ??
+    otherRegions[0]
   const variables =
     catalog?.variables.filter(
       (item) =>
         region?.variable_ids.includes(item.variable_id) &&
         secondRegion?.variable_ids.includes(item.variable_id),
     ) ?? NONE
-  const variable = variables.find((item) => item.variable_id === variableId) ?? variables[0]
+  const variable =
+    variables.find((item) => item.variable_id === (variableId || defaults?.[2])) ??
+    variables[0]
 
   // The investigation charts the Check step's series; the Discovery view charts
   // its lead Contrast. Both pairs come from the engine's narrative.
@@ -79,10 +86,13 @@ export default function MainScreen({
   )
 
   const discoverySeries = useSeries(refs)
+  // Wait for the list of stored series before comparing, so the first request
+  // is the data-backed default pair rather than whatever the catalog lists first.
+  const comparing = exploring && available.settled
   const comparison = useComparison(
-    exploring ? region?.region_id : null,
-    exploring ? secondRegion?.region_id : null,
-    exploring ? variable?.variable_id : null,
+    comparing ? region?.region_id : null,
+    comparing ? secondRegion?.region_id : null,
+    comparing ? variable?.variable_id : null,
   )
   const { loading: seriesLoading, series, notice: seriesNotice, error: seriesError } =
     exploring ? comparison : discoverySeries
@@ -152,8 +162,10 @@ export default function MainScreen({
               onRegion={setRegionId}
               onSecondRegion={setSecondRegionId}
               onVariable={setVariableId}
+              hasData={available.has}
               series={series}
               seriesLoading={seriesLoading}
+              error={comparison.error}
               timestamp={timestamp}
               highlights={explored}
               trends={comparison.trends}
