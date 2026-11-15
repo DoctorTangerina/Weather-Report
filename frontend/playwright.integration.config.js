@@ -14,6 +14,7 @@ export default defineConfig({
       command: 'node frontend/scripts/start-test-api.mjs',
       cwd: root,
       env: {
+        WEATHER_REPORT_E2E_API_APP: 'tests.explore_catalog_app:app',
         PYTHONPATH: [join(root, 'src'), root, process.env.PYTHONPATH].filter(Boolean).join(delimiter),
         WEATHER_REPORT_DATA_DIR: process.env.WEATHER_REPORT_DATA_DIR ?? join(root, 'data', 'seed'),
       },

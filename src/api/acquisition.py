@@ -51,10 +51,12 @@ async def acquire_series(
         "PYTHONPATH": os.pathsep.join((str(root), str(root / "src"))),
     }
     with tempfile.TemporaryDirectory(prefix="weather-acquisition-") as workspace:
-        geometry = (
-            {"rectangles": rectangles, "bbox": rectangles[0]}
-            if region is None
-            else {
+        if region is None:
+            if not rectangles:
+                raise ValueError("A Selected area requires at least one rectangle.")
+            geometry = {"rectangles": rectangles, "bbox": rectangles[0]}
+        else:
+            geometry = {
                 "region_id": region.region_id,
                 "bbox": [
                     region.bbox.west,
@@ -63,7 +65,6 @@ async def acquire_series(
                     region.bbox.north,
                 ],
             }
-        )
         request = {
             **geometry,
             "variable_id": variable.variable_id,

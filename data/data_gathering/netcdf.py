@@ -365,7 +365,9 @@ def extract_many(
                         raise ValueError(
                             "Time coordinate needs CF '<unit> since <date>' units."
                         )
-                    dates = num2date(time[:], time.units, calendar)
+                    dates = np.array(
+                        num2date(time[:], time.units, calendar), dtype=object, ndmin=1
+                    )
                     timestamps = [date.isoformat() for date in dates]
                     if len(timestamps) != len(set(timestamps)):
                         raise ValueError("Duplicate timestamps in one time coordinate.")
@@ -540,7 +542,7 @@ def _read_field(
                     else int(index)
                 )
             )
-            if hasattr(value, "item"):
+            if isinstance(value, np.generic):
                 value = value.item()
             if isinstance(value, bytes):
                 value = value.decode("utf-8")

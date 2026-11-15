@@ -316,10 +316,12 @@ async def get_explore_series(
     try:
         data, provenance = build()
     except AcquisitionNeeded as needed:
+        cache = explore_cache(aggregation, time_step)
+        assert cache is not None, "A validated Explore My World view requires a cache."
         job = explore_jobs.start(
             needed.view,
             catalog,
-            explore_cache(aggregation, time_step),
+            cache,
             acquisition_source,
             LIVE_TIMEOUT_SECONDS,
             finish=lambda: build()[0],

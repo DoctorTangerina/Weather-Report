@@ -1,7 +1,7 @@
 """Serve selected fields from a trusted acquisition manifest, without fetching."""
 
 import threading
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -241,7 +241,7 @@ class NetCDFSeriesSource:
             raise SeriesSelectionError(
                 "land_mask_unavailable", "This land-only Variable requires a land mask."
             )
-        mask_provider = None
+        mask_provider: Callable[..., np.ndarray] | None = None
         if description["land_only"]:
             mask_rule = rule.get("land_mask")
             if not isinstance(mask_rule, dict) or "variable" not in mask_rule:
@@ -250,8 +250,10 @@ class NetCDFSeriesSource:
                     "This land-only Variable needs a configured land mask before it can be returned.",
                 )
 
-            def mask_provider(record, available, geo):
+            def provide_land_mask(record, available, geo):
                 return self._land_mask(mask_rule, available, geo)
+
+            mask_provider = provide_land_mask
 
         normalized = [{**record, "dataset": identifier} for record in records]
         try:
