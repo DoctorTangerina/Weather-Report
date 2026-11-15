@@ -146,7 +146,10 @@ For hourly values `[1, 5, 9]` within one day, the daily result is `5` with `mean
   that are present, without requiring a complete native bucket. Empty and
   all-missing buckets return `None`, including for `sum`; no zero filling occurs.
 - Units and source quality assessments remain unchanged. Summing a rate such as
-  `mm/day` does not silently turn it into an accumulated rainfall quantity.
+  `mm/day` or `kg m-2 s-1` gives a total for each bucket while the units still
+  read as a rate, so that step returns a `sum_of_rate` warning instead of passing
+  silently. Summing a quantity that is already a total (for example precipitation
+  given in `mm` for each Time step) does not warn.
 - Results include `frequency` and `resampling` metadata: source/target frequency,
   aggregation, time zone, sample counts and valid-value counts per bucket.
   Recorded instructions support replay, and output can feed scaling or arithmetic.

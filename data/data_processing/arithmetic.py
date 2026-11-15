@@ -13,7 +13,7 @@ from .errors import ProcessingError
 from .missing_values import manage_missing
 from .resampling import resample_series
 from .scaling import scale_values
-from .units import compound, conversion
+from .units import compound, conversion, is_rate
 
 
 def _number(value) -> bool:
@@ -400,6 +400,21 @@ def process_series(request: Mapping) -> dict:
                 timezone=step.get("timezone", "UTC"),
             )
             result = _Value(resampled["values"], first["units"])
+            if resampled["resampling"]["aggregation"] == "sum" and is_rate(
+                first["units"]
+            ):
+                # The units are kept, so the warning is what stops a total being
+                # read as a rate.
+                step_warnings.append(
+                    {
+                        "code": "sum_of_rate",
+                        "units": first["units"],
+                        "message": (
+                            "Summing rate samples gives a total for each bucket, "
+                            "not a rate, although the units still read as a rate."
+                        ),
+                    }
+                )
         else:
             result = _Value(
                 scale_values(

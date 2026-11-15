@@ -51,3 +51,43 @@ def compound(left: str, right: str, *, divide: bool) -> str:
     if divide and left == right:
         return "1"
     return f"({left}) {'/' if divide else '*'} ({right})"
+
+
+_TIME_UNITS = {
+    "s",
+    "sec",
+    "second",
+    "seconds",
+    "min",
+    "minute",
+    "minutes",
+    "h",
+    "hr",
+    "hour",
+    "hours",
+    "d",
+    "day",
+    "days",
+    "month",
+    "months",
+    "yr",
+    "year",
+    "years",
+}
+
+
+def is_rate(units: str) -> bool:
+    """Whether units are per unit of time: "mm/day", "kg m-2 s-1", "mm per hour"."""
+    text = units.strip()
+    if "/" in text and text.rsplit("/", 1)[1].strip(" ()") in _TIME_UNITS:
+        return True
+    tokens = text.replace("^", "").split()
+    return any(
+        (token.endswith("-1") and token[:-2] in _TIME_UNITS)
+        or (
+            token == "per"
+            and index + 1 < len(tokens)
+            and tokens[index + 1] in _TIME_UNITS
+        )
+        for index, token in enumerate(tokens)
+    )

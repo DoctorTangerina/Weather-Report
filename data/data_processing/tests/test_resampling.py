@@ -286,3 +286,32 @@ def test_existing_frequency_cannot_be_overridden_with_a_false_declaration():
     with pytest.raises(ProcessingError) as error:
         process_series(payload)
     assert error.value.code == "source_frequency_mismatch"
+
+
+# #48: summing rate samples must not silently claim an accumulated total.
+HOURS = ["2024-01-01T00:00:00Z", "2024-01-01T01:00:00Z", "2024-01-01T02:00:00Z"]
+
+
+@pytest.mark.parametrize("units", ["mm/day", "kg m-2 s-1", "mm per hour", "m/s"])
+def test_summing_a_rate_warns_that_the_result_is_a_total(units):
+    payload = request(HOURS, [1, 5, 9], aggregation="sum")
+    payload["series"]["A"]["units"] = units
+    result = process_series(payload)
+    warning = next(w for w in result["series"]["daily"]["warnings"])
+    assert warning["code"] == "sum_of_rate"
+    assert warning["units"] == units
+    assert result["warnings"] == [{"operation": "daily", **warning}]
+
+
+@pytest.mark.parametrize("aggregation", ["mean", "min", "max", "median"])
+def test_other_aggregations_of_a_rate_do_not_warn(aggregation):
+    result = process_series(request(HOURS, [1, 5, 9], aggregation=aggregation))
+    assert result["warnings"] == []
+
+
+@pytest.mark.parametrize("units", ["mm", "kg m-2", "K", "°C", "1", "m-1"])
+def test_summing_a_quantity_that_is_not_a_rate_does_not_warn(units):
+    # Precipitation given as the total for each Time step is summed legitimately.
+    payload = request(HOURS, [1, 5, 9], aggregation="sum")
+    payload["series"]["A"]["units"] = units
+    assert process_series(payload)["warnings"] == []
