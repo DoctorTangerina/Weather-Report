@@ -25,7 +25,10 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel
 
 from data.data_gathering.config import settings
@@ -86,6 +89,27 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Weather Report", version=ENGINE_VERSION, lifespan=lifespan)
+# The Discovery list alone is over 2 MB of JSON; compressed it is a tenth of that.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(request: Request, exc: RequestValidationError) -> Any:
+    """FastAPI's own request validation, in the documented error envelope."""
+    problem = exc.errors()[0] if exc.errors() else {}
+    where = ".".join(str(part) for part in problem.get("loc", ()) if part != "body")
+    detail = problem.get("msg", "Invalid request")
+    return error(422, "invalid_request", f"{where}: {detail}" if where else detail)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_problem(request: Request, exc: StarletteHTTPException) -> Any:
+    """Unknown routes and wrong methods, in the documented error envelope."""
+    code = {404: "not_found", 405: "method_not_allowed"}.get(
+        exc.status_code, "http_error"
+    )
+    return error(exc.status_code, code, str(exc.detail))
+
 
 catalog = load_catalog(CATALOG_PATH)
 store = JsonResultStore(DATA_DIR, ENGINE_VERSION)
