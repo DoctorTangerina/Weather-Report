@@ -105,7 +105,7 @@ export default function ExploreMyWorld({
           ))}
         </select>
       </div>
-      <p className="chart-note">{describeAggregation(view.aggregation, view.timeStep)}</p>
+      <p className="chart-note">{describeAggregation(view.aggregation, view.timeStep, noun)}</p>
 
       {view.chosen.length === 0 && <p role="status">Choose at least one Variable.</p>}
       {view.error && (

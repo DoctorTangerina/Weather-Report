@@ -34,7 +34,9 @@ test('the seven Aggregations are offered in the spec order, defaulting to mean',
 
 test('the note says how cells are combined and which ones count by area', () => {
   assert.match(describeAggregation('mean'), /mean .*weighted by the area of each grid cell/)
-  assert.match(describeAggregation('maximum'), /highest value among the area's grid cells/)
+  assert.match(describeAggregation('maximum'), /highest value among the grid cells of the area/)
+  assert.match(describeAggregation('mean', 'monthly', 'Region'), /mean over the Region, weighted by the area of each grid cell/)
+  assert.doesNotMatch(describeAggregation('median', 'daily', 'Region'), /over the area/)
   assert.doesNotMatch(describeAggregation('maximum'), /area of each/)
   assert.match(describeAggregation('standard_deviation'), /population standard deviation/)
   assert.match(describeAggregation('standard_deviation'), /in proportion to its area/)
