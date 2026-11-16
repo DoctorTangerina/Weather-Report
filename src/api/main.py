@@ -60,6 +60,7 @@ from .field_map import FieldCache, FieldJobs, field_view
 from .grid_source import GridAcquisitionSource
 from .jobs import SeriesJobs
 from .processing import run_recipe
+from .products import PRODUCTS
 from .results import example_response, select_example, usable
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -424,6 +425,7 @@ def get_explore_options() -> Any:
         {
             "latest_month": explore_latest_month(),
             "area_variable_ids": variable_ids(AREA_VARIABLES),
+            "field_map_variable_ids": variable_ids(PRODUCTS),
             # Each Time step with the Variables that have data at it and its cap.
             "time_steps": [
                 {
@@ -445,7 +447,7 @@ async def process_explore_series(request: Request) -> Any:
     """Apply a Processing recipe to Source or Derived series (#83). Stateless."""
     try:
         body = json.loads(await request.body())
-    except ValueError:
+    except (ValueError, RecursionError):
         return error(422, "invalid_processing_request", "Send the request as JSON.")
     try:
         return ok(await run_in_threadpool(run_recipe, body))
