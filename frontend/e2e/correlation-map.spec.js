@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test'
 
+// Reduced motion keeps the globe still, so a handle drag lands where it is aimed.
+test.use({ reducedMotion: 'reduce' })
+
 const catalog = {
   regions: [
     { region_id: 'sahel', name: 'Sahel', bbox: { west: -15, east: 25, south: 12, north: 18 }, variable_ids: ['temperature', 'precipitation'] },
@@ -101,7 +104,16 @@ test('resampling-required and resource errors preserve choices and clear old res
   await expect(page.getByRole('list', { name: 'Correlation inputs' }).getByRole('listitem')).toHaveCount(2)
 })
 
-test('joined antimeridian rectangles and prepared calculations send identifiers and instructions', async ({ page }) => {
+// #60 with #81: rectangles come from the shared Selected area, drawn, joined and
+// resized with the same panel and globe handles as Explore My World.
+const handle = (page, rectangle, name) => page.locator(`.area-handle[data-rectangle="${rectangle}"][data-handle="${name}"]`)
+
+async function edges(page, button, [west, south, east, north]) {
+  for (const [name, value] of Object.entries({ West: west, South: south, East: east, North: north })) await page.getByRole('spinbutton', { name, exact: true }).fill(String(value))
+  await page.getByRole('button', { name: button, exact: true }).click()
+}
+
+test('the shared Selected area supplies joined, antimeridian and resized rectangles; prepared calculations send instructions', async ({ page }) => {
   let sent
   await start(page, async route => {
     sent = route.request().postDataJSON()
@@ -112,18 +124,43 @@ test('joined antimeridian rectangles and prepared calculations send identifiers 
   await page.getByLabel('Calculation name').fill('Twice temperature')
   await page.getByLabel('Expression or input ID').fill('2 * input_0')
   await page.getByRole('button', { name: 'Add prepared calculation', exact: true }).click()
-  await page.getByLabel('Choose my own rectangles').check()
-  for (const [name, value] of Object.entries({ West: '170', East: '-170', South: '-10', North: '10' })) await page.getByRole('spinbutton', { name, exact: true }).fill(value)
-  await page.getByRole('button', { name: 'Add rectangle', exact: true }).click()
-  for (const [name, value] of Object.entries({ West: '10', East: '20', South: '-5', North: '5' })) await page.getByRole('spinbutton', { name, exact: true }).fill(value)
-  await page.getByRole('button', { name: 'Add rectangle', exact: true }).click()
+
+  await page.getByLabel('Use my Selected area').check()
   await page.getByRole('checkbox', { name: 'Soil moisture', exact: true }).check()
   await page.getByRole('button', { name: 'Add selected Variables' }).click()
+  await expect(page.getByText('Draw a Selected area in Your own area first.')).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Correlation inputs' }).getByRole('listitem')).toHaveCount(3)
+
+  await page.getByText('Or type its edges in degrees').click()
+  await edges(page, 'Use these edges', [170, -10, -170, 10])
+  await edges(page, 'Add these edges', [-170, -5, -160, 5])
+  const shape = page.getByLabel('Selected area for correlation')
+  await expect(shape).toHaveText('Rectangles: 10°S to 10°N, 170°E to 170°W; 5°S to 5°N, 170°W to 160°W')
+  await page.getByLabel('Area name').fill('Pacific')
+  await page.getByRole('button', { name: 'Add selected Variables' }).click()
+
+  // Resize on the globe with the shared handles; the new shape is a new input.
+  await expect(handle(page, 1, 'e')).toBeVisible()
+  const box = await handle(page, 1, 'e').boundingBox()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2, { steps: 6 })
+  await page.mouse.up()
+  await expect(shape).not.toContainText('170°W to 160°W')
+  await page.getByLabel('Area name').fill('Wider Pacific')
+  await page.getByRole('button', { name: 'Add selected Variables' }).click()
+  await expect(page.getByRole('list', { name: 'Correlation inputs' }).getByRole('listitem')).toHaveCount(5)
+
   await page.getByRole('button', { name: 'Build correlation map', exact: true }).click()
   await expect(page.getByRole('table', { name: 'Pearson correlation matrix' })).toBeVisible()
   expect(sent.derived[0].operations[0].expression).toBe('2 * input_0')
-  expect(sent.variables.at(-1).area.rectangles).toEqual([{ west: 170, east: -170, south: -10, north: 10 }, { west: 10, east: 20, south: -5, north: 5 }])
   expect(sent.variables[2].label).toBe('Twice temperature')
+  expect(sent.variables[3]).toMatchObject({ variable: 'soil-moisture', label: 'Soil moisture — Pacific', area: { name: 'Pacific', rectangles: [{ west: 170, east: -170, south: -10, north: 10 }, { west: -170, east: -160, south: -5, north: 5 }] } })
+  const [first, resized] = sent.variables[4].area.rectangles
+  expect(first).toEqual({ west: 170, east: -170, south: -10, north: 10 })
+  expect(resized).toMatchObject({ west: -170, south: -5, north: 5 })
+  expect(resized.east).toBeGreaterThan(-160)
+  expect(sent.variables[4].label).toBe('Soil moisture — Wider Pacific')
 })
 
 test('too few retained inputs show reasons and no empty heatmap', async ({ page }) => {

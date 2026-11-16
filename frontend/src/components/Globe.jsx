@@ -118,7 +118,6 @@ function RegionGlobe({
   onDrawn,
   onDrawCancel,
   onAreaChange,
-  onPick,
 }) {
   // Equivalent highlights can arrive in new arrays as series requests settle.
   // Keep polygons, labels and the camera flight stable across those renders.
@@ -382,7 +381,6 @@ function RegionGlobe({
             atmosphereAltitude={0.18}
             animateIn={false}
             onGlobeReady={() => setReady(true)}
-            onGlobeClick={onPick}
             polygonsData={polygons}
             polygonCapColor={polygonCapColor}
             polygonSideColor={polygonSideColor}

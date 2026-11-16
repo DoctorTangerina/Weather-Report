@@ -12,11 +12,13 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from ..data_gathering.selection import SeriesSelectionError, TimeWindow
 from ..time_steps import (
     bucket_start,
+    confirmed_timezones,
     next_bucket,
     normalize_time_step,
     series_time_step,
     time_step_label,
     utc_instant,
+    zone_message,
 )
 from .arithmetic import process_series
 from .errors import ProcessingError
@@ -349,12 +351,12 @@ def _build(request, loader):
             "resampling_required",
             "Choose an explicit common Time step or change the selected inputs.",
         )
-    if zone.key != "UTC" and any(
-        "time_step" in candidate[1] for candidate in candidates
-    ):
-        raise ProcessingError(
-            "invalid_timezone", "Explore My World Time steps follow UTC."
-        )
+    for selection, item, _, _ in candidates:
+        zones = confirmed_timezones(item) - {zone.key}
+        if zones:
+            raise ProcessingError(
+                "invalid_timezone", zone_message(zones), input=selection["id"]
+            )
     for _, _, _, frequency in candidates:
         require_coarser_time_step(frequency, target)
     grid = _grid(lower, upper, target, zone)

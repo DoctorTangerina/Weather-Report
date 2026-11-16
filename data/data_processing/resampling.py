@@ -7,8 +7,14 @@ from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..time_steps import bucket_start as _floor
+from ..time_steps import (
+    confirmed_timezones,
+    normalize_time_step,
+    series_time_step,
+    time_step_label,
+    zone_message,
+)
 from ..time_steps import next_bucket as _next
-from ..time_steps import normalize_time_step, series_time_step, time_step_label
 from .errors import ProcessingError
 
 _AGGREGATIONS = {
@@ -147,10 +153,9 @@ def resample_series(
             "source_frequency_mismatch",
             "Source frequency contradicts the input's Time step.",
         )
-    if "time_step" in series and timezone != "UTC":
-        raise ProcessingError(
-            "invalid_timezone", "Explore My World Time steps follow UTC."
-        )
+    zones = confirmed_timezones(series) - {timezone}
+    if zones:
+        raise ProcessingError("invalid_timezone", zone_message(zones))
     require_coarser_time_step(source, target)
     if series.get("calendar", "standard") not in (
         "standard",

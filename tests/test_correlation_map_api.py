@@ -309,3 +309,81 @@ def test_prepared_calculation_cannot_supply_raw_values(client):
     assert (
         response.json()["error"]["details"]["excluded"][0]["code"] == "invalid_derived"
     )
+
+
+def test_prepared_local_zone_resampling_keeps_its_days_over_http(
+    client, monkeypatch, validator_for
+):
+    # #62: legacy hourly acquisitions, resampled by #48 to Sao Paulo days in a
+    # prepared calculation, stay on those local days in a Sao Paulo map.
+    def hourly(variable, values):
+        stamps = [
+            f"2024-01-{day:02d}T{hour}Z"
+            for day in (1, 2, 3)
+            for hour in ("04:00", "05:00")
+        ]
+        series = payload(
+            variable,
+            values,
+            timestamps=stamps,
+            period={"start": "2024-01", "end": "2024-01"},
+            frequency="hour",
+        )
+        series.pop("time_step")
+        return series
+
+    monkeypatch.setattr(
+        main.store,
+        "all_series",
+        lambda: [
+            hourly("temperature", [1, 1, 2, 2, 4, 4]),
+            hourly("precipitation", [3, 3, 2, 2, 1, 1]),
+        ],
+    )
+
+    def local(variable):
+        return {
+            "id": f"local-{variable}",
+            "inputs": {"A": {"variable": variable, "area": "sahel"}},
+            "operations": [
+                {
+                    "id": "result",
+                    "operation": "resample",
+                    "input": "A",
+                    "frequency": "daily",
+                    "timezone": "America/Sao_Paulo",
+                }
+            ],
+            "output": "result",
+        }
+
+    body = request(
+        variables=[
+            {"id": "t", "variable": "local-temperature", "area": "derived"},
+            {"id": "p", "variable": "local-precipitation", "area": "derived"},
+        ],
+        derived=[local("temperature"), local("precipitation")],
+        period={"start": "2024-01-01", "end": "2024-01-03"},
+        timezone="America/Sao_Paulo",
+    )
+    response = client.post("/api/correlation-map", json=body)
+    assert response.status_code == 200
+    validator_for("correlation-map.schema.json", "#/$defs/response").validate(
+        response.json()
+    )
+    data = response.json()["data"]
+    assert data["excluded"] == []
+    assert data["settings"] == {
+        "period": {"start": "2024-01-01", "end": "2024-01-03"},
+        "time_step": "daily",
+        "timezone": "America/Sao_Paulo",
+    }
+    assert data["timestamps"] == [f"2024-01-0{d}T03:00:00+00:00" for d in (1, 2, 3)]
+    assert (
+        data["inputs"][0]["metadata"]["resampling"]["timezone"] == "America/Sao_Paulo"
+    )
+
+    refused = client.post("/api/correlation-map", json={**body, "timezone": "UTC"})
+    assert refused.status_code == 422
+    assert refused.json()["error"]["code"] == "invalid_timezone"
+    assert refused.json()["error"]["details"]["input"] == "t"

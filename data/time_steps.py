@@ -47,6 +47,37 @@ def series_time_step(series: Mapping) -> str | None:
     return declared[0] if declared else None
 
 
+def confirmed_timezones(series: Mapping) -> set[str]:
+    """Zones a Series' Time-step boundaries were confirmed in; empty for legacy data.
+
+    Acquired Explore My World Time steps follow UTC. A #48 resampling records the
+    zone its buckets used, and later processing carries it in its provenance, so
+    a prepared Derived series keeps its own local days and months.
+    """
+    resampling = series.get("resampling")
+    if isinstance(resampling, Mapping) and isinstance(resampling.get("timezone"), str):
+        return {resampling["timezone"]}
+    provenance = series.get("provenance")
+    zones = set()
+    if isinstance(provenance, Mapping):
+        for parent in provenance.values():
+            if isinstance(parent, Mapping):
+                zones |= confirmed_timezones(parent)
+    if not zones and "time_step" in series:
+        zones.add("UTC")
+    return zones
+
+
+def zone_message(zones: set[str]) -> str:
+    if zones == {"UTC"}:
+        return "Explore My World Time steps follow UTC."
+    names = ", ".join(sorted(zones))
+    return (
+        f"This prepared series uses {names} days and months; "
+        "choose that analysis time zone instead of changing them."
+    )
+
+
 def utc_instant(timestamp: str) -> datetime:
     """Interpret ISO dates/times as UTC instants, keeping offset equivalence."""
     text = timestamp + "-01" if len(timestamp) == 7 else timestamp

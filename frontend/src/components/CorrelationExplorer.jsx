@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { getCorrelationMap } from '../api.js'
+import { describeArea } from '../selectedArea.js'
 import CorrelationHeatmap from './CorrelationHeatmap.jsx'
 import MissingDataDialog from './MissingDataDialog.jsx'
 
 const AGGREGATIONS = ['mean', 'sum', 'median', 'minimum', 'maximum', 'root mean square', 'standard deviation', 'mean absolute value']
-const EMPTY_BOX = { west: '', east: '', south: '', north: '' }
 const incomplete = item => item.code === 'incomplete_output_timeline'
 const selectionKey = ({ variable, area, source_time_step, aggregation }) => JSON.stringify({ variable, area, source_time_step, aggregation })
+// The shared Selected area (#79/#81) keeps rectangles as [west, south, east, north].
+const toBounds = ([west, south, east, north]) => ({ west, east, south, north })
 
-export default function CorrelationExplorer({ catalog, mapPoint, onPicking, onAreaPreview }) {
+// Selected areas come from the shared Selected area: drawn, joined and resized on
+// the globe or typed in Your own area, never a separate rectangle tool (#60).
+export default function CorrelationExplorer({ catalog, selectedArea, onAreaPreview }) {
   const [areaId, setAreaId] = useState(catalog.regions[0]?.region_id ?? '')
   const [custom, setCustom] = useState(false)
-  const [box, setBox] = useState(EMPTY_BOX)
-  const [rectangles, setRectangles] = useState([])
   const [areaName, setAreaName] = useState('Selected area')
   const [chosen, setChosen] = useState([])
   const [inputs, setInputs] = useState([])
@@ -30,8 +32,6 @@ export default function CorrelationExplorer({ catalog, mapPoint, onPicking, onAr
   const [loading, setLoading] = useState(false)
   const [popup, setPopup] = useState(null)
   const [message, setMessage] = useState('')
-  const [drawing, setDrawing] = useState(false)
-  const firstCorner = useRef(null)
   const sequence = useRef(0)
   const version = useRef(0)
   const controller = useRef(null)
@@ -47,41 +47,12 @@ export default function CorrelationExplorer({ catalog, mapPoint, onPicking, onAr
     setLoading(false)
   }
   useEffect(() => () => controller.current?.abort(), [])
-  useEffect(() => {
-    if (!drawing || !mapPoint) return
-    if (!firstCorner.current) {
-      firstCorner.current = mapPoint
-      setMessage('First corner selected. Choose the opposite corner on the globe.')
-    } else {
-      const a = firstCorner.current
-      const next = { west: Math.min(a.lng, mapPoint.lng), east: Math.max(a.lng, mapPoint.lng), south: Math.min(a.lat, mapPoint.lat), north: Math.max(a.lat, mapPoint.lat) }
-      setBox(Object.fromEntries(Object.entries(next).map(([key, value]) => [key, value.toFixed(3)])))
-      setDrawing(false)
-      onPicking?.(false)
-      firstCorner.current = null
-      setMessage('Rectangle coordinates selected. Review them and add the rectangle; swap west/east to cross the antimeridian.')
-    }
-  }, [mapPoint]) // Each map click is a distinct event, including repeated coordinates.
-
-  function addRectangle() {
-    const next = Object.fromEntries(Object.entries(box).map(([key, value]) => [key, Number(value)]))
-    if (Object.values(box).some(value => value === '') || !Object.values(next).every(Number.isFinite) || next.west < -180 || next.west > 180 || next.east < -180 || next.east > 180 || next.south < -90 || next.north > 90 || next.south >= next.north || next.west === next.east) {
-      setMessage('Use distinct west/east longitudes within ±180 and south < north within ±90.')
-      return
-    }
-    const added = [...rectangles, next]
-    setRectangles(added)
-    onAreaPreview?.(added)
-    clearResult()
-    setMessage('Rectangle added. Add another joined rectangle or choose Variables below.')
-  }
-
   function addSelections() {
-    if (!chosen.length || (custom && !rectangles.length)) {
-      setMessage('Choose an area and at least one Variable.')
+    if (!chosen.length || (custom && !selectedArea?.length)) {
+      setMessage(custom && !selectedArea?.length ? 'Draw a Selected area in Your own area first.' : 'Choose an area and at least one Variable.')
       return
     }
-    const area = custom ? { name: areaName || 'Selected area', rectangles } : areaId
+    const area = custom ? { name: areaName || 'Selected area', rectangles: selectedArea.map(toBounds) } : areaId
     const areaLabel = custom ? areaName || 'Selected area' : region.name
     const additions = chosen.map(variable => ({ variable, area, label: `${catalog.variables.find(item => item.variable_id === variable).name} — ${areaLabel}`, id: `input_${sequence.current++}` }))
     const seen = new Set(inputs.map(selectionKey))
@@ -132,15 +103,14 @@ export default function CorrelationExplorer({ catalog, mapPoint, onPicking, onAr
     <section className="explorer correlation-explorer" aria-labelledby="correlation-heading" aria-busy={loading}>
       <h3 id="correlation-heading">Correlation map</h3>
       <p className="muted">Explore My World: choose Variables independently for each area, then compare their series.</p>
-      <label><input type="checkbox" checked={custom} onChange={event => { setCustom(event.target.checked); setChosen([]); setDrawing(false); onPicking?.(false) }} /> Choose my own rectangles</label>
+      <label><input type="checkbox" checked={custom} onChange={event => { setCustom(event.target.checked); setChosen([]); onAreaPreview?.(event.target.checked ? null : region && [region.bbox]) }} /> Use my Selected area</label>
       {!custom ? <div className="catalog-controls"><label htmlFor="correlation-area">Area with acquired data</label><select id="correlation-area" value={areaId} onChange={event => { setAreaId(event.target.value); setChosen([]); const next = catalog.regions.find(item => item.region_id === event.target.value); onAreaPreview?.([next.bbox]) }}>{catalog.regions.map(item => <option key={item.region_id} value={item.region_id}>{item.name}</option>)}</select></div> : (
         <fieldset><legend>Selected area</legend>
+          {selectedArea?.length
+            ? <p aria-label="Selected area for correlation"><strong>Rectangles:</strong> {describeArea(selectedArea)}</p>
+            : <p className="notice">Draw a Selected area in Your own area above. It can join touching rectangles, be resized by its handles and cross 180°.</p>}
           <label>Area name <input value={areaName} onChange={event => setAreaName(event.target.value)} /></label>
-          <button type="button" onClick={() => { firstCorner.current = null; setDrawing(!drawing); onPicking?.(!drawing); setMessage('Choose two corners on the globe, or enter coordinates below.') }}>{drawing ? 'Cancel drawing' : 'Draw rectangle on globe'}</button>
-          <div className="rectangle-coordinates">{Object.keys(EMPTY_BOX).map(key => <label key={key}>{key[0].toUpperCase() + key.slice(1)}<input type="number" step="any" value={box[key]} onChange={event => setBox({ ...box, [key]: event.target.value })} /></label>)}</div>
-          <p className="muted">West greater than east crosses the antimeridian. Joined rectangles must have acquired coverage.</p>
-          <button type="button" onClick={addRectangle}>Add rectangle</button>
-          <ol aria-label="Joined rectangles">{rectangles.map((item, i) => <li key={i}>{Object.entries(item).map(([key, value]) => `${key}: ${value}`).join(', ')} <button type="button" aria-label={`Remove rectangle ${i + 1}`} onClick={() => { const next = rectangles.filter((_, j) => i !== j); setRectangles(next); onAreaPreview?.(next); clearResult() }}>Remove</button></li>)}</ol>
+          <p className="muted">Inputs keep the rectangles they were added with; redraw or resize the area, then add Variables again to compare another shape. The area needs acquired coverage.</p>
         </fieldset>
       )}
       <fieldset><legend>Variables for this area</legend>{variables.map(item => <label className="correlation-variable" key={item.variable_id}><input type="checkbox" checked={chosen.includes(item.variable_id)} onChange={event => setChosen(event.target.checked ? [...chosen, item.variable_id] : chosen.filter(value => value !== item.variable_id))} />{item.name}</label>)}</fieldset>
@@ -166,7 +136,7 @@ export default function CorrelationExplorer({ catalog, mapPoint, onPicking, onAr
         <label htmlFor="correlation-end">Analysis end</label><input id="correlation-end" type="date" required value={end} onChange={event => { setEnd(event.target.value); clearResult() }} />
         <label htmlFor="correlation-step">Common output Time step</label><select id="correlation-step" value={step} onChange={event => { setStep(event.target.value); clearResult() }}><option value="">Keep matching native Time steps</option>{['3-hourly', 'daily', 'monthly', 'year'].map(value => <option key={value}>{value}</option>)}</select>
         <label htmlFor="correlation-timezone">Aggregation time zone</label><input id="correlation-timezone" value={timezone} required onChange={event => { setTimezone(event.target.value); clearResult() }} />
-        <p className="muted">Use UTC for Time-step series. Legacy-frequency data can use a shared local time zone, such as America/Sao_Paulo. Coarser resampling uses each Series' own Aggregation. No automatic filling or upsampling.</p>
+        <p className="muted">Use UTC for acquired Time-step series. Legacy-frequency data, and prepared calculations resampled in a local time zone, use that zone, such as America/Sao_Paulo. Coarser resampling uses each Series' own Aggregation. No automatic filling or upsampling.</p>
         <button className="primary" type="submit" disabled={loading}>{loading ? 'Building correlation map…' : 'Build correlation map'}</button>
       </form>
       {message && <p role="status">{message}</p>}

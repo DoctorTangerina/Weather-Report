@@ -208,6 +208,10 @@ For hourly values `[1, 5, 9]` within one day, the daily result is `5` with `mean
 - Explore My World inputs declaring `time_step` use UTC, including 3-hour buckets
   starting at 00:00, 03:00, 06:00, and so on. A non-UTC override is rejected.
   Legacy native inputs without that field retain the optional time-zone setting.
+- A resampled output records its zone in `resampling.timezone`, and later steps
+  carry it in their `provenance`. Such a prepared series can be resampled again
+  only in that same zone (`invalid_timezone` otherwise), so its local days and
+  months are never silently re-bucketed into another zone.
 - Day, month and year boundaries are calendar boundaries in the chosen zone.
   Only Gregorian calendars are supported by this simple resampling operation.
 - The output spans the first through last observation's buckets, including empty

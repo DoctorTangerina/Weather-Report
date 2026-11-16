@@ -61,6 +61,10 @@ The common period includes both specified dates/months. ISO datetime endpoints
 are inclusive. Exact timestamps align as UTC instants; nearby times never match
 implicitly. Gregorian calendars are required. New `time_step` series use UTC.
 Legacy `frequency` inputs may use an explicit IANA `timezone` for bucket creation.
+A prepared Derived series whose resampling confirmed a local zone (its
+`resampling.timezone`, or that of a parent in its `provenance`) keeps those
+local days and months: it is compared in a map using that `timezone`, and any
+other zone is refused with `invalid_timezone` naming the input, never re-bucketed.
 
 Different native frequencies require an explicit common `time_step`. Only
 coarser resampling is supported, using the existing processing method and each

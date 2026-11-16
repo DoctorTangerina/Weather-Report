@@ -41,8 +41,6 @@ export default function MainScreen({
 }) {
   const [timeRange, setTimeRange] = useState(null)
   const [timestamp, setTimestamp] = useState(null)
-  const [mapPoint, setMapPoint] = useState(null)
-  const [pickingArea, setPickingArea] = useState(false)
   const [correlationBoxes, setCorrelationBoxes] = useState(null)
   const [regionId, setRegionId] = useState('')
   const [secondRegionId, setSecondRegionId] = useState('')
@@ -155,10 +153,6 @@ export default function MainScreen({
     : exploredRegion ? exploreHighlights : correlationHighlights ?? explored
   // Catalog Regions are clickable where a student is choosing what to look at.
   const pickable = exploring || exploringPlace
-  // While the Correlation map panel picks corners on the globe, a click places a
-  // corner instead of opening the Region under it.
-  const correlationPicking = exploring && pickingArea
-  const regionsClickable = pickable && !correlationPicking
   useEffect(() => {
     if (phase !== 'drawing') previousHighlights.current = globeHighlights
   }, [phase, globeHighlights])
@@ -223,8 +217,8 @@ export default function MainScreen({
         <RegionGlobe
           fieldMap={field.frame}
           highlights={phase === 'drawing' ? previousHighlights.current : globeHighlights}
-          regions={regionsClickable ? catalog.regions : undefined}
-          onRegionClick={regionsClickable ? onExplore : undefined}
+          regions={pickable ? catalog.regions : undefined}
+          onRegionClick={pickable ? onExplore : undefined}
           selectedArea={pickable ? selectedArea : null}
           onAreaClick={pickable ? () => onExplore(null) : undefined}
           drawing={pickable ? drawingArea : null}
@@ -233,9 +227,6 @@ export default function MainScreen({
             setDrawingArea(null)
           }}
           onDrawCancel={() => setDrawingArea(null)}
-          onPick={correlationPicking
-            ? point => setMapPoint({ ...point, clickId: Date.now() })
-            : undefined}
           onAreaChange={
             pickable
               ? (area, problem) => {
@@ -303,7 +294,7 @@ export default function MainScreen({
             <ExploreEntry catalog={catalog} onExplore={onExplore}>
               {areaPanel}
             </ExploreEntry>
-            <CorrelationExplorer catalog={catalog} mapPoint={mapPoint} onPicking={setPickingArea} onAreaPreview={setCorrelationBoxes} />
+            <CorrelationExplorer catalog={catalog} selectedArea={selectedArea} onAreaPreview={setCorrelationBoxes} />
             <Explorer
               disabled={checkingDiscovery}
               catalog={catalog}

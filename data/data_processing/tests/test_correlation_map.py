@@ -4,7 +4,7 @@ import copy
 
 import pytest
 
-from data.data_processing import build_correlation_map
+from data.data_processing import ProcessingError, build_correlation_map, process_series
 
 
 def source(values, *, time_step="daily", timestamps=None, **metadata):
@@ -568,3 +568,132 @@ def test_legacy_local_zone_uses_common_local_bucket_boundaries():
         "2024-01-02T03:00:00+00:00",
     ]
     assert result["settings"]["timezone"] == "America/Sao_Paulo"
+
+
+# #62: a prepared Derived series keeps the local-zone semantics its #48
+# resampling confirmed, while acquired Time steps keep following UTC.
+SAO_PAULO = "America/Sao_Paulo"
+
+
+def local_daily(values, operations=()):
+    """Hourly legacy data resampled by #48 to Sao Paulo days, then processed."""
+    hourly = source(
+        [v for value in values for v in (value, value)],
+        timestamps=[
+            f"2024-01-{day + 1:02d}T{hour}Z"
+            for day in range(len(values))
+            for hour in ("04:00", "05:00")
+        ],
+    )
+    hourly.pop("time_step")
+    hourly["frequency"] = "hour"
+    steps = [
+        {
+            "id": "local",
+            "operation": "resample",
+            "input": "hourly",
+            "frequency": "daily",
+            "timezone": SAO_PAULO,
+        },
+        *operations,
+    ]
+    response = process_series({"series": {"hourly": hourly}, "operations": steps})
+    return response["series"][steps[-1]["id"]]
+
+
+def map_of(series_by_variable, **settings):
+    return build_correlation_map(
+        {
+            "variables": list(series_by_variable),
+            "area": "test",
+            "period": {"start": "2024-01-01", "end": "2024-01-03"},
+            **settings,
+        },
+        loader=lambda selection, period: copy.deepcopy(
+            series_by_variable[selection["variable"]]
+        ),
+    )
+
+
+def test_prepared_local_zone_derived_series_is_eligible_in_its_own_zone():
+    prepared = local_daily([1, 2, 4])
+    legacy = source([3, 2, 1], timestamps=[f"2024-01-0{d}T03:00Z" for d in (1, 2, 3)])
+    legacy.pop("time_step")
+    legacy["frequency"] = "day"
+
+    result = map_of(
+        {"prepared": prepared, "legacy": legacy}, time_step="daily", timezone=SAO_PAULO
+    )
+
+    assert [item["variable"] for item in result["inputs"]] == ["prepared", "legacy"]
+    assert result["excluded"] == []
+    assert result["timestamps"] == [f"2024-01-0{d}T03:00:00+00:00" for d in (1, 2, 3)]
+    assert result["inputs"][0]["metadata"]["resampling"]["timezone"] == SAO_PAULO
+    assert result["settings"]["timezone"] == SAO_PAULO
+
+
+def test_processing_after_local_resampling_keeps_the_confirmed_zone():
+    scaled = local_daily(
+        [1, 2, 4],
+        [{"id": "scaled", "expression": "2 * local"}],
+    )
+    other = local_daily([4, 1, 3])
+
+    result = map_of({"scaled": scaled, "other": other}, timezone=SAO_PAULO)
+
+    assert result["excluded"] == []
+    assert result["settings"]["time_step"] == "daily"
+    provenance = result["inputs"][0]["metadata"]["provenance"]["local"]
+    assert provenance["resampling"]["timezone"] == SAO_PAULO
+
+
+def test_prepared_local_days_resample_to_local_months_in_the_same_zone():
+    january = local_daily([1, 2, 4])
+    prepared = {
+        **january,
+        "timestamps": january["timestamps"] + ["2024-02-01T00:00:00-03:00"],
+        "values": january["values"] + [9],
+        "filled": january["filled"] + [False],
+    }
+    other = copy.deepcopy(prepared)
+    other["values"] = [5, 5, 5, 1]
+
+    result = build_correlation_map(
+        {
+            "variables": ["A", "B"],
+            "area": "test",
+            "period": {"start": "2024-01", "end": "2024-02"},
+            "time_step": "monthly",
+            "timezone": SAO_PAULO,
+        },
+        loader=lambda selection, period: copy.deepcopy(
+            prepared if selection["variable"] == "A" else other
+        ),
+    )
+
+    assert result["timestamps"] == [
+        "2024-01-01T03:00:00+00:00",
+        "2024-02-01T03:00:00+00:00",
+    ]
+    assert result["matrix"] == [[1, -1], [-1, 1]]
+
+
+@pytest.mark.parametrize("timezone", ["UTC", "Europe/Lisbon"])
+def test_prepared_local_series_is_not_rebucketed_into_another_zone(timezone):
+    prepared = local_daily([1, 2, 4])
+    other = local_daily([4, 1, 3])
+
+    with pytest.raises(ProcessingError) as error:
+        map_of({"prepared": prepared, "other": other}, timezone=timezone)
+
+    assert error.value.code == "invalid_timezone"
+    assert error.value.details["input"] == "input_0"
+    assert SAO_PAULO in str(error.value)
+
+
+def test_acquired_time_steps_still_follow_utc_in_a_local_map():
+    with pytest.raises(ProcessingError) as error:
+        map_of({"A": source([1, 2, 3]), "B": source([3, 1, 2])}, timezone=SAO_PAULO)
+
+    assert error.value.code == "invalid_timezone"
+    assert "UTC" in str(error.value)
