@@ -12,5 +12,7 @@ dist/
 htmlcov/
 .ruff_cache/
 .vite/
+
+# Browser test output
 frontend/test-results/
 frontend/playwright-report/

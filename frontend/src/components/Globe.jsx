@@ -3,6 +3,7 @@ import Globe from 'react-globe.gl'
 import { fieldColor } from './FieldMap.jsx'
 import { AREA_COLOR, withAlpha } from '../palette.js'
 import { handles, rectangleFromCorners, resizeArea, unwrapped } from '../selectedArea.js'
+import { rectangleCentre } from '../areaGeometry.js'
 
 const FLIGHT_MS = 1600
 const polygonSideColor = ({ properties: { kind, color } }) =>
@@ -51,11 +52,12 @@ function boxPolygon([west, south, east, north], properties) {
 }
 
 const bounds = ({ bbox }) => [bbox.west, bbox.south, bbox.east, bbox.north]
+// A box whose west edge lies east of its east edge crosses the antimeridian.
 const regionPolygon = (region, color, kind) =>
-  boxPolygon(bounds(region), { color, kind, regionId: region.region_id, name: region.name })
+  boxPolygon(unwrapped(bounds(region)), { color, kind, regionId: region.region_id, name: region.name })
 
 function centre({ bbox }) {
-  return { lat: (bbox.south + bbox.north) / 2, lng: (bbox.west + bbox.east) / 2 }
+  return rectangleCentre(bbox)
 }
 
 function toVector({ lat, lng }) {

@@ -1,9 +1,13 @@
 # Manual data processing
 
 Public Python methods for issue #46's arithmetic, scaling, simple resampling,
-missing-value management, temporal filtering, linear detrending and Pearson comparison. Everything in this
-package is independent of the API and automatic engine. It performs no downloads
-or file reads, needs no Earthdata token, and adds no third-party dependencies.
+missing-value management, temporal filtering, linear detrending and Pearson comparison.
+The [correlation-map method](CORRELATION_MAP.md) loads named selections and returns a
+numeric matrix for issue #56. Everything in this package is independent of the API
+and automatic engine. Numeric processing performs no downloads or file reads and needs
+no Earthdata token. The correlation-map default loader reads the catalog and cached
+monthly series; other sources use an injected loader. No third-party dependencies
+are added.
 
 ## Execute a request
 
@@ -204,6 +208,10 @@ For hourly values `[1, 5, 9]` within one day, the daily result is `5` with `mean
 - Explore My World inputs declaring `time_step` use UTC, including 3-hour buckets
   starting at 00:00, 03:00, 06:00, and so on. A non-UTC override is rejected.
   Legacy native inputs without that field retain the optional time-zone setting.
+- A resampled output records its zone in `resampling.timezone`, and later steps
+  carry it in their `provenance`. Such a prepared series can be resampled again
+  only in that same zone (`invalid_timezone` otherwise), so its local days and
+  months are never silently re-bucketed into another zone.
 - Day, month and year boundaries are calendar boundaries in the chosen zone.
   Only Gregorian calendars are supported by this simple resampling operation.
 - The output spans the first through last observation's buckets, including empty

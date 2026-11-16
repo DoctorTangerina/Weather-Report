@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://weather-report.local/schemas/correlation-map.schema.json",
+  "title": "Correlation-map transport",
+  "$defs": {
+    "response": {
+      "type": "object",
+      "required": ["data", "notice"],
+      "additionalProperties": false,
+      "properties": {
+        "notice": { "$ref": "common.schema.json#/$defs/notice" },
+        "data": {
+          "type": "object",
+          "required": ["inputs", "matrix", "filled_pair_counts", "timestamps", "observation_count", "settings", "excluded", "warnings"],
+          "additionalProperties": false,
+          "properties": {
+            "inputs": {
+              "type": "array", "minItems": 2,
+              "items": {
+                "type": "object",
+                "required": ["id", "variable", "area", "label", "metadata", "filled_count"],
+                "properties": {
+                  "id": { "type": "string", "minLength": 1 },
+                  "variable": { "type": "string", "minLength": 1 },
+                  "area": { "type": ["string", "object"] },
+                  "label": { "type": "string", "minLength": 1 },
+                  "metadata": { "type": "object" },
+                  "filled_count": { "type": "integer", "minimum": 0 }
+                }
+              }
+            },
+            "matrix": { "type": "array", "minItems": 2, "items": { "type": "array", "minItems": 2, "items": { "type": "number", "minimum": -1, "maximum": 1 } } },
+            "filled_pair_counts": { "type": "array", "items": { "type": "array", "items": { "type": "integer", "minimum": 0 } } },
+            "timestamps": { "type": "array", "minItems": 2, "items": { "type": "string" } },
+            "observation_count": { "type": "integer", "minimum": 2 },
+            "settings": {
+              "type": "object", "required": ["period", "time_step", "timezone"],
+              "properties": { "period": { "type": "object", "required": ["start", "end"], "properties": { "start": { "type": "string" }, "end": { "type": "string" } } }, "time_step": { "type": "string" }, "timezone": { "type": "string" } }
+            },
+            "excluded": { "type": "array", "items": { "type": "object", "required": ["id", "variable", "area", "label", "code", "message", "details"], "properties": { "code": { "type": "string" }, "message": { "type": "string" }, "details": { "type": "object" } } } },
+            "warnings": { "type": "array", "items": { "type": "object", "required": ["code", "message"], "properties": { "code": { "type": "string" }, "message": { "type": "string" } } } }
+          }
+        }
+      }
+    },
+    "error": {
+      "type": "object", "required": ["error"], "additionalProperties": false,
+      "properties": { "error": { "type": "object", "required": ["code", "message", "details"], "additionalProperties": false, "properties": { "code": { "type": "string", "minLength": 1 }, "message": { "type": "string", "minLength": 1 }, "details": { "type": "object" } } } }
+    }
+  }
+}

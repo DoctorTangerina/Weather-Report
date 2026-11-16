@@ -28,6 +28,12 @@ npm run test:integration
 same way, with `tests/explore_area_app.py` serving synthetic global grids in
 place of NASA.
 
+`npm run test:correlation` runs the Correlation map suite (`integration-correlation/`,
+#60–#62) the same way. `tests/correlation_app.py` adds deterministic acquired results
+to the seed set: an input missing one month, a constant input, an input rejected by the
+acquisition Quality gate, daily inputs with their own Aggregation, and an acquired
+Selected area across 180°.
+
 The runner uses API port **8765** and frontend port **4174**, keeping the normal
 development ports separate. Those test ports must be free; the suite refuses to
 reuse existing servers so it cannot silently test the wrong configuration.

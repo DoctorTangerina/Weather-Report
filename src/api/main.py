@@ -1,8 +1,8 @@
 """HTTP layer over the engine (seam 2 of the testing plan).
 
 Thin on purpose: it looks results up in the store, checks requests against the
-catalog and serializes. Every statistic and every selection rule belongs to the
-engine package.
+catalog and serializes. Automatic Discovery statistics belong to the engine package; exploratory
+correlation processing belongs to data/data_processing/.
 
 Response bodies follow `schemas/responses.schema.json`: a resource under
 `data`, a `notice` for live unavailability, and (for Series) `provenance`
@@ -48,6 +48,7 @@ from engine.discovery import SessionHistory
 
 from .acquisition import AcquisitionUnavailable, acquire_series
 from .area_cache import AreaSeriesCache
+from .correlation import router as correlation_router
 from .explore import (
     AGGREGATIONS,
     AREA_VARIABLES,
@@ -111,6 +112,8 @@ async def http_problem(request: Request, exc: StarletteHTTPException) -> Any:
     )
     return error(exc.status_code, code, str(exc.detail))
 
+
+app.include_router(correlation_router)
 
 catalog = load_catalog(CATALOG_PATH)
 store = JsonResultStore(DATA_DIR, ENGINE_VERSION)

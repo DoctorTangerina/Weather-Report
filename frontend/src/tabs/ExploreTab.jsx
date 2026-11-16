@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import CorrelationExplorer from '../components/CorrelationExplorer.jsx'
 import ExploreMyWorld, { ExploreEntry } from '../components/ExploreMyWorld.jsx'
 import FieldMap from '../components/FieldMap.jsx'
 import SelectedAreaPanel from '../components/SelectedAreaPanel.jsx'
@@ -11,7 +12,9 @@ import { useShell, useTabDeclaration, useTabTimeline } from './shell.js'
 const NONE = []
 
 // Explore My World (#75-#83): a catalog Region or the Selected area, opened in
-// one view. This is the tab that draws and edits the Selected area.
+// one view. This is the tab that draws and edits the Selected area. Its entry
+// view also holds the Correlation map (#60-#62), which takes its Selected areas
+// from that same shared area.
 export default function ExploreTab() {
   const { catalog, available, area } = useShell()
   const { timestamp } = useTabTimeline()
@@ -21,6 +24,8 @@ export default function ExploreTab() {
     ? catalog.regions.find((item) => item.region_id === target.regionId)
     : null
   const exploredArea = target?.area ? area.selectedArea : null
+  // The Correlation map previews the catalog area it is choosing from.
+  const [correlationBoxes, setCorrelationBoxes] = useState(null)
   const open = (regionId) => setTarget(regionId ? { regionId } : { area: true })
 
   const view = useExploreView(catalog, exploredRegion, available, exploredArea)
@@ -28,10 +33,14 @@ export default function ExploreTab() {
     exploredArea ? { rectangles: exploredArea } : exploredRegion ? { regionId: exploredRegion.region_id } : null,
     view,
   )
-  const highlights = useMemo(
-    () => (exploredRegion ? [{ region: exploredRegion, color: REGION_COLORS[0] }] : NONE),
-    [exploredRegion],
-  )
+  const highlights = useMemo(() => {
+    if (exploredRegion) return [{ region: exploredRegion, color: REGION_COLORS[0] }]
+    if (exploredArea || !correlationBoxes) return NONE
+    return correlationBoxes.map((bbox, index) => ({
+      region: { bbox, name: `Selected area ${index + 1}` },
+      color: REGION_COLORS[index % REGION_COLORS.length],
+    }))
+  }, [exploredRegion, exploredArea, correlationBoxes])
   const series = useMemo(
     () => view.series.filter((item) => item.quality.included),
     [view.series],
@@ -63,9 +72,12 @@ export default function ExploreTab() {
 
   if (!place) {
     return (
-      <ExploreEntry catalog={catalog} onExplore={open}>
-        {areaPanel}
-      </ExploreEntry>
+      <>
+        <ExploreEntry catalog={catalog} onExplore={open}>
+          {areaPanel}
+        </ExploreEntry>
+        <CorrelationExplorer catalog={catalog} selectedArea={area.selectedArea} onAreaPreview={setCorrelationBoxes} />
+      </>
     )
   }
   return (

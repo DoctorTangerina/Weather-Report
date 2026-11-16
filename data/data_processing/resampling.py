@@ -3,10 +3,18 @@
 import math
 import statistics
 from collections import defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from ..time_steps import normalize_time_step, series_time_step, time_step_label
+from ..time_steps import bucket_start as _floor
+from ..time_steps import (
+    confirmed_timezones,
+    normalize_time_step,
+    series_time_step,
+    time_step_label,
+    zone_message,
+)
+from ..time_steps import next_bucket as _next
 from .errors import ProcessingError
 
 _AGGREGATIONS = {
@@ -30,6 +38,16 @@ _AGGREGATIONS = {
     "mean_absolute": "mav",
     "mav": "mav",
 }
+
+
+def normalize_aggregation(value):
+    """Return the public canonical aggregation name, without changing semantics."""
+    result = _AGGREGATIONS.get(value) if isinstance(value, str) else None
+    if result is None:
+        raise ValueError("Choose a supported Aggregation.")
+    return result
+
+
 _ORDER = {
     name: index
     for index, name in enumerate(
@@ -38,35 +56,12 @@ _ORDER = {
 }
 
 
-def _floor(instant, frequency):
-    if frequency == "second":
-        return instant.replace(microsecond=0)
-    if frequency == "minute":
-        return instant.replace(second=0, microsecond=0)
-    if frequency in ("hour", "3-hour"):
-        hour = instant.hour if frequency == "hour" else (instant.hour // 3) * 3
-        return instant.replace(hour=hour, minute=0, second=0, microsecond=0)
-    if frequency == "day":
-        return instant.replace(hour=0, minute=0, second=0, microsecond=0)
-    if frequency == "month":
-        return instant.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    return instant.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-
-
-def _next(instant, frequency):
-    if frequency in ("second", "minute", "hour", "3-hour"):
-        seconds = {"second": 1, "minute": 60, "hour": 3600, "3-hour": 10800}[frequency]
-        return (instant.astimezone(UTC) + timedelta(seconds=seconds)).astimezone(
-            instant.tzinfo
+def require_coarser_time_step(source, target):
+    """Reject upsampling before callers allocate the target timeline."""
+    if _ORDER[target] < _ORDER[source]:
+        raise ProcessingError(
+            "upsampling_not_supported", "Choose the same or a coarser frequency."
         )
-    if frequency == "day":
-        return instant + timedelta(days=1)
-    if frequency == "month":
-        return instant.replace(
-            year=instant.year + (instant.month == 12),
-            month=1 if instant.month == 12 else instant.month + 1,
-        )
-    return instant.replace(year=instant.year + 1)
 
 
 def _aggregate(values, aggregation, timestamp):
@@ -158,14 +153,10 @@ def resample_series(
             "source_frequency_mismatch",
             "Source frequency contradicts the input's Time step.",
         )
-    if "time_step" in series and timezone != "UTC":
-        raise ProcessingError(
-            "invalid_timezone", "Explore My World Time steps follow UTC."
-        )
-    if _ORDER[target] < _ORDER[source]:
-        raise ProcessingError(
-            "upsampling_not_supported", "Choose the same or a coarser frequency."
-        )
+    zones = confirmed_timezones(series) - {timezone}
+    if zones:
+        raise ProcessingError("invalid_timezone", zone_message(zones))
+    require_coarser_time_step(source, target)
     if series.get("calendar", "standard") not in (
         "standard",
         "gregorian",
