@@ -1,3 +1,5 @@
+import { formatNumber } from '../format.js'
+
 // Shared by the globe and its accessible cell table. Missing values are transparent.
 export function fieldColor(value, minimum, maximum) {
   if (value == null) return 'transparent'
@@ -5,7 +7,7 @@ export function fieldColor(value, minimum, maximum) {
   return `hsl(${240 - ratio * 240}, 85%, 55%)`
 }
 
-export default function FieldMap({ field, view, catalog }) {
+export default function FieldMap({ field, catalog }) {
   const data = field.data
   return (
     <section className="field-map" aria-label="Field map">
@@ -15,11 +17,15 @@ export default function FieldMap({ field, view, catalog }) {
       {field.open && <>
         <label htmlFor="field-variable">Field map Variable</label>
         <select id="field-variable" value={field.variableId ?? ''}
+          disabled={field.variableIds.length === 0}
           onChange={(event) => field.setVariableId(event.target.value)}>
-          {view.chosen.map((id) => <option key={id} value={id}>
+          {field.variableIds.map((id) => <option key={id} value={id}>
             {catalog.variables.find((item) => item.variable_id === id)?.name}
           </option>)}
         </select>
+        {field.variableIds.length === 0 && (
+          <p className="chart-note">None of the chosen Variables has a Field map yet.</p>
+        )}
         {field.loading && <div role="status">
           Obtaining the Field map: {field.progress ?? 0}%
           <progress aria-label="Field map acquisition progress" value={field.progress ?? 0} max="100" />
@@ -28,7 +34,7 @@ export default function FieldMap({ field, view, catalog }) {
         {data && <>
           <div aria-label="Field map legend" className="field-legend">
             <span className="field-gradient" aria-hidden="true" />
-            <span>{data.minimum == null ? 'No valid data' : `${data.minimum} to ${data.maximum} ${data.units}`}</span>
+            <span>{data.minimum == null ? 'No valid data' : `${formatNumber(data.minimum)} to ${formatNumber(data.maximum)} ${data.units}`}</span>
             <span className="field-no-data" aria-hidden="true" /> no data
           </div>
           <label htmlFor="field-time">Field map time</label>
@@ -44,9 +50,9 @@ export default function FieldMap({ field, view, catalog }) {
               <tbody>{data.cells.map((cell, index) => {
                 const value = data.frames[field.index][index]
                 return <tr key={index}>
-                  <td>{cell.bbox.join(', ')}</td>
+                  <td>{cell.bbox.map(formatNumber).join(', ')}</td>
                   <td><span className="field-cell-swatch" style={{ background: fieldColor(value, data.minimum, data.maximum) }} />
-                    {value == null ? 'no data' : `${value} ${data.units}`}</td>
+                    {value == null ? 'no data' : `${formatNumber(value)} ${data.units}`}</td>
                 </tr>
               })}</tbody>
             </table>

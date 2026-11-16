@@ -149,6 +149,8 @@ export default function useExploreView(catalog, region, available, area = null) 
     latest,
     range,
     periodError,
+    // Field maps are drawn from NASA grids; null until the API has said which.
+    fieldMapVariableIds: options?.field_map_variable_ids ?? null,
     ...series,
   }
 }
