@@ -134,3 +134,14 @@ test('a resize that would part the area from itself is refused', () => {
 test('a resize that leaves no width is refused without a message', () => {
   assert.deepEqual(resizeArea([[0, 0, 10, 10]], 0, 'w', { lat: 5, lng: 10 }), {})
 })
+
+test('a resized edge keeps two decimals after wrapping round the globe', () => {
+  const decimals = (value) => (String(value).split('.')[1] ?? '').length
+  for (const lng of [34.67, -10.53, 179.99, -179.99, 120.31]) {
+    for (const handle of ['e', 'w']) {
+      const resized = resizeRectangle([-20, 0, 20, 25], handle, { lat: 0, lng })
+      if (resized) for (const edge of resized) assert.ok(decimals(edge) <= 2, `${handle} ${lng}: ${resized}`)
+    }
+  }
+  assert.equal(resizeRectangle([-20, 0, 20, 25], 'e', { lat: 0, lng: 34.67 })[2], 34.67)
+})

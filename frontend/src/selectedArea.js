@@ -125,7 +125,8 @@ export function resizeRectangle(rectangle, handle, { lat, lng }) {
   if (handle.includes('w')) west = round(nearest(lng, west))
   const [low, high] = [Math.min(west, east), Math.max(west, east)]
   if (south === north || low === high || high - low >= 360) return null
-  return [wrap(low), Math.min(south, north), wrapEast(high), Math.max(south, north)]
+  // Round after wrapping: the wrap's arithmetic adds float noise (34.67000000000007).
+  return [round(wrap(low)), Math.min(south, north), round(wrapEast(high)), Math.max(south, north)]
 }
 
 // The area after one of its rectangles is resized; the reason it cannot be if
