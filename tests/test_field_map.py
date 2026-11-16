@@ -134,3 +134,52 @@ def test_antimeridian_cells_keep_native_bounds(api, validator_for):
     assert job["status"] == "succeeded", job
     assert job["result"]["frames"][0] == [0, 1]
     assert job["result"]["cells"][1]["bbox"] == [-175.5, 14.5, -174.5, 15.5]
+
+
+def test_a_corrupt_cached_field_map_is_rebuilt_not_a_server_error(api, validator_for):
+    from api import main
+    from engine import ENGINE_VERSION
+
+    client, use = api
+    source = use(NativeGridSource(lambda stamp, cell: float(cell), longitudes=[0, 1]))
+    assert job_of(client, field(client), validator_for)["status"] == "succeeded"
+    folder = main.live_store.root / "field-maps" / ENGINE_VERSION
+    (cached,) = folder.glob("*.json")
+    cached.write_text('{"truncated": ')
+    response = field(client)
+    assert response.status_code == 202, response.json()
+    assert job_of(client, response, validator_for)["status"] == "succeeded"
+    assert source.calls == 2
+
+
+def test_a_variable_without_nasa_grids_has_no_field_map(api, validator_for):
+    client, use = api
+    source = use(NativeGridSource(lambda stamp, cell: 1.0))
+    response = client.get(
+        "/api/explore/field-map",
+        params={
+            "region_id": "sahel",
+            "variable_id": "vegetation-index",
+            "period_start": "2010-01",
+            "period_end": "2010-01",
+        },
+    )
+    assert response.status_code == 422, response.json()
+    validator_for("responses.schema.json", "#/$defs/errorResponse").validate(
+        response.json()
+    )
+    assert response.json()["error"]["code"] == "variable_not_available_for_field_map"
+    assert source.calls == 0
+
+
+def test_the_options_name_the_variables_a_field_map_can_have(api, validator_for):
+    client, _ = api
+    body = client.get("/api/explore/options").json()
+    validator_for("responses.schema.json", "#/$defs/exploreOptionsResponse").validate(
+        body
+    )
+    assert body["data"]["field_map_variable_ids"] == [
+        "temperature",
+        "precipitation",
+        "soil-moisture",
+    ]

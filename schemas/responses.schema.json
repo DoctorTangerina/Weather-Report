@@ -166,6 +166,12 @@
               "items": { "$ref": "common.schema.json#/$defs/variableId" },
               "uniqueItems": true
             },
+            "field_map_variable_ids": {
+              "description": "The Variables a Field map can show: those with NASA grids to draw.",
+              "type": "array",
+              "items": { "$ref": "common.schema.json#/$defs/variableId" },
+              "uniqueItems": true
+            },
             "time_steps": {
               "description": "Each Time step (#80), in order from finest, with the Variables that have data at it and the longest period a request may span (null when only the 2000-01 to latest-month range applies).",
               "type": "array",
@@ -191,6 +197,7 @@
           "required": [
             "latest_month",
             "area_variable_ids",
+            "field_map_variable_ids",
             "time_steps"
           ],
           "additionalProperties": false
@@ -639,6 +646,7 @@
                 "period_too_long",
                 "invalid_area",
                 "variable_not_available_for_area",
+                "variable_not_available_for_field_map",
                 "variable_not_available_at_time_step",
                 "job_not_found",
                 "invalid_processing_request",
