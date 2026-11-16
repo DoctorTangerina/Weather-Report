@@ -205,7 +205,9 @@ function RegionGlobe({
           handles(rectangle).map((place) => ({ ...place, index, kind: 'handle' })),
         )
       : []
-    return [...regionLabels, { ...area, lat: north, lng: (west + east) / 2 }, ...grips]
+    // Above the north edge while its resize handles are shown, so they do not cover it.
+    const labelLat = resizable ? Math.min(90, north + 4) : north
+    return [...regionLabels, { ...area, lat: labelLat, lng: (west + east) / 2 }, ...grips]
   }, [highlightLayers, shownArea, resizable])
   const rings = useMemo(
     () => (reducedMotion() ? [] : highlightLayers.map((layer) => layer.ring)),
@@ -316,21 +318,67 @@ function RegionGlobe({
   const startResize = useRef(null)
   startResize.current = (index, handle) =>
     selectedArea && setResizing({ index, handle, area: selectedArea, problem: null })
+  // The keyboard route to resizing: arrow keys move a handle by 1°, Shift by 5°.
+  const focusHandle = useRef(null)
+  const keyResize = useRef(null)
+  keyResize.current = (index, handle, key, step) => {
+    const [north, east] = KEY_STEPS[key] ?? [0, 0]
+    if (!selectedArea || (!north && !east)) return false
+    const place = handles(selectedArea[index]).find((item) => item.handle === handle)
+    const point = { lat: place.lat + north * step, lng: place.lng + east * step }
+    const { area, error } = resizeArea(selectedArea, index, handle, point)
+    focusHandle.current = { index, handle }
+    if (area) resizedTo.current = JSON.stringify(area)
+    if (area || error) onAreaChange?.(area ?? selectedArea, error ?? null)
+    return true
+  }
   const htmlElement = useCallback((item) => {
     if (item.kind !== 'handle') return labelElement(item)
     const element = document.createElement('div')
     element.className = `area-handle area-handle-${item.handle}`
     element.dataset.handle = item.handle
     element.dataset.rectangle = String(item.index)
-    element.setAttribute('aria-hidden', 'true')
+    element.tabIndex = 0
+    element.setAttribute('role', 'button')
+    element.setAttribute(
+      'aria-label',
+      `Resize ${HANDLE_NAMES[item.handle]} of rectangle ${item.index + 1}. ` +
+        'Arrow keys move it by 1 degree, with Shift by 5.',
+    )
     element.style.setProperty('--region', AREA_COLOR)
     element.addEventListener('pointerdown', (event) => {
       event.preventDefault()
       event.stopPropagation()
       startResize.current?.(item.index, item.handle)
     })
+    element.addEventListener('keydown', (event) => {
+      if (keyResize.current?.(item.index, item.handle, event.key, event.shiftKey ? 5 : 1)) {
+        event.preventDefault()
+      }
+    })
     return element
   }, [])
+  // The globe rebuilds its handles a few frames after the area changes; keep
+  // focus on the one in use by focusing whichever element now stands for it.
+  useEffect(() => {
+    const target = focusHandle.current
+    if (!target) return undefined
+    focusHandle.current = null
+    const selector = `.area-handle-${target.handle}[data-rectangle="${target.index}"]`
+    let frames = 20
+    let request
+    const refocus = () => {
+      const active = document.activeElement
+      // Only reclaim focus that was lost with a replaced handle, never focus the
+      // user has since moved somewhere else.
+      if (active && active !== document.body && active.isConnected && !active.matches(selector)) return
+      const element = containerRef.current?.querySelector(selector)
+      if (element && active !== element) element.focus()
+      if ((frames -= 1) > 0) request = requestAnimationFrame(refocus)
+    }
+    request = requestAnimationFrame(refocus)
+    return () => cancelAnimationFrame(request)
+  }, [selectedArea])
 
   const pointAt = (event) => {
     const box = containerRef.current.getBoundingClientRect()
@@ -418,6 +466,17 @@ function RegionGlobe({
 // Callers pass fresh callback closures each render; those only call state
 // setters, so the globe compares whether each is given, not its identity.
 const CALLBACKS = ['onRegionClick', 'onAreaClick', 'onDrawn', 'onDrawCancel', 'onAreaChange']
+const KEY_STEPS = { ArrowUp: [1, 0], ArrowDown: [-1, 0], ArrowRight: [0, 1], ArrowLeft: [0, -1] }
+const HANDLE_NAMES = {
+  n: 'the north edge',
+  ne: 'the north-east corner',
+  e: 'the east edge',
+  se: 'the south-east corner',
+  s: 'the south edge',
+  sw: 'the south-west corner',
+  w: 'the west edge',
+  nw: 'the north-west corner',
+}
 const sameJson = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 export default memo(RegionGlobe, (previous, next) =>
   sameJson(previous.highlights, next.highlights) &&
