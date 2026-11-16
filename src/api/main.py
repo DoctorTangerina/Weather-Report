@@ -57,6 +57,7 @@ from .explore import (
     TIME_STEPS,
     AcquisitionNeeded,
     Refusal,
+    _cut,
     explore_series,
 )
 from .field_map import FieldCache, FieldJobs, field_view
@@ -227,6 +228,22 @@ async def get_series(
     payload = store.series(region_id, variable_id, period)
     if payload is not None and usable(payload, catalog):
         return {**ok(payload), "provenance": "preloaded"}
+    # A period inside a stored Series is cut from it, gated again on its months.
+    covering = next(
+        (
+            Period(**item["period"])
+            for item in store.available_series()
+            if (item["region_id"], item["variable_id"]) == (region_id, variable_id)
+            and item["period"]["start"] <= period.start
+            and item["period"]["end"] >= period.end
+        ),
+        None,
+    )
+    stored = covering and store.series(region_id, variable_id, covering)
+    if stored is not None and usable(stored, catalog):
+        payload = _cut(stored, period.start, period.end)
+        if payload["quality"]["included"]:
+            return {**ok(payload), "provenance": "preloaded"}
     try:
         token = settings().get("EARTHDATA_TOKEN")
         if not token and acquisition_source is None:

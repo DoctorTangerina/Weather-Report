@@ -13,8 +13,8 @@ def test_bs009_failed_live_fetch_returns_preloaded_example_with_notice(validator
             params={
                 "region_id": "sahel",
                 "variable_id": "temperature",
-                "period_start": "2010-01",
-                "period_end": "2019-12",
+                "period_start": "2025-01",
+                "period_end": "2025-12",
             },
         )
     assert response.status_code == 200
