@@ -1,0 +1,245 @@
+{
+  "discovery_id": "antarctic-peninsula--southern-africa",
+  "region_ids": [
+    "antarctic-peninsula",
+    "southern-africa"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "antarctic-peninsula",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.5164462280676008,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.8793304014611778,
+            -0.15356205467402367
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.5164462280676008,
+              "p_value": 0.0001626355695824751,
+              "r_squared": 0.04667349208596286
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.5172681187662035,
+              "p_value": 0.028229223491291373
+            },
+            "robust": {
+              "slope_per_decade": -0.4973640435410176,
+              "p_value": 3.501326481905643e-05
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.48704876177221423
+            },
+            "mann_kendall": {
+              "tau": -0.14028985507246378,
+              "p_value": 0.0002904294869741825
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2015-09",
+              "slope_per_decade": -0.5035374983355326,
+              "p_value": 0.00017171448729677956
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.015505652545281893,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.2974963103967879,
+            "effective_sample_size": 162.4290606394971
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.2377035867900774,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.028091266068039272,
+            0.5034984396481941
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.2377035867900774,
+              "p_value": 0.0009489152891673369,
+              "r_squared": 0.0360553247905362
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.2380818766417419,
+              "p_value": 0.1601737366552228
+            },
+            "robust": {
+              "slope_per_decade": 0.22920285274578986,
+              "p_value": 0.0008134555617682037
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.24237364409938245
+            },
+            "mann_kendall": {
+              "tau": 0.12414715719063546,
+              "p_value": 0.0013425577713606122
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2024-02",
+              "slope_per_decade": 0.21743706422277584,
+              "p_value": 0.0022355137777648666
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.14822003715272772,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5578267571297238,
+            "effective_sample_size": 85.15194148128026
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Air temperature seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "antarctic-peninsula",
+              "label": "Antarctic Peninsula"
+            },
+            {
+              "option_id": "southern-africa",
+              "label": "Southern Africa"
+            }
+          ],
+          "answer_option_id": "antarctic-peninsula",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "antarctic-peninsula",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "southern-africa",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Antarctic Peninsula: -0.516 \u00b0C/decade (95% interval -0.879 to -0.154). Southern Africa: 0.238 \u00b0C/decade (95% interval -0.028 to 0.503). Antarctic Peninsula is changing faster. Evidence label for Antarctic Peninsula: Strong evidence. Evidence label for Southern Africa: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "antarctic-peninsula",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "southern-africa",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

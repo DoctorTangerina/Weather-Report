@@ -1,0 +1,7 @@
+Reused observation summary, not a raw terminal transcript.
+Conversation tool chunk: 3c8a48
+Command: npm run test:e2e -- --workers=1 --timeout=90000
+Exit code: 0
+Result: 18 passed (1.5m). Final desktop/mobile test covers full span before/after load, debounce, exact cap boundaries, English under pt-BR locale, moving labels, centered timestamp, compact header and error placement without height growth.
+Original run UTC: not captured.
+Summary captured UTC: 2026-11-15T23:30:30.811087Z

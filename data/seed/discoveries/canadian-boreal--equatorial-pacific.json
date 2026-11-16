@@ -1,0 +1,245 @@
+{
+  "discovery_id": "canadian-boreal--equatorial-pacific",
+  "region_ids": [
+    "canadian-boreal",
+    "equatorial-pacific"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -1.0787579969892334,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -3.0718673317700453,
+            0.9143513377915786
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -1.0787579969892334,
+              "p_value": 0.2210792464166754,
+              "r_squared": 0.005020460534752828
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -1.080474770421963,
+              "p_value": 0.3537463160060503
+            },
+            "robust": {
+              "slope_per_decade": -0.7642217937546824,
+              "p_value": 0.3143434762107106
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.5794854087234529
+            },
+            "mann_kendall": {
+              "tau": -0.02613154960981048,
+              "p_value": 0.4996894090724384
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2007-09",
+              "slope_per_decade": -0.9613478968162106,
+              "p_value": 0.26665572061472426
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.43332840278139995,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.13861335395956806,
+            "effective_sample_size": 226.95675657893776
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 3.1499714901378586,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -18.673945607230362,
+            24.973888587506078
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 3.1499714901378586,
+              "p_value": 0.31422144617212316,
+              "r_squared": 0.003398736758826449
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 3.154984465599585,
+              "p_value": 0.6408988777494153
+            },
+            "robust": {
+              "slope_per_decade": -0.017557647677714443,
+              "p_value": 0.992044442516785
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.29689176133597556
+            },
+            "mann_kendall": {
+              "tau": -0.006778149386845039,
+              "p_value": 0.8610169666484817
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2015-12",
+              "slope_per_decade": 2.5804790959497472,
+              "p_value": 0.37348567450768067
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.8314635408323291,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.8394990415154966,
+            "effective_sample_size": 26.17576114944955
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Precipitation seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "canadian-boreal",
+              "label": "Canadian Boreal Forest"
+            },
+            {
+              "option_id": "equatorial-pacific",
+              "label": "Equatorial Pacific"
+            }
+          ],
+          "answer_option_id": "equatorial-pacific",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "canadian-boreal",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "equatorial-pacific",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Canadian Boreal Forest: -1.079 mm/month/decade (95% interval -3.072 to 0.914). Equatorial Pacific: 3.15 mm/month/decade (95% interval -18.674 to 24.974). Equatorial Pacific is changing faster. Evidence label for Canadian Boreal Forest: Not enough evidence yet. Evidence label for Equatorial Pacific: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "canadian-boreal",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "equatorial-pacific",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

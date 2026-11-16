@@ -1,0 +1,7 @@
+Reused observation summary, not a raw terminal transcript.
+Conversation tool chunk: 92c73b
+Command: npm run test:integration -- --config playwright.aggregations.config.js
+Exit code: 0
+Result: 2 passed (1.4m) in an earlier UI iteration: seven Aggregations and rebuilding all charts using maximum. Not rerun after final full-span migration/layout.
+Original run UTC: not captured.
+Summary captured UTC: 2026-11-15T23:30:30.811087Z

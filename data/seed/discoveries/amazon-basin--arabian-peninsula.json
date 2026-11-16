@@ -1,0 +1,245 @@
+{
+  "discovery_id": "amazon-basin--arabian-peninsula",
+  "region_ids": [
+    "amazon-basin",
+    "arabian-peninsula"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -18.818092206498186,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -26.392110478429693,
+            -11.24407393456668
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -18.818092206498186,
+              "p_value": 1.4338031440512334e-13,
+              "r_squared": 0.1678329675237798
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -18.848039980553665,
+              "p_value": 0.0006169936714173048
+            },
+            "robust": {
+              "slope_per_decade": -20.072627823745886,
+              "p_value": 8.074553918923618e-20
+            },
+            "theil_sen": {
+              "slope_per_decade": -20.1732476949432
+            },
+            "mann_kendall": {
+              "tau": -0.31143812709030105,
+              "p_value": 8.663082670642543e-16
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2005-01",
+              "slope_per_decade": -19.380364732174172,
+              "p_value": 9.32407496877725e-15
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 2.8780315113833954e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.4258010532524733,
+            "effective_sample_size": 120.81607292357299
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 2.3848212183784647,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            1.4113075029332787,
+            3.3583349338236506
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 2.3848212183784647,
+              "p_value": 6.865321436307967e-09,
+              "r_squared": 0.10671278096144277
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 2.388616506775773,
+              "p_value": 7.065617778693068e-05
+            },
+            "robust": {
+              "slope_per_decade": 1.2965623525924213,
+              "p_value": 1.276908712551478e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": 1.151390297925308
+            },
+            "mann_kendall": {
+              "tau": 0.1940691192865106,
+              "p_value": 5.3640915014667e-07
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2023-01",
+              "slope_per_decade": 2.120525625126877,
+              "p_value": 9.087028556835505e-09
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 2.8780315113833954e-05,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.20795644603107113,
+            "effective_sample_size": 196.70665028643486
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Precipitation is rising in one of these places and falling in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "amazon-basin",
+              "label": "Amazon Basin"
+            },
+            {
+              "option_id": "arabian-peninsula",
+              "label": "Arabian Peninsula"
+            }
+          ],
+          "answer_option_id": "amazon-basin",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "amazon-basin",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "arabian-peninsula",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "Amazon Basin: -18.818 mm/month/decade (95% interval -26.392 to -11.244). Arabian Peninsula: 2.385 mm/month/decade (95% interval 1.411 to 3.358). Amazon Basin is changing faster. Evidence label for Amazon Basin: Strong evidence. Evidence label for Arabian Peninsula: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "amazon-basin",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "arabian-peninsula",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

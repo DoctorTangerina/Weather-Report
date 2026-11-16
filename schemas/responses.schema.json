@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://weather-report.local/schemas/responses.schema.json",
   "title": "HTTP responses",
-  "description": "What the API returns (BS-009). Every success body is a resource under \"data\" plus a \"notice\", which is null unless the service served something other than a fresh result.",
+  "description": "What the API returns (BS-009). Every success body is a resource under \"data\" plus a \"notice\", which is set when live acquisition fails. Series provenance distinguishes live, cached and preloaded data.",
   "$defs": {
     "catalogResponse": {
       "type": "object",
@@ -13,10 +13,33 @@
       "required": ["data", "notice"],
       "additionalProperties": false
     },
+    "availableSeriesResponse": {
+      "description": "The Region-Variable series the service holds, without their values.",
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "region_id": { "$ref": "common.schema.json#/$defs/regionId" },
+              "variable_id": { "$ref": "common.schema.json#/$defs/variableId" },
+              "period": { "$ref": "common.schema.json#/$defs/period" }
+            },
+            "required": ["region_id", "variable_id", "period"],
+            "additionalProperties": false
+          }
+        },
+        "notice": { "$ref": "common.schema.json#/$defs/notice" }
+      },
+      "required": ["data", "notice"],
+      "additionalProperties": false
+    },
     "seriesResponse": {
       "type": "object",
       "properties": {
         "data": { "$ref": "series.schema.json" },
+        "provenance": { "type": "string", "enum": ["live", "cache", "preloaded"] },
         "notice": { "$ref": "common.schema.json#/$defs/notice" }
       },
       "required": ["data", "notice"],
@@ -43,8 +66,563 @@
       "required": ["data", "notice"],
       "additionalProperties": false
     },
+    "comparisonResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "trends": {
+              "type": "array",
+              "items": {
+                "$ref": "trend.schema.json"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "series": {
+              "type": "array",
+              "items": {
+                "$ref": "series.schema.json"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "trends",
+            "series"
+          ],
+          "additionalProperties": false
+        },
+        "notice": {
+          "$ref": "common.schema.json#/$defs/notice"
+        }
+      },
+      "required": [
+        "data",
+        "notice"
+      ],
+      "additionalProperties": false
+    },
+    "exploreSeriesResponse": {
+      "description": "Explore My World (#75, #79): the Series of one catalog Region or one Selected area for one to five Variables, built with one Aggregation and one Time step over one period. Each Series covers exactly the requested period, and its quality is the Quality gate's verdict on that period. Every value combines the area's grid cells, then the native time steps inside one Time step, by `aggregation` (#78): area-weighted for all but minimum and maximum; standard deviation is the population one. Each Series holds one value per Time step from the first day of period.start (#80): a month, a UTC day or a UTC 3-hour interval. Precipitation is the total that fell during each Time step (mm/month, mm/day or mm/3h).",
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "region_id": { "$ref": "common.schema.json#/$defs/regionId" },
+            "area": { "$ref": "common.schema.json#/$defs/selectedArea" },
+            "aggregation": {
+              "type": "string",
+              "enum": [
+                "mean",
+                "median",
+                "minimum",
+                "maximum",
+                "root_mean_square",
+                "standard_deviation",
+                "mean_absolute_value"
+              ]
+            },
+            "time_step": { "type": "string", "enum": ["3-hourly", "daily", "monthly"] },
+            "period": { "$ref": "common.schema.json#/$defs/period" },
+            "series": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  { "$ref": "series.schema.json" },
+                  { "$ref": "series.schema.json#/$defs/areaSeries" }
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 5
+            }
+          },
+          "required": ["aggregation", "time_step", "period", "series"],
+          "oneOf": [{ "required": ["region_id"] }, { "required": ["area"] }],
+          "additionalProperties": false
+        },
+        "provenance": { "type": "string", "enum": ["live", "cache", "preloaded"] },
+        "notice": { "$ref": "common.schema.json#/$defs/notice" }
+      },
+      "required": ["data", "notice", "provenance"],
+      "additionalProperties": false
+    },
+    "exploreOptionsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "latest_month": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+            },
+            "area_variable_ids": {
+              "description": "The Variables a Selected area can have: those NASA data can be fetched for on demand.",
+              "type": "array",
+              "items": { "$ref": "common.schema.json#/$defs/variableId" },
+              "uniqueItems": true
+            },
+            "field_map_variable_ids": {
+              "description": "The Variables a Field map can show: those with NASA grids to draw.",
+              "type": "array",
+              "items": { "$ref": "common.schema.json#/$defs/variableId" },
+              "uniqueItems": true
+            },
+            "time_steps": {
+              "description": "Each Time step (#80), in order from finest, with the Variables that have data at it and the longest period a request may span (null when only the 2000-01 to latest-month range applies).",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "time_step": { "type": "string", "enum": ["3-hourly", "daily", "monthly"] },
+                  "variable_ids": {
+                    "type": "array",
+                    "items": { "$ref": "common.schema.json#/$defs/variableId" },
+                    "uniqueItems": true
+                  },
+                  "max_months": { "type": ["integer", "null"], "minimum": 1 },
+                  "limit": { "type": ["string", "null"], "minLength": 1 }
+                },
+                "required": ["time_step", "variable_ids", "max_months", "limit"],
+                "additionalProperties": false
+              },
+              "minItems": 3,
+              "maxItems": 3
+            }
+          },
+          "required": [
+            "latest_month",
+            "area_variable_ids",
+            "field_map_variable_ids",
+            "time_steps"
+          ],
+          "additionalProperties": false
+        },
+        "notice": {
+          "$ref": "common.schema.json#/$defs/notice"
+        }
+      },
+      "required": [
+        "data",
+        "notice"
+      ],
+      "additionalProperties": false
+    },
+    "exploreJobResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "job": {
+              "$ref": "#/$defs/exploreJob"
+            }
+          },
+          "required": [
+            "job"
+          ],
+          "additionalProperties": false
+        },
+        "notice": {
+          "$ref": "common.schema.json#/$defs/notice"
+        }
+      },
+      "required": [
+        "data",
+        "notice"
+      ],
+      "additionalProperties": false
+    },
+    "exploreJob": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^/api/explore/jobs/[a-f0-9]+$"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed"
+          ]
+        },
+        "progress": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "result": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/exploreSeriesResponse/properties/data"
+            },
+            { "$ref": "#/$defs/fieldMapResponse/properties/data" }
+          ]
+        },
+        "error": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "const": "acquisition_failed"
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "code",
+                "message"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "status",
+        "progress",
+        "result",
+        "error"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "succeeded"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "type": "object"
+              },
+              "progress": {
+                "const": 100
+              },
+              "error": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "failed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "error": {
+                "type": "object"
+              },
+              "result": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "queued",
+                  "running"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "result": {
+                "type": "null"
+              },
+              "error": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "fieldMapResponse": {
+      "description": "#82 / BS-012: one frame per UTC Time step, one value per native cell in cells order. Null means no valid data. Minimum and maximum span all frames; both are null when every cell is missing. Cell bounds are west,south,east,north; antimeridian cells keep continuous longitudes.",
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "region_id": {
+              "$ref": "common.schema.json#/$defs/regionId"
+            },
+            "area": {
+              "$ref": "common.schema.json#/$defs/selectedArea"
+            },
+            "variable_id": {
+              "$ref": "common.schema.json#/$defs/variableId"
+            },
+            "aggregation": {
+              "type": "string",
+              "enum": [
+                "mean",
+                "median",
+                "minimum",
+                "maximum",
+                "root_mean_square",
+                "standard_deviation",
+                "mean_absolute_value"
+              ]
+            },
+            "time_step": {
+              "enum": [
+                "3-hourly",
+                "daily",
+                "monthly"
+              ]
+            },
+            "period": {
+              "$ref": "common.schema.json#/$defs/period"
+            },
+            "units": {
+              "type": "string"
+            },
+            "minimum": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "maximum": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "cells": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "bbox": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "bbox"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "timestamps": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "frames": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "required": [
+            "variable_id",
+            "aggregation",
+            "time_step",
+            "period",
+            "units",
+            "minimum",
+            "maximum",
+            "cells",
+            "timestamps",
+            "frames"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "region_id"
+              ]
+            },
+            {
+              "required": [
+                "area"
+              ]
+            }
+          ],
+          "additionalProperties": false
+        },
+        "notice": {
+          "$ref": "common.schema.json#/$defs/notice"
+        },
+        "provenance": {
+          "const": "cache"
+        }
+      },
+      "required": [
+        "data",
+        "notice",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "processingRequest": {
+      "description": "Body of POST /api/explore/process (#83): named inputs and an ordered Processing recipe, applied by the data-layer processing of #46 (#47-#53). Nothing is kept between requests; replay means sending the same body again. Each input is a Source series exactly as /api/explore/series returned it, with that view's Time step and Aggregation, or a Derived series from an earlier response.",
+      "type": "object",
+      "properties": {
+        "series": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "description": "A Source series. Its timestamps are laid out from period.start: one per month, UTC day or UTC 3-hour interval.",
+                "type": "object",
+                "properties": {
+                  "time_step": { "type": "string", "enum": ["3-hourly", "daily", "monthly"] },
+                  "aggregation": {
+                    "$ref": "#/$defs/exploreSeriesResponse/properties/data/properties/aggregation"
+                  },
+                  "series": {
+                    "oneOf": [
+                      { "$ref": "series.schema.json" },
+                      { "$ref": "series.schema.json#/$defs/areaSeries" }
+                    ]
+                  }
+                },
+                "required": ["time_step", "aggregation", "series"],
+                "additionalProperties": false
+              },
+              {
+                "description": "A Derived series returned by an earlier request, sent back unchanged.",
+                "type": "object",
+                "properties": { "derived": { "$ref": "#/$defs/derivedSeries" } },
+                "required": ["derived"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "operations": {
+          "description": "The Processing recipe: steps applied in order, each naming a new output id that later steps may use. The data layer's README lists the operations and their parameters.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": { "id": { "type": "string" }, "operation": { "type": "string" } },
+            "required": ["id"]
+          }
+        }
+      },
+      "required": ["series", "operations"],
+      "additionalProperties": false
+    },
+    "derivedSeries": {
+      "description": "A Series made by a Processing recipe. It carries the recipe that made it, a snapshot of every input's metadata (`provenance`, including the Source series' Region or area, Variable, period, source and Quality gate verdict), its warnings, and the step's own metadata, such as resampling sample counts or scaling parameters.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamps": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "values": { "type": "array", "items": { "type": ["number", "null"] } },
+        "units": { "type": "string", "minLength": 1 },
+        "inputs": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "provenance": { "type": "object" },
+        "recipe": { "$ref": "#/$defs/processingRecipe" },
+        "warnings": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["id", "timestamps", "values", "units", "inputs", "provenance", "recipe", "warnings"]
+    },
+    "processingRecipe": {
+      "type": "object",
+      "properties": {
+        "operations": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["operations"],
+      "additionalProperties": false
+    },
+    "processingResponse": {
+      "description": "Result of POST /api/explore/process (#83): every Derived series by id, every comparison by id, the whole recipe and all warnings, each warning naming its step.",
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "series": {
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/derivedSeries" }
+            },
+            "comparisons": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "inputs": { "type": "array", "items": { "type": "string" } },
+                  "provenance": { "type": "object" },
+                  "recipe": { "$ref": "#/$defs/processingRecipe" }
+                },
+                "required": ["id", "inputs", "provenance", "recipe"]
+              }
+            },
+            "recipe": { "$ref": "#/$defs/processingRecipe" },
+            "warnings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": { "operation": { "type": "string" }, "code": { "type": "string" } },
+                "required": ["operation", "code"]
+              }
+            }
+          },
+          "required": ["series", "comparisons", "recipe", "warnings"],
+          "additionalProperties": false
+        },
+        "notice": { "$ref": "common.schema.json#/$defs/notice" }
+      },
+      "required": ["data", "notice"],
+      "additionalProperties": false
+    },
     "errorResponse": {
-      "description": "Returned with a 4xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region.",
+      "description": "Returned with a 4xx or 5xx status. A Region or Variable outside the catalog is rejected with 422 and code region_not_in_catalog or variable_not_in_catalog; a Variable that does not apply to the Region is variable_not_available_for_region. Explore My World refuses a malformed view with 422 (invalid_variable_count, duplicate_variable, invalid_aggregation, invalid_time_step, invalid_period, period_out_of_range, period_too_long, invalid_area, variable_not_available_for_area, variable_not_available_at_time_step); unknown job references return 404 job_not_found. The Processing recipe endpoint answers 422 invalid_processing_request for a body that does not match processingRequest, and 422 processing_refused when the data layer refuses a step; `details.reason` then names the data layer's own code.",
       "type": "object",
       "properties": {
         "error": {
@@ -57,10 +635,35 @@
                 "variable_not_in_catalog",
                 "variable_not_available_for_region",
                 "result_not_available",
-                "no_discovery_left_in_session"
+                "invalid_period",
+                "live_data_unavailable",
+                "no_discovery_left_in_session",
+                "invalid_variable_count",
+                "duplicate_variable",
+                "invalid_aggregation",
+                "invalid_time_step",
+                "period_out_of_range",
+                "period_too_long",
+                "invalid_area",
+                "variable_not_available_for_area",
+                "variable_not_available_for_field_map",
+                "invalid_request",
+                "not_found",
+                "method_not_allowed",
+                "http_error",
+                "variable_not_available_at_time_step",
+                "job_not_found",
+                "invalid_processing_request",
+                "processing_refused"
               ]
             },
-            "message": { "type": "string", "minLength": 1 }
+            "message": { "type": "string", "minLength": 1 },
+            "details": {
+              "description": "Set by processing_refused: `reason` is the data layer's code, with any step index or input name it gave.",
+              "type": "object",
+              "properties": { "reason": { "type": "string", "minLength": 1 } },
+              "required": ["reason"]
+            }
           },
           "required": ["code", "message"],
           "additionalProperties": false

@@ -1,0 +1,31 @@
+﻿{
+    "generated_at_utc":  "2026-11-14T21:36:28.2643933Z",
+    "branch":  "front/detective",
+    "head":  "a1d38358ae9ed6de8ecb8d94dd177b4b450446ba",
+    "files":  [
+                  {
+                      "path":  "src/App.jsx",
+                      "sha256":  "362F7FFEFFA11C14808ABE64446F8F31A02DB94AC38EC41E6BE6EA5AF34EEAE0"
+                  },
+                  {
+                      "path":  "src/screens/MainScreen.jsx",
+                      "sha256":  "2329860914BF1E1A23B011A7B8019A7887A594DC7C6D26CB87BAF93AA46E5019"
+                  },
+                  {
+                      "path":  "src/screens/InvestigationScreen.jsx",
+                      "sha256":  "FB6713A4AC0BC55A2DEDCB6385E5C15A7CBEA3A72409E49935188F940E2C3084"
+                  },
+                  {
+                      "path":  "src/styles.css",
+                      "sha256":  "53004C6B07E43B4370EBA6CD5F8BA3FB5B1394061B36BB6EFA5E7FD05E327554"
+                  },
+                  {
+                      "path":  "src/components/Evidence.jsx",
+                      "sha256":  "E17540ABA44DDB51F4D22F7EE332B07092A80F91AF9D7483F0C787A8CEAD5420"
+                  },
+                  {
+                      "path":  "docs/issue-15-smoke.md",
+                      "sha256":  "C3416E705DBCB02C889CBA4159A67768C9BDA290C05E3AB0501C0A0028B06AEE"
+                  }
+              ]
+}

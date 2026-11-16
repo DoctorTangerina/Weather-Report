@@ -1,0 +1,82 @@
+{
+  "captured_at_utc": "2026-11-15T23:30:30.811087Z",
+  "head": "8659a51e2efc9a89094bf387f770201dd1843d55",
+  "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+  "files": [
+    {
+      "path": "frontend/e2e/explore-timeline.spec.js",
+      "sha256": "00767c0e74355a92bdc6eec34d0735ab409af88707657402ce6cb4e76096be28",
+      "last_write_utc": "2026-11-15T23:21:11.133661+00:00"
+    },
+    {
+      "path": "frontend/integration-aggregations/aggregations.spec.js",
+      "sha256": "fbb40b1b92191129e4465cf1fe25df455a2e70255e1e63468de4bf89beae2007",
+      "last_write_utc": "2026-11-15T23:09:16.053562+00:00"
+    },
+    {
+      "path": "frontend/integration-areas/areas.spec.js",
+      "sha256": "5c30a38f3d3c02f534e14adf9ca5782554ce3fe40db096cb08e7ad4ca963aeea",
+      "last_write_utc": "2026-11-15T23:09:16.013379+00:00"
+    },
+    {
+      "path": "frontend/integration-jobs/jobs.spec.js",
+      "sha256": "13a5ecd90aa3e6ccd97aaa890e9a99a2313b09bd254e12c54597ab5ec0bce06c",
+      "last_write_utc": "2026-11-15T23:09:16.033950+00:00"
+    },
+    {
+      "path": "frontend/integration-time-steps/time-steps.spec.js",
+      "sha256": "74da2efebc90027796311ed6830d77877c5afd96c7fafa1bf88476841ec26175",
+      "last_write_utc": "2026-11-15T23:09:16.056075+00:00"
+    },
+    {
+      "path": "frontend/integration/explore.spec.js",
+      "sha256": "5548dc205f4a2d29e19f7cc9d08344514fa4bf2e198afbbcb905dc180c56de9c",
+      "last_write_utc": "2026-11-15T23:09:15.992136+00:00"
+    },
+    {
+      "path": "frontend/playwright.aggregations.config.js",
+      "sha256": "0a89e6a2cea7a6b6665d430192089bcf6e46097762ef36ebad23608466db094c",
+      "last_write_utc": "2026-11-15T22:52:59.741750+00:00"
+    },
+    {
+      "path": "frontend/playwright.integration.config.js",
+      "sha256": "b0ad2cf6eaef8a3a2bcb6bbf8dd70d2a8b65520442cf846a59d510543a646fb4",
+      "last_write_utc": "2026-11-15T22:52:59.742750+00:00"
+    },
+    {
+      "path": "frontend/src/components/ExploreMyWorld.jsx",
+      "sha256": "fd1242c1020ecf6b66e7c58ef0727f89833a0538f403f4c7b58553ddc3eeffa4",
+      "last_write_utc": "2026-11-15T23:09:15.973961+00:00"
+    },
+    {
+      "path": "frontend/src/components/ExploreTimeline.jsx",
+      "sha256": "5f2a0661b80dc4ae726011bc0bfb76bbbda8c85b081faa9888257b68dc429203",
+      "last_write_utc": "2026-11-15T23:09:15.971962+00:00"
+    },
+    {
+      "path": "frontend/src/components/Timeline.jsx",
+      "sha256": "b124db3cf7cb4828d22369f3d2ce0b59410da56cc36a7a9a4a07677968b0d0d6",
+      "last_write_utc": "2026-11-15T23:20:12.371518+00:00"
+    },
+    {
+      "path": "frontend/src/screens/MainScreen.jsx",
+      "sha256": "2f2f2767cf72cf14fd194a46e94fbc1389107dcea61b3d6ed342399d26c433ce",
+      "last_write_utc": "2026-11-15T22:52:59.745259+00:00"
+    },
+    {
+      "path": "frontend/src/styles.css",
+      "sha256": "ce0b00f9c22e7f56847dd8479907969c66b64a63755e3c6acae418a7d04d3e14",
+      "last_write_utc": "2026-11-15T23:26:58.955417+00:00"
+    },
+    {
+      "path": "frontend/src/useExploreSeries.js",
+      "sha256": "69479a163eee37374e6d6428a65aef517c733c9bec6ac72c69d8c854260051a6",
+      "last_write_utc": "2026-11-15T22:56:21.038063+00:00"
+    },
+    {
+      "path": "frontend/src/useExploreView.js",
+      "sha256": "28f99e5f6f706229fa4d52f1b178b5b5302f4b8431bb7c569d03a9d98f60f0ca",
+      "last_write_utc": "2026-11-15T23:09:15.973961+00:00"
+    }
+  ]
+}

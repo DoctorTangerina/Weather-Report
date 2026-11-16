@@ -42,6 +42,7 @@ print("ok")
 def test_engine_imports_with_every_web_dependency_blocked():
     result = subprocess.run(
         [sys.executable, "-c", PROBE],
+        check=False,
         capture_output=True,
         text=True,
         env={**os.environ, "PYTHONPATH": str(ROOT / "src")},

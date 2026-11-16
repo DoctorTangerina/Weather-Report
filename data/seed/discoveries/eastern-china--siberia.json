@@ -1,0 +1,245 @@
+{
+  "discovery_id": "eastern-china--siberia",
+  "region_ids": [
+    "eastern-china",
+    "siberia"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "vegetation-index",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "eastern-china",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.03235373474909495,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            0.02662347351688988,
+            0.038083995981300016
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.03235373474909495,
+              "p_value": 2.5893571668158186e-62,
+              "r_squared": 0.6077700743235339
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.03247239343401735,
+              "p_value": 4.997380633723896e-13
+            },
+            "robust": {
+              "slope_per_decade": 0.032147686048644084,
+              "p_value": 2.364927676500582e-67
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.03219210363984602
+            },
+            "mann_kendall": {
+              "tau": 0.5803012278063344,
+              "p_value": 1.2639528465504116e-50
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2001-06",
+              "slope_per_decade": 0.031935211378959,
+              "p_value": 4.624286277079165e-62
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 3.6487298226000254e-16,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5694511394543011,
+            "effective_sample_size": 82.02492327854492
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.00783055769138942,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            0.0028042203006733686,
+            0.012856895082105472
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.00783055769138942,
+              "p_value": 0.000641390159694418,
+              "r_squared": 0.03853553678102352
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.007934866372762722,
+              "p_value": 0.0014198911555535153
+            },
+            "robust": {
+              "slope_per_decade": 0.005265573493099808,
+              "p_value": 0.0009597869945242237
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.004947807364907124
+            },
+            "mann_kendall": {
+              "tau": 0.12257861776391103,
+              "p_value": 0.001573009952164633
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2011-04",
+              "slope_per_decade": 0.00798500859111997,
+              "p_value": 0.00016383221829701115
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.008486231855116903,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.11645699818492063,
+            "effective_sample_size": 236.62295813649624
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 2.0467452942844244,
+  "score_components": {
+    "opposite_sign": 0.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 2.0467452942844244,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Vegetation index (NDVI) is rising in both of these places. Why would it change so much faster in one of them?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think vegetation index (ndvi) is changing faster?",
+          "options": [
+            {
+              "option_id": "eastern-china",
+              "label": "Eastern China"
+            },
+            {
+              "option_id": "siberia",
+              "label": "Siberia"
+            }
+          ],
+          "answer_option_id": "eastern-china",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "eastern-china",
+              "variable_id": "vegetation-index"
+            },
+            {
+              "region_id": "siberia",
+              "variable_id": "vegetation-index"
+            }
+          ],
+          "comparison": "Eastern China: 0.032 NDVI/decade (95% interval 0.027 to 0.038). Siberia: 0.008 NDVI/decade (95% interval 0.003 to 0.013). Eastern China is changing faster. Evidence label for Eastern China: Strong evidence. Evidence label for Siberia: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make vegetation index (ndvi) change this way?",
+          "possible_causes": [
+            {
+              "text": "Plants grow more when there is more rain and soil water.",
+              "kind": "context"
+            },
+            {
+              "text": "A longer warm season gives plants more time to grow.",
+              "kind": "context"
+            },
+            {
+              "text": "Clearing forests for farms or towns removes plant cover.",
+              "kind": "context"
+            },
+            {
+              "text": "Droughts and fires cut back plant growth.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "eastern-china",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "siberia",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

@@ -13,7 +13,7 @@ import pytest
 from jsonschema import Draft202012Validator, ValidationError
 
 from engine import ENGINE_VERSION, JsonResultStore, Period, applies_to, load_catalog
-from engine.contracts import Series
+from engine.contracts import Discovery, Series, as_dict
 
 
 def series_paths(stub_dir: Path) -> list[Path]:
@@ -34,8 +34,8 @@ def test_every_schema_is_itself_valid(schema_paths):
         Draft202012Validator.check_schema(load(path))
 
 
-def test_stub_catalog_matches_the_catalog_schema(stub_dir, validator_for):
-    validator_for("catalog.schema.json").validate(load(stub_dir / "catalog.json"))
+def test_catalog_matches_the_catalog_schema(catalog_path, validator_for):
+    validator_for("catalog.schema.json").validate(load(catalog_path))
 
 
 def test_stub_series_match_the_series_schema(stub_dir, validator_for):
@@ -97,8 +97,8 @@ def test_discovery_trends_agree_with_the_declared_contrast_kind(stub_dir):
                 assert same_sign, path.name
 
 
-def test_catalog_offers_only_variables_that_apply_to_the_region(stub_dir):
-    catalog = load_catalog(stub_dir / "catalog.json")
+def test_catalog_offers_only_variables_that_apply_to_the_region(catalog_path):
+    catalog = load_catalog(catalog_path)
     known = {variable.variable_id for variable in catalog.variables}
     for region in catalog.regions:
         assert set(region.variable_ids) <= known
@@ -117,7 +117,7 @@ def test_store_serves_the_stub_set_keyed_by_region_variable_and_period(stub_dir)
         is None
     )
     assert store.series("not-a-region", "temperature", period) is None
-    assert [d["discovery_id"] for d in store.discoveries()][0] == "amazon-basin--sahel"
+    assert next(d["discovery_id"] for d in store.discoveries()) == "amazon-basin--sahel"
     assert store.discovery("amazon-basin--sahel") is not None
     assert store.discovery("nope") is None
 
@@ -184,8 +184,8 @@ def test_schema_rejects_an_invalid_evidence_label(stub_dir, validator_for):
         validator_for("discovery.schema.json").validate(payload)
 
 
-def test_stub_discoveries_only_reference_catalog_entries(stub_dir):
-    catalog = load_catalog(stub_dir / "catalog.json")
+def test_stub_discoveries_only_reference_catalog_entries(stub_dir, catalog_path):
+    catalog = load_catalog(catalog_path)
     for path in discovery_paths(stub_dir):
         discovery = load(path)
         refs = [
@@ -218,3 +218,21 @@ def test_every_series_a_stub_discovery_charts_is_in_the_store(stub_dir):
             assert (
                 store.series(ref["region_id"], ref["variable_id"], period) is not None
             )
+
+
+def test_stub_trends_use_the_engines_false_discovery_rate(stub_dir):
+    import engine
+
+    for path in discovery_paths(stub_dir):
+        for contrast in load(path)["contrasts"]:
+            for trend in contrast["trends"]:
+                assert trend["multiple_comparisons"]["q"] == engine.FALSE_DISCOVERY_RATE
+
+
+def test_a_stored_discovery_round_trips_through_the_contract_objects(stub_dir):
+    """from_dict and as_dict must be exact inverses over JSON, or the API would
+    quietly reshape a payload on its way back out."""
+    for path in discovery_paths(stub_dir):
+        payload = load(path)
+        rebuilt = json.loads(json.dumps(as_dict(Discovery.from_dict(payload))))
+        assert rebuilt == payload, path.name

@@ -1,0 +1,549 @@
+{
+  "discovery_id": "california--siberian-arctic",
+  "region_ids": [
+    "california",
+    "siberian-arctic"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "california",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.8533648898760916,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -6.366189882588241,
+            4.659460102836057
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.8533648898760916,
+              "p_value": 0.7356190567107085,
+              "r_squared": 0.000383168371409578
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.8547229647876412,
+              "p_value": 0.7849443370174324
+            },
+            "robust": {
+              "slope_per_decade": -1.5227481317487044,
+              "p_value": 0.3609794143524568
+            },
+            "theil_sen": {
+              "slope_per_decade": -1.2011382096788603
+            },
+            "mann_kendall": {
+              "tau": -0.037814938684503904,
+              "p_value": 0.32868762069544477
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2017-01",
+              "slope_per_decade": -1.2696563582536717,
+              "p_value": 0.6035429556597265
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.8314635408323291,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.10256774501791745,
+            "effective_sample_size": 244.1842487331693
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 1.5044925225477956,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -0.9747840147926814,
+            3.9837690598882727
+          ],
+          "direction": "rising",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 1.5044925225477956,
+              "p_value": 0.192676916134369,
+              "r_squared": 0.00568804956949808
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 1.5068868248840277,
+              "p_value": 0.30633471979698534
+            },
+            "robust": {
+              "slope_per_decade": 1.4397840636601962,
+              "p_value": 0.1375605056682298
+            },
+            "theil_sen": {
+              "slope_per_decade": 1.5805247476125355
+            },
+            "mann_kendall": {
+              "tau": 0.05770345596432554,
+              "p_value": 0.1360976539770806
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2013-07",
+              "slope_per_decade": 1.5399616132690812,
+              "p_value": 0.1730770339801942
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.3763283033040034,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.08819521369606251,
+            "effective_sample_size": 251.37165873216435
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "vegetation-index",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "california",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.00441445998249822,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            -0.011896789978642967,
+            0.003067870013646526
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.00441445998249822,
+              "p_value": 0.0019007523746582878,
+              "r_squared": 0.031999376934917265
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.004369906751555429,
+              "p_value": 0.18389113997611045
+            },
+            "robust": {
+              "slope_per_decade": -0.0044449383555323525,
+              "p_value": 0.0007901095506415864
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.004393013289612269
+            },
+            "mann_kendall": {
+              "tau": -0.11207380305717045,
+              "p_value": 0.0038526145093000395
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2008-01",
+              "slope_per_decade": -0.004587105377491357,
+              "p_value": 0.0010390815091559458
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.3781895863057422,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.7474091161460241,
+            "effective_sample_size": 43.22094555561852
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "vegetation-index",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.012531202157278013,
+          "units_per_decade": "NDVI/decade",
+          "confidence_interval_95": [
+            0.006425283795975615,
+            0.01863712051858041
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.012531202157278013,
+              "p_value": 4.712850617056458e-05,
+              "r_squared": 0.059171801372009565
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.012528808640642975,
+              "p_value": 0.00019397682404114362
+            },
+            "robust": {
+              "slope_per_decade": 0.007408448910150698,
+              "p_value": 4.459969856159361e-06
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.0065449635418545656
+            },
+            "mann_kendall": {
+              "tau": 0.21889789043073715,
+              "p_value": 6.641901760976473e-08
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2009-10",
+              "slope_per_decade": 0.012940557056814496,
+              "p_value": 7.54398425454727e-06
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.00040300664694599284,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.023176709637612144,
+            "effective_sample_size": 261.5868588858812
+          },
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    },
+    {
+      "variable_id": "soil-moisture",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "california",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.002853301962957745,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -0.6694422182680709,
+            0.6637356143421554
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.002853301962957745,
+              "p_value": 0.9875321176005418,
+              "r_squared": 8.208293187546282e-07
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.002857842808095605,
+              "p_value": 0.9932427833555827
+            },
+            "robust": {
+              "slope_per_decade": 0.07669669956478023,
+              "p_value": 0.6454966039232449
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.12604484631014679
+            },
+            "mann_kendall": {
+              "tau": 0.02782608695652174,
+              "p_value": 0.47229591706757823
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2014-01",
+              "slope_per_decade": 0.003927427815397983,
+              "p_value": 0.9826032230950652
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.9960109805224359,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.543282504332901,
+            "effective_sample_size": 88.78170284147417
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.15182306281720512,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -1.336000322721039,
+            1.032354197086629
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.15182306281720512,
+              "p_value": 0.48260237388634014,
+              "r_squared": 0.0016556903180407253
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.1520646793812907,
+              "p_value": 0.7640261490530973
+            },
+            "robust": {
+              "slope_per_decade": -0.25163613959696723,
+              "p_value": 0.20928961622431394
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.23412494888251292
+            },
+            "mann_kendall": {
+              "tau": -0.037458193979933115,
+              "p_value": 0.3332711532127042
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2013-06",
+              "slope_per_decade": -0.1466954513060444,
+              "p_value": 0.4912081071381687
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.8425131347743526,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.7603858737601473,
+            "effective_sample_size": 40.834364183127974
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 125.73361471663706,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 20.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 5.73361471663707,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Precipitation seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "california",
+              "label": "California"
+            },
+            {
+              "option_id": "siberian-arctic",
+              "label": "Siberian Arctic"
+            }
+          ],
+          "answer_option_id": "siberian-arctic",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "california",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "siberian-arctic",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "California: -0.853 mm/month/decade (95% interval -6.366 to 4.659). Siberian Arctic: 1.504 mm/month/decade (95% interval -0.975 to 3.984). Siberian Arctic is changing faster. Evidence label for California: Not enough evidence yet. Evidence label for Siberian Arctic: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "california",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "california",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "vegetation-index",
+          "source": {
+            "provider": "LP DAAC",
+            "dataset": "MODIS/Terra MOD13C2 v061",
+            "variable": "CMG 0.05 Deg Monthly NDVI",
+            "url": "https://doi.org/10.5067/MODIS/MOD13C2.061"
+          }
+        },
+        {
+          "region_id": "california",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "siberian-arctic",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

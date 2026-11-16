@@ -1,0 +1,64 @@
+{
+  "BBOX": [
+    -74.0,
+    -34.0,
+    -34.0,
+    6.0
+  ],
+  "THEMES_FILE": "data/data_gathering/themes.json",
+  "CMR_PROVIDERS": [
+    "GES_DISC",
+    "LPCLOUD"
+  ],
+  "DATA_START": "2000-01",
+  "DATA_END": "2024-12",
+  "SERIES_MANIFEST": "data/data_gathering/downloads/acquisition-manifest.json",
+  "VARIABLE_RULES": {
+    "C1342986036-GES_DISC": {
+      "SoilMoi0_10cm_inst": {
+        "land_only": true,
+        "land_mask": {
+          "file": "data/data_gathering/downloads/masks/GLDASp5_landmask_025d.nc4",
+          "variable": "GLDAS_mask",
+          "land_values": [
+            1
+          ]
+        }
+      }
+    },
+    "C2565788914-LPCLOUD": {
+      "CMG 0.05 Deg Monthly NDVI": {
+        "land_only": true,
+        "land_mask": {
+          "file": "data/data_gathering/downloads/masks/MOD13C2_landmask_005d.nc",
+          "variable": "land_mask",
+          "land_values": [
+            1
+          ]
+        }
+      }
+    }
+  },
+  "CATALOG_SERIES": {
+    "temperature": {
+      "dataset_id": "C1276812859-GES_DISC",
+      "native_units": "K",
+      "conversion": "kelvin_to_celsius"
+    },
+    "precipitation": {
+      "dataset_id": "C1276812868-GES_DISC",
+      "native_units": "kg m-2 s-1",
+      "conversion": "rate_per_second_to_per_month"
+    },
+    "soil-moisture": {
+      "dataset_id": "C1342986036-GES_DISC",
+      "native_units": "kg m-2",
+      "conversion": "identity"
+    },
+    "vegetation-index": {
+      "dataset_id": "C2565788914-LPCLOUD",
+      "native_units": "NDVI",
+      "conversion": "identity"
+    }
+  }
+}

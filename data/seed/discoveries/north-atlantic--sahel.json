@@ -1,0 +1,245 @@
+{
+  "discovery_id": "north-atlantic--sahel",
+  "region_ids": [
+    "north-atlantic",
+    "sahel"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "precipitation",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "north-atlantic",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -4.399465601512395,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            -7.206819818101649,
+            -1.5921113849231405
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -4.399465601512395,
+              "p_value": 0.0006186120090367083,
+              "r_squared": 0.0386259608112801
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -4.406467065866649,
+              "p_value": 0.01910295698874278
+            },
+            "robust": {
+              "slope_per_decade": -4.025066625089922,
+              "p_value": 0.0003522155012661911
+            },
+            "theil_sen": {
+              "slope_per_decade": -4.1277280639827065
+            },
+            "mann_kendall": {
+              "tau": -0.13141583054626535,
+              "p_value": 0.0006876059093576706
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2002-01",
+              "slope_per_decade": -3.8402406720041995,
+              "p_value": 0.0017821926193320131
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.008319290746736202,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.11354526093856303,
+            "effective_sample_size": 238.8195891510363
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 10.814711515468218,
+          "units_per_decade": "mm/month/decade",
+          "confidence_interval_95": [
+            5.840092136515305,
+            15.78933089442113
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 10.814711515468218,
+              "p_value": 1.3961298110602825e-14,
+              "r_squared": 0.18054687087874358
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 10.831922427891548,
+              "p_value": 7.207046483469588e-07
+            },
+            "robust": {
+              "slope_per_decade": 4.455578408500535,
+              "p_value": 1.3955248148514243e-08
+            },
+            "theil_sen": {
+              "slope_per_decade": 2.347067498039511
+            },
+            "mann_kendall": {
+              "tau": 0.2568561872909699,
+              "p_value": 3.2538105255045655e-11
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2024-08",
+              "slope_per_decade": 10.080666376405583,
+              "p_value": 4.214411691098671e-14
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.00027752430218078893,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.5567609767029273,
+            "effective_sample_size": 85.41562190924346
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Strong evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Precipitation is rising in one of these places and falling in the other. Which is which?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think precipitation is changing faster?",
+          "options": [
+            {
+              "option_id": "north-atlantic",
+              "label": "North Atlantic"
+            },
+            {
+              "option_id": "sahel",
+              "label": "Sahel"
+            }
+          ],
+          "answer_option_id": "sahel",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "north-atlantic",
+              "variable_id": "precipitation"
+            },
+            {
+              "region_id": "sahel",
+              "variable_id": "precipitation"
+            }
+          ],
+          "comparison": "North Atlantic: -4.399 mm/month/decade (95% interval -7.207 to -1.592). Sahel: 10.815 mm/month/decade (95% interval 5.84 to 15.789). Sahel is changing faster. Evidence label for North Atlantic: Strong evidence. Evidence label for Sahel: Strong evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make precipitation change this way?",
+          "possible_causes": [
+            {
+              "text": "Shifting wind belts move storm tracks away from a region.",
+              "kind": "context"
+            },
+            {
+              "text": "A warmer atmosphere can carry more water vapour.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in ocean temperature alter where rain forms.",
+              "kind": "context"
+            },
+            {
+              "text": "Rain shadows and mountains change where clouds drop their water.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "north-atlantic",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        },
+        {
+          "region_id": "sahel",
+          "variable_id": "precipitation",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXFLX v5.12.4",
+            "variable": "PRECTOTCORR",
+            "url": "https://doi.org/10.5067/0JRLVL8YV2Y4"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Strong evidence.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

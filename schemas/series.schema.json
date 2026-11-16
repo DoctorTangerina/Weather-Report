@@ -10,7 +10,7 @@
     "period": { "$ref": "common.schema.json#/$defs/period" },
     "units": { "type": "string" },
     "values": {
-      "description": "One entry per calendar month from period.start to period.end inclusive, so index i is the month i after period.start. A missing month is null rather than omitted, which keeps the index aligned with the calendar.",
+      "description": "One entry per Time step from period.start to period.end inclusive: per calendar month for the seed set and the Discovery engine, so index i is the month i after period.start. An Explore My World Series at a daily or 3-hourly Time step (#80) has one entry per UTC day or UTC 3-hour interval from the first day of period.start. A missing Time step is null rather than omitted, which keeps the index aligned with the calendar.",
       "type": "array",
       "items": { "type": ["number", "null"] },
       "minItems": 1
@@ -22,8 +22,33 @@
   "required": ["region_id", "variable_id", "period", "units", "values", "quality", "source", "engine_version"],
   "additionalProperties": false,
   "$defs": {
+    "areaSeries": {
+      "description": "A Series for a Selected area (#79): the same fields as a Region's Series, with `area` where `region_id` would be. The Discovery engine never reads one.",
+      "type": "object",
+      "properties": {
+        "area": { "$ref": "common.schema.json#/$defs/selectedArea" },
+        "variable_id": { "$ref": "#/properties/variable_id" },
+        "period": { "$ref": "#/properties/period" },
+        "units": { "$ref": "#/properties/units" },
+        "values": { "$ref": "#/properties/values" },
+        "quality": { "$ref": "#/$defs/quality" },
+        "source": { "$ref": "#/properties/source" },
+        "engine_version": { "$ref": "#/properties/engine_version" }
+      },
+      "required": [
+        "area",
+        "variable_id",
+        "period",
+        "units",
+        "values",
+        "quality",
+        "source",
+        "engine_version"
+      ],
+      "additionalProperties": false
+    },
     "quality": {
-      "description": "Result of the quality gate (BS-003).",
+      "description": "Result of the quality gate (BS-003). A series the gate excluded is still returned, flagged here, but its values are all null so nothing can use them.",
       "type": "object",
       "properties": {
         "included": {
@@ -31,7 +56,7 @@
           "type": "boolean"
         },
         "missing_fraction": {
-          "description": "Share of months in the period with no value. Above 0.2 the series is excluded.",
+          "description": "Share of Time steps (months for the seed set) in the period with no value. Above 0.2 the series is excluded.",
           "type": "number",
           "minimum": 0,
           "maximum": 1
@@ -47,7 +72,11 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["too_many_missing_months", "insufficient_land_fraction"]
+            "enum": [
+              "too_many_missing_months",
+              "too_many_missing_time_steps",
+              "insufficient_land_fraction"
+            ]
           },
           "uniqueItems": true
         }

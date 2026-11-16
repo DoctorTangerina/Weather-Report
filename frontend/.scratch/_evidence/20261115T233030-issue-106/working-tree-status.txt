@@ -1,0 +1,17 @@
+AM e2e/explore-timeline.spec.js
+MM integration-aggregations/aggregations.spec.js
+MM integration-areas/areas.spec.js
+MM integration-jobs/jobs.spec.js
+ M integration-time-steps/time-steps.spec.js
+MM integration/explore.spec.js
+M  playwright.aggregations.config.js
+M  playwright.integration.config.js
+MM src/api.js
+MM src/components/ExploreMyWorld.jsx
+AM src/components/ExploreTimeline.jsx
+MM src/components/Timeline.jsx
+M  src/screens/MainScreen.jsx
+MM src/styles.css
+MM src/useExploreSeries.js
+MM src/useExploreView.js
+?? .scratch/_evidence/20261115T233030-issue-106/

@@ -1,0 +1,7 @@
+Reused observation summary, not a raw terminal transcript.
+Conversation tool chunk: f7e56e
+Command: npm run test:e2e -- e2e/explore-timeline.spec.js --workers=1
+Exit code: 1
+Result: Expected mutation failure: temporarily disabling debounce produced 2 requests where 1 was required. Restored to 300 ms; later complete browser run passed.
+Original run UTC: not captured.
+Summary captured UTC: 2026-11-15T23:30:30.811087Z

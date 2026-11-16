@@ -1,0 +1,245 @@
+{
+  "discovery_id": "southern-africa--western-europe",
+  "region_ids": [
+    "southern-africa",
+    "western-europe"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "soil-moisture",
+      "kind": "magnitude_gap",
+      "trends": [
+        {
+          "region_id": "southern-africa",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -2.062893410565628,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -2.6664810649865647,
+            -1.4593057561446914
+          ],
+          "direction": "falling",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -2.062893410565628,
+              "p_value": 2.428317380086777e-32,
+              "r_squared": 0.3757285455663043
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -2.066176371722489,
+              "p_value": 1.957234489901609e-06
+            },
+            "robust": {
+              "slope_per_decade": -1.9002768869584947,
+              "p_value": 1.1860438128432524e-32
+            },
+            "theil_sen": {
+              "slope_per_decade": -1.9301974386454346
+            },
+            "mann_kendall": {
+              "tau": -0.43268673355629883,
+              "p_value": 5.325974762541639e-29
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2024-02",
+              "slope_per_decade": -2.008443440893745,
+              "p_value": 6.411295945442391e-32
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 6.343238247539346e-08,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.589328076251566,
+            "effective_sample_size": 77.51802725029648
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "western-europe",
+          "variable_id": "soil-moisture",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.6754823753432952,
+          "units_per_decade": "mm/decade",
+          "confidence_interval_95": [
+            -1.2907302407064205,
+            -0.06023450998016988
+          ],
+          "direction": "falling",
+          "evidence_label": "Some evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.6754823753432952,
+              "p_value": 9.461991297077302e-07,
+              "r_squared": 0.07761036751531107
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.6765573617623898,
+              "p_value": 0.03233837790957332
+            },
+            "robust": {
+              "slope_per_decade": -0.6800436092753558,
+              "p_value": 2.5539294358098904e-08
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.6668538938295273
+            },
+            "mann_kendall": {
+              "tau": -0.19304347826086957,
+              "p_value": 6.154099409057476e-07
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2003-08",
+              "slope_per_decade": -0.7081008847140116,
+              "p_value": 1.9366001105380143e-07
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.06690631390620634,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.6765358045891168,
+            "effective_sample_size": 57.88081492661424
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 1.6106792468664073,
+  "score_components": {
+    "opposite_sign": 0.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 1.6106792468664073,
+    "mirror": 0.0
+  },
+  "evidence_label": "Some evidence",
+  "headline_eligible": true,
+  "narrative": {
+    "question": "Soil moisture is falling in both of these places. Why would it change so much faster in one of them?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think soil moisture is changing faster?",
+          "options": [
+            {
+              "option_id": "southern-africa",
+              "label": "Southern Africa"
+            },
+            {
+              "option_id": "western-europe",
+              "label": "Western Europe"
+            }
+          ],
+          "answer_option_id": "southern-africa",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "southern-africa",
+              "variable_id": "soil-moisture"
+            },
+            {
+              "region_id": "western-europe",
+              "variable_id": "soil-moisture"
+            }
+          ],
+          "comparison": "Southern Africa: -2.063 mm/decade (95% interval -2.666 to -1.459). Western Europe: -0.675 mm/decade (95% interval -1.291 to -0.06). Southern Africa is changing faster. Evidence label for Southern Africa: Strong evidence. Evidence label for Western Europe: Some evidence.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make soil moisture change this way?",
+          "possible_causes": [
+            {
+              "text": "Less rain means less water soaks into the soil.",
+              "kind": "context"
+            },
+            {
+              "text": "Hotter air pulls more water out of the soil through evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Farming and irrigation change how much water the soil holds.",
+              "kind": "context"
+            },
+            {
+              "text": "Melting snow and ice add water to the soil in spring.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "southern-africa",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        },
+        {
+          "region_id": "western-europe",
+          "variable_id": "soil-moisture",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "GLDAS_NOAH025_M v2.1",
+            "variable": "SoilMoi0_10cm_inst",
+            "url": "https://doi.org/10.5067/SXAVCZFAQLNO"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Some evidence.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}

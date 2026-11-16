@@ -1,0 +1,245 @@
+{
+  "discovery_id": "australian-outback--greenland-coast",
+  "region_ids": [
+    "australian-outback",
+    "greenland-coast"
+  ],
+  "period": {
+    "start": "2000-01",
+    "end": "2024-12"
+  },
+  "contrasts": [
+    {
+      "variable_id": "temperature",
+      "kind": "opposite_sign",
+      "trends": [
+        {
+          "region_id": "australian-outback",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": 0.37668363475022876,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            0.09613024672813975,
+            0.6572370227723178
+          ],
+          "direction": "rising",
+          "evidence_label": "Strong evidence",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": 0.37668363475022876,
+              "p_value": 0.00030289532061393,
+              "r_squared": 0.04292478539199221
+            },
+            "annual_anomaly": {
+              "slope_per_decade": 0.37728310234025686,
+              "p_value": 0.033969333701168995
+            },
+            "robust": {
+              "slope_per_decade": 0.38201482143622906,
+              "p_value": 4.9039716386349957e-05
+            },
+            "theil_sen": {
+              "slope_per_decade": 0.36460847094468796
+            },
+            "mann_kendall": {
+              "tau": 0.13846153846153847,
+              "p_value": 0.0003482723096878651
+            },
+            "outlier_check": {
+              "survives": true,
+              "removed_month": "2005-04",
+              "slope_per_decade": 0.3935583612636912,
+              "p_value": 0.00013965269792179917
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.023199168965482735,
+            "significant": true,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.3103827604757182,
+            "effective_sample_size": 157.88148172994696
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        },
+        {
+          "region_id": "greenland-coast",
+          "variable_id": "temperature",
+          "period": {
+            "start": "2000-01",
+            "end": "2024-12"
+          },
+          "rate_per_decade": -0.15035860368690498,
+          "units_per_decade": "\u00b0C/decade",
+          "confidence_interval_95": [
+            -0.6074123806714955,
+            0.3066951732976855
+          ],
+          "direction": "falling",
+          "evidence_label": "Not enough evidence yet",
+          "methods": {
+            "least_squares": {
+              "slope_per_decade": -0.15035860368690498,
+              "p_value": 0.32673389776125566,
+              "r_squared": 0.003227713341849687
+            },
+            "annual_anomaly": {
+              "slope_per_decade": -0.15059788965920842,
+              "p_value": 0.6139958413390384
+            },
+            "robust": {
+              "slope_per_decade": -0.1203986204750587,
+              "p_value": 0.371195147809307
+            },
+            "theil_sen": {
+              "slope_per_decade": -0.11032109650219872
+            },
+            "mann_kendall": {
+              "tau": -0.030501672240802677,
+              "p_value": 0.4307792486078319
+            },
+            "outlier_check": {
+              "survives": false,
+              "removed_month": "2011-04",
+              "slope_per_decade": -0.155539143278863,
+              "p_value": 0.30110172810573527
+            }
+          },
+          "multiple_comparisons": {
+            "q": 0.05,
+            "family_size": 92,
+            "adjusted_p_value": 0.6452558351247586,
+            "significant": false,
+            "method": "benjamini-hochberg"
+          },
+          "autocorrelation": {
+            "lag1": 0.38987259769786814,
+            "effective_sample_size": 131.69424377012476
+          },
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          },
+          "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139.",
+          "engine_version": "0.1.0"
+        }
+      ]
+    }
+  ],
+  "mirrors": [],
+  "score": 100.0,
+  "score_components": {
+    "opposite_sign": 100.0,
+    "multi_variable": 0.0,
+    "surprising_pair": 0.0,
+    "magnitude_gap": 0.0,
+    "mirror": 0.0
+  },
+  "evidence_label": "Not enough evidence yet",
+  "headline_eligible": false,
+  "narrative": {
+    "question": "Air temperature seems to be changing faster in one of these places than in the other. Is the difference real?",
+    "investigation": {
+      "steps": [
+        {
+          "question": "Where do you think air temperature is changing faster?",
+          "options": [
+            {
+              "option_id": "australian-outback",
+              "label": "Australian Outback"
+            },
+            {
+              "option_id": "greenland-coast",
+              "label": "Greenland Coast"
+            }
+          ],
+          "answer_option_id": "australian-outback",
+          "kind": "predict"
+        },
+        {
+          "series": [
+            {
+              "region_id": "australian-outback",
+              "variable_id": "temperature"
+            },
+            {
+              "region_id": "greenland-coast",
+              "variable_id": "temperature"
+            }
+          ],
+          "comparison": "Australian Outback: 0.377 \u00b0C/decade (95% interval 0.096 to 0.657). Greenland Coast: -0.15 \u00b0C/decade (95% interval -0.607 to 0.307). Australian Outback is changing faster. Evidence label for Australian Outback: Strong evidence. Evidence label for Greenland Coast: Not enough evidence yet.",
+          "kind": "check"
+        },
+        {
+          "prompt": "What could make air temperature change this way?",
+          "possible_causes": [
+            {
+              "text": "More greenhouse gases in the atmosphere hold in heat.",
+              "kind": "context"
+            },
+            {
+              "text": "Less vegetation means less cooling from evaporation.",
+              "kind": "context"
+            },
+            {
+              "text": "Changes in cloud cover alter how much sunlight reaches the ground.",
+              "kind": "context"
+            },
+            {
+              "text": "Cities and farmland absorb and release heat differently from forests.",
+              "kind": "context"
+            }
+          ],
+          "kind": "reason"
+        }
+      ]
+    },
+    "how_do_we_know": {
+      "period": {
+        "start": "2000-01",
+        "end": "2024-12"
+      },
+      "sources": [
+        {
+          "region_id": "australian-outback",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        },
+        {
+          "region_id": "greenland-coast",
+          "variable_id": "temperature",
+          "source": {
+            "provider": "GES DISC",
+            "dataset": "MERRA-2 M2TMNXSLV v5.12.4",
+            "variable": "T2M",
+            "url": "https://doi.org/10.5067/AP1B0BA5PD2K"
+          }
+        }
+      ],
+      "statistics_summary": "Each series covers 2000-01 to 2024-12. The seasonal cycle was removed, then a least-squares fit gave each rate per decade and its 95% interval. Fits on annual anomalies, a robust fit, a rerun without the most extreme month and a Theil-Sen fit with a Mann-Kendall test checked that result. The fits were corrected for month-to-month autocorrelation and, because 92 series were tested, for false discoveries at a rate of 0.05. Together these give the Evidence label: Not enough evidence yet.",
+      "method_citation": "Acker, J. G., McMahon, E., Shen, S., Hearty, T. and Casey, N. (2009). Time-series analysis of remotely-sensed SeaWiFS chlorophyll in river-influenced coastal regions. EARSeL eProceedings 8(2), 114-139."
+    }
+  },
+  "engine_version": "0.1.0"
+}
