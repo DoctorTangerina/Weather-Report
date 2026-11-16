@@ -76,8 +76,10 @@ test(`Explore timeline stays compact and requests the chosen period at ${width}p
   const fromBox = await page.locator('.timeline-start-label').boundingBox()
   const toBox = await page.locator('.timeline-end-label').boundingBox()
   const railBox = await page.locator('.timeline-range-rail').boundingBox()
-  expect(Math.abs(fromBox.x + fromBox.width / 2 - (railBox.x + railBox.width * 120 / 301))).toBeLessThan(3)
-  expect(Math.abs(toBox.x + toBox.width / 2 - (railBox.x + railBox.width * 131 / 301))).toBeLessThan(3)
+  // "From" ends at the start handle and "To" begins at the end handle, so they never overlap.
+  expect(Math.abs(fromBox.x + fromBox.width - (railBox.x + railBox.width * 120 / 301))).toBeLessThan(3)
+  expect(Math.abs(toBox.x - (railBox.x + railBox.width * 131 / 301))).toBeLessThan(3)
+  expect(fromBox.x + fromBox.width).toBeLessThanOrEqual(toBox.x + 0.5)
   const timestampBox = await page.getByLabel('Selected timestamp', { exact: true }).boundingBox()
   expect(Math.abs(timestampBox.x + timestampBox.width / 2 - width / 2)).toBeLessThan(3)
   expect(choicesBox.x + choicesBox.width <= timestampBox.x || timestampBox.x + timestampBox.width <= choicesBox.x).toBe(true)

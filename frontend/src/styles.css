@@ -477,11 +477,13 @@ button.experience-quiet:hover { box-shadow: 0 6px 18px #16202a14; }
 .feedback-caveat { display: block; margin-top: 0.35rem; color: var(--muted); font-size: 0.9rem; }
 
 .timeline-handle-label { position: absolute; width: 8rem; max-width: 100%; white-space: nowrap; font-size: 0.8rem; color: #a4e6f5; font-variant-numeric: tabular-nums; pointer-events: none; }
-.timeline-start-label { top: 0; left: clamp(0px, var(--start), calc(100% - 8rem)); }
-.timeline-end-label { top: 0; left: clamp(8rem, var(--end), 100%); transform: translateX(-100%); text-align: right; }
-.has-request-period .timeline-handle-label { font-size: 0.75rem; line-height: 1.1; text-align: center; }
-.has-request-period .timeline-start-label { left: clamp(0px, calc(var(--start) - 6rem), calc(100% - 8rem)); }
-.has-request-period .timeline-end-label { left: clamp(0px, calc(var(--end) - 2rem), calc(100% - 8rem)); transform: none; }
+/* "From" ends at its handle and "To" starts at its handle, each clamped the same way,
+   so they never overlap, even when both handles meet. */
+.timeline-start-label { top: 0; left: clamp(8rem, var(--start), calc(100% - 8rem)); transform: translateX(-100%); padding-right: 4px; text-align: right; }
+.timeline-end-label { top: 0; left: clamp(8rem, var(--end), calc(100% - 8rem)); padding-left: 4px; text-align: left; }
+.has-request-period .timeline-handle-label { width: 6rem; font-size: 0.75rem; line-height: 1.1; }
+.has-request-period .timeline-start-label { left: clamp(6rem, var(--start), calc(100% - 6rem)); }
+.has-request-period .timeline-end-label { left: clamp(6rem, var(--end), calc(100% - 6rem)); }
 .timeline-range { position: relative; height: 4.5rem; margin: 0 10px; }
 .timeline-range-rail { position: absolute; top: calc(50% - 2px); left: 0; right: 0; height: 4px; border-radius: 3px; background: linear-gradient(to right, #465269 var(--start), #8bd9ed var(--start), #8bd9ed var(--end), #465269 var(--end)); }
 .timeline-range input { position: absolute; top: 50%; transform: translateY(-50%); height: 2rem; padding: 0; border: 0; left: -10px; width: calc(100% + 20px); appearance: none; background: transparent; pointer-events: none; }
