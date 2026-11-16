@@ -1,383 +1,200 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import DiscoveryPanel from '../components/DiscoveryPanel.jsx'
-import ExploreMyWorld, { ExploreEntry } from '../components/ExploreMyWorld.jsx'
-import Explorer from '../components/Explorer.jsx'
-import FieldMap from '../components/FieldMap.jsx'
-import RegionGlobe from '../components/Globe.jsx'
-import { Drawing, SessionComplete, Unreachable, Welcome } from '../components/PanelStates.jsx'
-import SelectedAreaPanel from '../components/SelectedAreaPanel.jsx'
-import Timeline from '../components/Timeline.jsx'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import ExploreTimeline from '../components/ExploreTimeline.jsx'
-import { AREA_COLOR, REGION_COLORS } from '../palette.js'
-import { describeArea, joinRectangle } from '../selectedArea.js'
+import RegionGlobe from '../components/Globe.jsx'
+import { Drawing, Unreachable } from '../components/PanelStates.jsx'
+import TabBar from '../components/TabBar.jsx'
+import Timeline from '../components/Timeline.jsx'
+import { joinRectangle } from '../selectedArea.js'
+import { TABS, tabFromHash } from '../tabs/registry.js'
+import { ShellContext, TabIdContext, createTabStore, useShell } from '../tabs/shell.js'
 import useAvailableSeries from '../useAvailableSeries.js'
-import useComparison from '../useComparison.js'
-import useExploreView from '../useExploreView.js'
-import useFieldMap from '../useFieldMap.js'
-import useSeries from '../useSeries.js'
-import InvestigationScreen from './InvestigationScreen.jsx'
 
 const NONE = []
+const TAB_LIST = TABS.map(({ id, label, description, icon }) => ({ id, label, description, icon }))
 
-export default function MainScreen({
-  phase,
-  catalog,
-  discovery,
-  highlights,
-  notice,
-  error,
-  checkingDiscovery,
-  seen,
-  onSurprise,
-  onDetective,
-  onInvestigate,
-  onBack,
-  onHome,
-  onNewSession,
-  onRetry,
-  exploreRegionId,
-  onExplore,
-  onCloseExplore,
-}) {
-  const [timeRange, setTimeRange] = useState(null)
-  const [timestamp, setTimestamp] = useState(null)
-  const [regionId, setRegionId] = useState('')
-  const [secondRegionId, setSecondRegionId] = useState('')
-  const [variableId, setVariableId] = useState('')
-  const [investigationStep, setInvestigationStep] = useState(0)
-  // At most one Selected area, kept only in memory: a reload clears it (#79).
-  const [selectedArea, setSelectedArea] = useState(null)
-  // 'new' replaces the Selected area, 'add' joins a rectangle to it (#81).
-  const [drawingArea, setDrawingArea] = useState(null)
-  // Why the last rectangle drawn, typed or resized was not taken.
-  const [areaProblem, setAreaProblem] = useState(null)
-  const previousHighlights = useRef(NONE)
-
-  const exploring = phase === 'welcome' && Boolean(catalog)
-  const showing = phase === 'discovery' && Boolean(discovery)
-  const investigating = phase === 'investigation' && Boolean(discovery)
-  const exploredRegion =
-    phase === 'explore' ? catalog?.regions.find((item) => item.region_id === exploreRegionId) : null
-  // onExplore(null) opens the Selected area rather than a Region.
-  const exploredArea =
-    phase === 'explore' && exploreRegionId === null && catalog ? selectedArea : null
-  const exploringPlace = Boolean(exploredRegion || exploredArea)
-
-  // Every investigation starts at Predict, however the previous one ended.
-  useEffect(() => {
-    if (investigating) setInvestigationStep(0)
-  }, [investigating, discovery?.discovery_id])
-
+// The shell (#114): header, globe, the tab bar and its panels, and the timeline.
+// Each tab owns its flow and declares what the globe and timeline show while it
+// is active; the shell renders only that. Tabs stay mounted, so their state
+// survives switching away and back until the page is reloaded.
+export default function MainScreen({ phase, catalog, notice, session, recordDiscovery, resetSession, onRetry }) {
+  const [activeId, setActiveId] = useState(() => tabFromHash(window.location.hash))
+  const declarations = useRef(createTabStore()).current
+  const timelines = useRef(createTabStore()).current
   const available = useAvailableSeries()
-  const exploreView = useExploreView(catalog, exploredRegion, available, exploredArea)
-  const field = useFieldMap(
-    exploredArea ? { rectangles: exploredArea } : exploredRegion ? { regionId: exploredRegion.region_id } : null,
-    exploreView,
-  )
-  const exploreHighlights = useMemo(
-    () => (exploredRegion ? [{ region: exploredRegion, color: REGION_COLORS[0] }] : NONE),
-    [exploredRegion],
-  )
-  const exploreSeries = useMemo(
-    () => exploreView.series.filter((item) => item.quality.included),
-    [exploreView.series],
-  )
-  const region = catalog?.regions.find((item) => item.region_id === regionId)
-  const otherRegions =
-    catalog?.regions.filter((item) => item.region_id !== region?.region_id) ?? NONE
-  const secondRegion = otherRegions.find((item) => item.region_id === secondRegionId)
-  const variables =
-    catalog?.variables.filter(
-      (item) =>
-        region?.variable_ids.includes(item.variable_id) &&
-        secondRegion?.variable_ids.includes(item.variable_id),
-    ) ?? NONE
-  const variable =
-    variables.find((item) => item.variable_id === variableId) ??
-    variables[0]
 
-  // The investigation charts the Check step's series; the Discovery view charts
-  // its lead Contrast. Both pairs come from the engine's narrative.
-  const refs = useMemo(() => {
-    if (investigating) return discovery.narrative.investigation.steps[1].series
-    if (showing) {
-      return discovery.contrasts[0].trends.map(({ region_id, variable_id }) => ({
-        region_id,
-        variable_id,
-      }))
-    }
-    return NONE
-  }, [investigating, showing, discovery])
-
-  const explored = useMemo(
-    () =>
-      exploring
-        ? [region, secondRegion]
-            .filter(Boolean)
-            .map((item, index) => ({ region: item, color: REGION_COLORS[index] }))
-        : NONE,
-    [exploring, region, secondRegion],
-  )
-
-  const discoverySeries = useSeries(
-    refs,
-    showing || investigating ? discovery.period : undefined,
-  )
-  // Wait for availability and an explicit pair before requesting a comparison.
-  const comparing = exploring && available.settled
-  const comparison = useComparison(
-    comparing ? region?.region_id : null,
-    comparing ? secondRegion?.region_id : null,
-    comparing ? variable?.variable_id : null,
-  )
-  const { loading: seriesLoading, series, notice: seriesNotice, error: seriesError } =
-    exploring ? comparison : discoverySeries
-  // #13: when the API substitutes stored examples for the requested series, the
-  // globe shows the Regions actually charted, not the ones that were asked for.
-  const displayedHighlights =
-    (showing || investigating) && discoverySeries.substituted
-      ? [...new Set(series.map((item) => item.region_id))]
-          .map((id, index) => ({
-            region: catalog.regions.find((item) => item.region_id === id),
-            color: REGION_COLORS[index % REGION_COLORS.length],
-          }))
-          .filter((item) => item.region)
-      : highlights
-  const globeHighlights =
-    showing || investigating ? displayedHighlights : exploredRegion ? exploreHighlights : explored
-  // Catalog Regions are clickable where a student is choosing what to look at.
-  const pickable = exploring || exploringPlace
+  // The hash names the active tab; switching replaces it, so Back skips tabs.
+  const openTab = useCallback((id) => {
+    const next = tabFromHash(id)
+    setActiveId(next)
+    window.history.replaceState(null, '', `#${next}`)
+  }, [])
   useEffect(() => {
-    if (phase !== 'drawing') previousHighlights.current = globeHighlights
-  }, [phase, globeHighlights])
-  // Notices for a Discovery's series are shown beside each chart (SeriesResults),
-  // so only the Explorer's notice goes in the banner.
-  const banner = notice ?? (exploring ? seriesNotice : null)
-  const detectiveError = exploring && ['result_not_available', 'incomplete_pair'].includes(error?.code)
-    ? error
-    : null
-  const timelineKey = exploringPlace
-    ? `explore/${exploredRegion?.region_id ?? describeArea(exploredArea)}`
-    : discovery && !exploring
-      ? `${phase}/${discovery.discovery_id}`
-      : `${region?.region_id}/${secondRegion?.region_id}/${variable?.variable_id}`
+    const follow = () => setActiveId(tabFromHash(window.location.hash))
+    window.addEventListener('hashchange', follow)
+    return () => window.removeEventListener('hashchange', follow)
+  }, [])
 
-  // Before the student predicts, nothing may hint at the answer: the timeline
-  // stays empty until the Check step shows the charts (BS-006).
-  const timelineSeries = exploringPlace
-    ? exploreView.loading ? NONE : exploreSeries
-    : seriesLoading || (investigating && investigationStep !== 1) ? NONE : series
+  // At most one Selected area, kept only in memory (#79), shown in every tab and
+  // edited only where a tab declares editsArea. 'new' replaces it, 'add' joins.
+  const [selectedArea, setSelectedArea] = useState(null)
+  const [drawingArea, setDrawingArea] = useState(null)
+  const [areaProblem, setAreaProblem] = useState(null)
+  const area = useMemo(() => ({
+    selectedArea,
+    drawingArea,
+    areaProblem,
+    startDrawing: (mode) => {
+      setAreaProblem(null)
+      setDrawingArea(mode)
+    },
+    stopDrawing: () => setDrawingArea(null),
+    placeRectangle: (rectangle, mode) => {
+      const { area: next, error } =
+        mode === 'add' && selectedArea ? joinRectangle(selectedArea, rectangle) : { area: [rectangle] }
+      if (next) setSelectedArea(next)
+      setAreaProblem(error ?? null)
+    },
+    change: (next, problem) => {
+      setSelectedArea(next)
+      setAreaProblem(problem ?? null)
+    },
+  }), [selectedArea, drawingArea, areaProblem])
 
-  // A new rectangle starts a new Selected area, or joins the one there is if it
-  // touches or overlaps it. A refused one leaves the area as it was.
-  const placeRectangle = (rectangle, mode) => {
-    const { area, error } =
-      mode === 'add' && selectedArea ? joinRectangle(selectedArea, rectangle) : { area: [rectangle] }
-    if (area) setSelectedArea(area)
-    setAreaProblem(error ?? null)
-  }
-  const startDrawing = (mode) => {
-    setAreaProblem(null)
-    setDrawingArea(mode)
-  }
+  const shell = useMemo(() => ({
+    catalog,
+    available,
+    session,
+    recordDiscovery,
+    resetSession,
+    area,
+    tabs: TAB_LIST,
+    activeId,
+    openTab,
+    declarations,
+    timelines,
+  }), [catalog, available, session, recordDiscovery, resetSession, area, activeId, openTab, declarations, timelines])
 
-  const areaPanel = (
-    <SelectedAreaPanel
-      area={selectedArea}
-      drawing={drawingArea}
-      problem={areaProblem}
-      onDraw={startDrawing}
-      onStopDrawing={() => setDrawingArea(null)}
-      onArea={placeRectangle}
-      onExplore={exploredArea ? undefined : () => onExplore(null)}
-    />
-  )
-
+  const ready = phase === 'ready' && Boolean(catalog)
+  const seen = session.shownDiscoveryIds.length
   return (
-    <div className="main-screen">
-      <header className="main-header">
-        <h1 className="brand">
-          <span className="brand-mark" aria-hidden="true" />
-          Earth System Trend Detective
-        </h1>
-        {seen > 0 && (
-          <p className="session-count" aria-live="polite">
-            {seen === 1 ? '1 Discovery seen' : `${seen} Discoveries seen`}
-          </p>
-        )}
-      </header>
+    <ShellContext.Provider value={shell}>
+      <div className="main-screen">
+        <header className="main-header">
+          <h1 className="brand">
+            <span className="brand-mark" aria-hidden="true" />
+            Earth System Trend Detective
+          </h1>
+          {seen > 0 && (
+            <p className="session-count" aria-live="polite">
+              {seen === 1 ? '1 Discovery seen' : `${seen} Discoveries seen`}
+            </p>
+          )}
+        </header>
 
-      <section className="globe-panel" aria-label="Interactive Earth globe">
-        <RegionGlobe
-          fieldMap={field.frame}
-          highlights={phase === 'drawing' ? previousHighlights.current : globeHighlights}
-          regions={pickable ? catalog.regions : undefined}
-          onRegionClick={pickable ? onExplore : undefined}
-          selectedArea={pickable ? selectedArea : null}
-          onAreaClick={pickable ? () => onExplore(null) : undefined}
-          drawing={pickable ? drawingArea : null}
-          onDrawn={(rectangle) => {
-            placeRectangle(rectangle, drawingArea)
-            setDrawingArea(null)
-          }}
-          onDrawCancel={() => setDrawingArea(null)}
-          onAreaChange={
-            pickable
-              ? (area, problem) => {
-                  setSelectedArea(area)
-                  setAreaProblem(problem ?? null)
-                }
-              : undefined
-          }
-        />
-        <p className="globe-hint">
-          {pickable && drawingArea
-            ? 'Drag from one corner to the opposite corner · Escape to stop'
-            : `${pickable ? 'Click a Region to explore it · ' : ''}${
-                pickable && selectedArea ? 'Drag a handle to resize · ' : ''
-              }Drag to turn · Scroll or pinch to zoom`}
-        </p>
-      </section>
+        <GlobeHost catalog={ready ? catalog : null} activeId={activeId} />
 
-      <aside
-        className="sidebar"
-        tabIndex={0}
-        aria-label={investigating ? 'Become a Detective' : undefined}
-        aria-busy={phase === 'loading' || phase === 'drawing' || seriesLoading || exploreView.loading}
-      >
-        {catalog && (
-          <button
-            className="home-button"
-            aria-label="Home"
-            title="Home — choose Regions"
-            disabled={phase === 'drawing' || exploring}
-            onClick={onHome}
-          >
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9" />
-            </svg>
-          </button>
-        )}
-        {banner && (
-          <p className="notice" role="status">
-            {banner.message}
-          </p>
-        )}
-        {error && !detectiveError && (
-          <p className="error" role="alert">
-            {error.message}
-          </p>
-        )}
-        {seriesError && showing && (
-          <p className="error" role="alert">
-            The analysis could not be loaded: {seriesError.message}
-          </p>
-        )}
+        <aside className={`sidebar${ready ? ' has-tabs' : ''}`} aria-busy={phase === 'loading'}>
+          {phase === 'loading' && <div className="sidebar-content"><Drawing /></div>}
+          {phase === 'unreachable' && <div className="sidebar-content"><Unreachable onRetry={onRetry} /></div>}
+          {ready && (
+            <>
+              <TabBar tabs={TAB_LIST} activeId={activeId} onSelect={openTab} />
+              <div className="sidebar-content">
+                {notice && <p className="notice" role="status">{notice.message}</p>}
+                {TABS.map(({ id, Component }) => (
+                  <section
+                    key={id}
+                    id={`panel-${id}`}
+                    className="tab-panel"
+                    role="tabpanel"
+                    aria-labelledby={`tab-${id}`}
+                    tabIndex={0}
+                    hidden={id !== activeId}
+                  >
+                    <TabIdContext.Provider value={id}>
+                      <Suspense fallback={null}>
+                        <Component />
+                      </Suspense>
+                    </TabIdContext.Provider>
+                  </section>
+                ))}
+              </div>
+            </>
+          )}
+        </aside>
 
-        {phase === 'loading' && <Drawing />}
-        {phase === 'unreachable' && <Unreachable onRetry={onRetry} />}
-        {exploring && (
-          <>
-            <Welcome
-              catalog={catalog}
-              detectiveError={detectiveError}
-              checkingDiscovery={checkingDiscovery}
-              onSurprise={onSurprise}
-              onDetective={() => onDetective([region, secondRegion].filter(Boolean).map((item) => item.region_id))}
-            />
-            <ExploreEntry catalog={catalog} onExplore={onExplore}>
-              {areaPanel}
-            </ExploreEntry>
-            <Explorer
-              disabled={checkingDiscovery}
-              catalog={catalog}
-              region={region}
-              secondRegion={secondRegion}
-              variable={variable}
-              variables={variables}
-              onRegion={setRegionId}
-              onSecondRegion={setSecondRegionId}
-              onVariable={setVariableId}
-              hasData={available.has}
-              series={series}
-              seriesLoading={seriesLoading}
-              error={comparison.error}
-              timestamp={timestamp}
-              timeRange={timeRange}
-              highlights={explored}
-              trends={comparison.trends}
-            />
-          </>
-        )}
-        {exploringPlace && (
-          <ExploreMyWorld
-            catalog={catalog}
-            title={exploredRegion?.name ?? 'Selected area'}
-            description={
-              exploredRegion?.description ??
-              `${describeArea(exploredArea)}. It lasts until you reload the page.`
-            }
-            noun={exploredRegion ? 'Region' : 'area'}
-            view={exploreView}
-            color={exploredRegion ? REGION_COLORS[0] : AREA_COLOR}
-            timestamp={timestamp}
-            onBack={onCloseExplore}
-          >
-            <FieldMap field={field} catalog={catalog} />
-            {areaPanel}
-          </ExploreMyWorld>
-        )}
-        {phase === 'drawing' && <Drawing />}
-        {phase === 'complete' && <SessionComplete seen={seen} onNewSession={onNewSession} />}
-        {showing && (
-          <DiscoveryPanel
-            discovery={discovery}
-            catalog={catalog}
-            highlights={displayedHighlights}
-            responses={discoverySeries.responses}
-            substituted={discoverySeries.substituted}
-            seriesError={seriesError}
-            series={series}
-            seriesLoading={seriesLoading}
-            timestamp={timestamp}
-            timeRange={timeRange}
-            onInvestigate={onInvestigate}
-            onSurprise={onSurprise}
-          />
-        )}
-        {investigating && (
-          <InvestigationScreen
-            key={discovery.discovery_id}
-            discovery={discovery}
-            catalog={catalog}
-            highlights={displayedHighlights}
-            onBack={onBack}
-            stepIndex={investigationStep}
-            onStepChange={setInvestigationStep}
-            loading={seriesLoading}
-            responses={discoverySeries.responses}
-            substituted={discoverySeries.substituted}
-            error={seriesError}
-            timestamp={timestamp}
-            timeRange={timeRange}
-          />
-        )}
-      </aside>
+        {ready && <TimelineHost activeId={activeId} />}
+      </div>
+    </ShellContext.Provider>
+  )
+}
 
-      {(showing || exploring || investigating || exploringPlace || phase === 'drawing') && (
-        exploringPlace ? <ExploreTimeline
-          key={timelineKey}
-          view={exploreView}
-          series={timelineSeries}
-          onTimestampChange={setTimestamp}
-        /> : <Timeline
-          key={timelineKey}
-          series={timelineSeries}
-          loading={exploringPlace ? exploreView.loading : seriesLoading}
-          onTimestampChange={setTimestamp}
-          onRangeChange={setTimeRange}
-        />
-      )}
-    </div>
+// The active tab's declaration; it changes only when a declared field does.
+function useDeclaration(activeId) {
+  const { declarations } = useShell()
+  return useSyncExternalStore(declarations.subscribe, () => declarations.get(activeId))
+}
+
+// The globe, as the active tab declares it. The Selected area's outline shows
+// in every tab; drawing, resizing and opening it only where editsArea is set.
+function GlobeHost({ catalog, activeId }) {
+  const { area, declarations } = useShell()
+  const declaration = useDeclaration(activeId)
+  const globe = declaration?.globe ?? {}
+  const editable = Boolean(globe.editsArea)
+  const clickable = Boolean(globe.onRegionClick) && Boolean(catalog)
+  const latest = useCallback(
+    (name) => (...args) => declarations.latest(activeId)?.globe?.[name]?.(...args),
+    [declarations, activeId],
+  )
+  const onRegionClick = useMemo(() => (clickable ? latest('onRegionClick') : undefined), [clickable, latest])
+  const onAreaClick = useMemo(() => (editable ? latest('onAreaClick') : undefined), [editable, latest])
+  const hint = editable && area.drawingArea
+    ? 'Drag from one corner to the opposite corner · Escape to stop'
+    : `${globe.hint ? `${globe.hint} · ` : ''}${editable && area.selectedArea ? 'Drag a handle to resize · ' : ''}Drag to turn · Scroll or pinch to zoom`
+  return (
+    <section className="globe-panel" aria-label="Interactive Earth globe">
+      <RegionGlobe
+        fieldMap={globe.fieldMap ?? null}
+        highlights={globe.highlights ?? NONE}
+        regions={clickable ? catalog.regions : undefined}
+        onRegionClick={onRegionClick}
+        selectedArea={area.selectedArea}
+        onAreaClick={onAreaClick}
+        drawing={editable ? area.drawingArea : null}
+        onDrawn={(rectangle) => {
+          area.placeRectangle(rectangle, area.drawingArea)
+          area.stopDrawing()
+        }}
+        onDrawCancel={area.stopDrawing}
+        onAreaChange={editable ? area.change : undefined}
+      />
+      <p className="globe-hint">{hint}</p>
+    </section>
+  )
+}
+
+// The timeline, as the active tab declares it; what it reports goes back to
+// that tab (useTabTimeline).
+function TimelineHost({ activeId }) {
+  const { timelines } = useShell()
+  const timeline = useDeclaration(activeId)?.timeline
+  const report = useMemo(() => ({
+    timestamp: (timestamp) => timelines.merge(activeId, { timestamp }),
+    range: (timeRange) => timelines.merge(activeId, { timeRange }),
+  }), [timelines, activeId])
+  if (!timeline) return null
+  const key = `${activeId}/${timeline.key}`
+  if (timeline.kind === 'explore') {
+    return <ExploreTimeline key={key} view={timeline.view} series={timeline.series} onTimestampChange={report.timestamp} />
+  }
+  return (
+    <Timeline
+      key={key}
+      series={timeline.series}
+      loading={timeline.loading}
+      onTimestampChange={report.timestamp}
+      onRangeChange={report.range}
+    />
   )
 }

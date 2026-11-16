@@ -33,7 +33,7 @@ async function clickRegionOnGlobe(page, name) {
 }
 
 async function openFromSidebar(page, regionId) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByLabel('Region to explore', { exact: true }).selectOption(regionId)
   await expect(page.locator('.explore')).toBeVisible()
 }
@@ -41,8 +41,8 @@ async function openFromSidebar(page, regionId) {
 test('clicking Sahel on the globe opens its Explore My World view', async ({ page }) => {
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto('/')
-  await expect(page.locator('.welcome')).toBeVisible()
+  await page.goto('/#explore')
+  await expect(page.locator('.explore-entry')).toBeVisible()
   await page.waitForTimeout(1500)
   await clickRegionOnGlobe(page, 'Sahel')
   await expect(page.getByRole('heading', { name: 'Sahel', exact: true })).toBeVisible()
@@ -115,5 +115,5 @@ test('Variables without data are not offered, and Back returns to the welcome', 
   await expect(page.getByRole('checkbox', { name: /vegetation/i })).toHaveCount(0)
   await expect(page.locator('.explore')).toContainText('No data yet for vegetation index (ndvi).')
   await page.getByRole('button', { name: '← Back' }).click()
-  await expect(page.locator('.welcome')).toBeVisible()
+  await expect(page.locator('.explore-entry')).toBeVisible()
 })

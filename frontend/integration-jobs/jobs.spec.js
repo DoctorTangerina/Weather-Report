@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 // #77 / BS-003: progress and acquisition failure visible through the real API.
 async function openBeyondSeed(page) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect(page.locator('.explore .chart')).toHaveCount(1)
   await page.getByRole('slider', { name: 'Range end', exact: true }).fill('301')

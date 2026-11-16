@@ -31,7 +31,7 @@ export default function Explorer({
 
   return (
     <section className="explorer" aria-labelledby="explore-heading">
-      <h3 id="explore-heading">Or compare two Regions</h3>
+      <h3 id="explore-heading">Compare two Regions</h3>
       <p className="muted">Choose two Regions and a shared Variable to see their Trends and monthly series.</p>
       <div className="catalog-controls">
         <label htmlFor="explore-region">First Region</label>

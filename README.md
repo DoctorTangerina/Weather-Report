@@ -62,6 +62,18 @@ Run the browser suite against the real API and committed seed with
 `npm run test:browser` runs all seven suites in turn.
 See [browser end-to-end setup and configuration](frontend/docs/browser-end-to-end.md).
 
+## The sidebar tabs
+
+Each tool is a tab (#114): Start, Surprise Me!, Become a Detective, Explore My
+World and Compare Regions. `#<id>` in the URL opens a tab, and every tab keeps
+its state until the page is reloaded. To add one, write a component in
+`frontend/src/tabs/` and add one entry to `TABS` in `frontend/src/tabs/registry.js`
+(`id`, `label`, `description`, `icon` as an SVG path, `Component` as a lazy
+import); `MainScreen` and `App` need no change. The component reads the catalog,
+session and Selected area from `useShell()` and tells the shell what the globe
+and timeline show while it is active with `useTabDeclaration()`
+(`frontend/src/tabs/shell.js` documents the fields).
+
 ## The seed set
 
 ```sh
@@ -140,7 +152,7 @@ A Region or Variable outside the catalog is rejected with `422` and an
 `errorResponse`. A Series cache miss attempts acquisition and then uses a labelled
 preloaded fallback; if neither is available it returns `503 live_data_unavailable`.
 
-The welcome screen lets students compare two catalog Regions using a Variable
+The Compare Regions tab lets students compare two catalog Regions using a Variable
 offered for both. The comparison endpoint analyzes their stored series with the
 engine's Trend methods and rates the two Trends together as the family for
 multiple-comparison correction. A pair does not need to be a stored Discovery.

@@ -12,7 +12,7 @@ const chooseMonth = (page, boundary, month) => page.getByRole('slider', { name: 
   .fill(String((Number(month.slice(0, 4)) - 2000) * 12 + Number(month.slice(5, 7)) - 1))
 
 async function openSahel(page) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect(charts(page)).toHaveCount(1)
 }
