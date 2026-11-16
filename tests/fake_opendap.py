@@ -14,6 +14,9 @@ from urllib.parse import parse_qs, urlsplit
 import numpy as np
 from netCDF4 import Dataset
 
+# netCDF/HDF5 is not thread-safe. The real download is plain HTTP; this fake
+# writes netCDF files, so its writes take turns while its delays overlap.
+_NETCDF = threading.Lock()
 LATITUDES = np.arange(-89.0, 90.0, 2.0)
 LONGITUDES = np.arange(-179.0, 180.0, 2.0)
 
@@ -68,7 +71,8 @@ class FakeOpendap:
             self.downloads.append(url)
         try:
             time.sleep(self.delay)
-            self._write(url, destination)
+            with _NETCDF:
+                self._write(url, destination)
         finally:
             with self._lock:
                 self.active -= 1
