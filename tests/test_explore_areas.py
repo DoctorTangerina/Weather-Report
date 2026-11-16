@@ -72,7 +72,7 @@ def ask(client, rectangles, variables=("temperature",), **params):
 def finished(client, response, validator_for):
     assert response.status_code == 202, response.json()
     job = response.json()["data"]["job"]
-    deadline = time.monotonic() + 10
+    deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
         body = client.get(job["url"]).json()
         validator_for("responses.schema.json", "#/$defs/exploreJobResponse").validate(

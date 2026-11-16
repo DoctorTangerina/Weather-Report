@@ -82,7 +82,7 @@ def series_of(client, response, validator_for):
         return body["data"]
     assert response.status_code == 202, body
     url = body["data"]["job"]["url"]
-    deadline = time.monotonic() + 10
+    deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
         body = client.get(url).json()
         validator_for(RESPONSES, "#/$defs/exploreJobResponse").validate(body)

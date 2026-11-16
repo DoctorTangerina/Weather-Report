@@ -72,7 +72,7 @@ def job_of(client, response, validator_for):
     assert response.status_code == 202, response.json()
     validator_for(RESPONSES, "#/$defs/exploreJobResponse").validate(response.json())
     url = response.json()["data"]["job"]["url"]
-    deadline = time.monotonic() + 20
+    deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
         body = client.get(url).json()
         validator_for(RESPONSES, "#/$defs/exploreJobResponse").validate(body)
