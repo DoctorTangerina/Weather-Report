@@ -27,12 +27,30 @@ Python 3.11 or newer, Node 18 or newer.
 
 ```sh
 pip install -e ".[api,dev]"
-python -m pytest                                  # the whole suite, no network
-python -m uvicorn api.main:app --port 8000        # API on :8000
+cd frontend && npm install && cd ..
+cp .env.example .env                              # then set EARTHDATA_TOKEN
+python scripts/run_app.py                         # API on :8000, UI on :5173
 ```
 
+Open http://localhost:5173. `run_app.py` checks the setup first (packages, free
+ports, the token) and says what is missing; `--check` runs only the checks.
+Ctrl+C stops both servers. It passes `.env` to the API, so any setting listed in
+`.env.example` can live there. Without a token the app runs on the committed seed
+set; live requests fall back to it or report that live data is unavailable.
+
+To run the two servers yourself:
+
 ```sh
-cd frontend && npm install && npm run dev         # UI on :5173, /api proxied to :8000
+python -m uvicorn api.main:app --port 8000        # API on :8000
+cd frontend && npm run dev                        # UI on :5173, /api proxied to :8000
+```
+
+Tests, all without network:
+
+```sh
+python -m pytest                                  # Python suite
+cd frontend && npm test                           # frontend unit tests
+cd frontend && npm run test:browser               # every Playwright suite (see below)
 ```
 
 `WEATHER_REPORT_DATA_DIR` points the API at a different result set; it defaults to
@@ -41,6 +59,7 @@ cd frontend && npm install && npm run dev         # UI on :5173, /api proxied to
 
 Run the browser suite against the real API and committed seed with
 `npm run test:integration` from `frontend/`. It starts and stops both servers.
+`npm run test:browser` runs all seven suites in turn.
 See [browser end-to-end setup and configuration](frontend/docs/browser-end-to-end.md).
 
 ## The seed set
