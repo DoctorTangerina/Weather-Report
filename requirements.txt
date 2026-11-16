@@ -1,0 +1,11 @@
+# What the API needs at runtime, for Azure App Service (its build runs
+# `pip install -r requirements.txt`). Keep in step with the `api` extra in
+# pyproject.toml. The app runs from the checkout, not as an installed package:
+#   python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --app-dir src
+numpy>=1.26
+scipy>=1.11
+fastapi>=0.110
+uvicorn>=0.27
+jsonschema>=4.21
+netCDF4>=1.7
+pyhdf>=0.11

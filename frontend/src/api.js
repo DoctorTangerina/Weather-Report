@@ -1,3 +1,5 @@
+import { API_BASE, withBase } from './apiBase.js'
+
 export class ApiError extends Error {
   constructor(code, message) {
     super(message)
@@ -6,7 +8,7 @@ export class ApiError extends Error {
 }
 
 async function request(path, options) {
-  const response = await fetch(path, options)
+  const response = await fetch(withBase(API_BASE, path), options)
   const body = await response.json()
   if (!response.ok) {
     const error = body?.error ?? {}

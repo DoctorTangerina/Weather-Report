@@ -26,10 +26,11 @@ from typing import Annotated, Any
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from data.data_gathering.config import settings
 from engine import (
@@ -92,6 +93,20 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Weather Report", version=ENGINE_VERSION, lifespan=lifespan)
 # The Discovery list alone is over 2 MB of JSON; compressed it is a tenth of that.
 app.add_middleware(GZipMiddleware, minimum_size=1024)
+# Deployed, the static site and the API are on different hosts, so the site's
+# origin must be listed here. Locally the Vite proxy keeps one origin and the
+# setting stays empty.
+ALLOWED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.environ.get("WEATHER_REPORT_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if ALLOWED_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=ALLOWED_ORIGINS,
+        allow_methods=["GET", "POST"],
+    )
 
 
 @app.exception_handler(RequestValidationError)
