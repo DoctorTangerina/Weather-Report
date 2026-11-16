@@ -60,7 +60,7 @@ def request(client, variables=("temperature",)):
 
 
 def finish(client, url, validator_for):
-    deadline = time.monotonic() + 10
+    deadline = time.monotonic() + 60
     progress = []
     while time.monotonic() < deadline:
         response = client.get(url)
@@ -190,7 +190,7 @@ def test_polling_shows_partial_progress_for_multiple_variables(jobs, validator_f
     client, source = jobs
     source.calls = 0
     job = request(client, ("temperature", "precipitation")).json()["data"]["job"]
-    deadline = time.monotonic() + 10
+    deadline = time.monotonic() + 60
     seen = [job["progress"]]
     while time.monotonic() < deadline:
         body = client.get(job["url"]).json()

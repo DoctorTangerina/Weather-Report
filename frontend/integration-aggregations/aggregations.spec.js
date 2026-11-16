@@ -9,11 +9,11 @@ const ticks = (page, name) =>
   page.locator('.explore .chart', { hasText: name }).locator('text.chart-tick:not(.chart-time)')
 
 async function openWithTemperatureAndPrecipitation(page) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect(page.locator('.explore .chart')).toHaveCount(1)
-  await page.getByLabel('From', { exact: true }).fill('2025-01')
-  await page.getByLabel('To', { exact: true }).fill('2025-02')
+  await page.getByRole('slider', { name: 'Range end', exact: true }).fill('301')
+  await page.getByRole('slider', { name: 'Range start', exact: true }).fill('300')
   await page.getByRole('checkbox', { name: 'Precipitation', exact: true }).check()
   await expect(page.locator('.explore .chart')).toHaveCount(2)
 }
@@ -46,7 +46,7 @@ test('choosing the Aggregation "maximum" rebuilds every chart with it', async ({
   await page.getByLabel('Aggregation', { exact: true }).selectOption('maximum')
   await expect(ticks(page, 'Air temperature')).toHaveText(['14', '6'])
   await expect(ticks(page, 'Precipitation')).toHaveText(['9', '5'])
-  await expect(page.locator('.explore')).toContainText("highest value among the area's grid cells")
+  await expect(page.locator('.explore')).toContainText('highest value among the grid cells of the Region')
   expect(requested.map((params) => params.get('aggregation'))).toEqual(['maximum'])
   expect(requested[0].getAll('variable_id')).toEqual(['temperature', 'precipitation'])
 })

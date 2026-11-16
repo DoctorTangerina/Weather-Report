@@ -5,6 +5,7 @@ server-side index constraints over the requested time and cell centres.
 """
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import cast
 from urllib.parse import urlencode, urlsplit
@@ -17,6 +18,66 @@ from data.data_gathering.download import download, load_token
 from data.data_gathering.selection import SeriesSelectionError, TimeWindow
 
 from .products import PRODUCTS
+
+
+# Parallel downloads per acquisition; Earthdata accepts this many comfortably.
+DOWNLOAD_WORKERS = 8
+
+
+def _download_all(jobs, token):
+    """Download (url, path) pairs concurrently; the first failure is raised."""
+    if not jobs:
+        return
+    with ThreadPoolExecutor(max_workers=min(DOWNLOAD_WORKERS, len(jobs))) as pool:
+        for future in [pool.submit(download, url, path, token) for url, path in jobs]:
+            future.result()
+
+
+_DROPPED_ATTRIBUTES = {
+    "_FillValue",
+    "missing_value",
+    "scale_factor",
+    "add_offset",
+    "valid_range",
+    "valid_min",
+    "valid_max",
+}
+
+
+def _merge_longitude_runs(paths, target, field):
+    """One grid file from subsets that differ only in their longitude columns."""
+    parts = [Dataset(path) for path in paths]
+    try:
+        first = parts[0]
+        with Dataset(target, "w") as out:
+            out.createDimension("time", len(first["time"]))
+            out.createDimension("lat", len(first["lat"]))
+            out.createDimension("lon", sum(len(part["lon"]) for part in parts))
+            for name, values in (
+                ("time", first["time"][:]),
+                ("lat", first["lat"][:]),
+                ("lon", np.concatenate([np.asarray(part["lon"][:]) for part in parts])),
+            ):
+                variable = out.createVariable(name, "f8", (name,))
+                variable.setncatts(
+                    {key: first[name].getncattr(key) for key in first[name].ncattrs()}
+                )
+                variable[:] = values
+            source = first[field]
+            merged = out.createVariable(
+                field, "f4", ("time", "lat", "lon"), fill_value=np.float32(1e15)
+            )
+            merged.setncatts(
+                {
+                    key: source.getncattr(key)
+                    for key in source.ncattrs()
+                    if key not in _DROPPED_ATTRIBUTES
+                }
+            )
+            merged[:] = np.ma.concatenate([part[field][:] for part in parts], axis=-1)
+    finally:
+        for part in parts:
+            part.close()
 
 
 class NasaGridAcquisitionSource:
@@ -48,110 +109,52 @@ class NasaGridAcquisitionSource:
         directory = Path(request["workspace"])
         directory.mkdir(parents=True, exist_ok=True)
         token = load_token()
-        records = []
-        seen = set()
-        for box in boxes:
-            query = {
-                "short_name": product,
-                "version": version,
-                "bounding_box": ",".join(map(str, box)),
-                "temporal": temporal_range(period["start"], period["end"]),
-                "sort_key[]": ["start_date", "producer_granule_id"],
-            }
-            for granule in cmr_entries("granules", query):
-                key = (granule["id"], tuple(box))
-                if key in seen:
-                    continue
-                seen.add(key)
-                url = self._url(granule)
-                index = len(seen)
-                coordinates = directory / f"coordinates-{index}.nc4"
-                download(self._subset(url, "/time;/lat;/lon"), coordinates, token)
-                with Dataset(coordinates) as ds:
-                    lat = np.asarray(ds["lat"][:])
-                    lon = (np.asarray(ds["lon"][:]) + 180) % 360 - 180
-                    time = ds["time"]
-                    dates = cast(
-                        np.ndarray,
-                        num2date(
-                            time[:], time.units, getattr(time, "calendar", "standard")
-                        ),
-                    )
-                    timestamps = np.array(
-                        [date.isoformat() for date in np.atleast_1d(dates)]
-                    )
-                west, south, east, north = box
-                selectors = [
-                    np.flatnonzero(
-                        (timestamps >= window.lower) & (timestamps < window.upper)
-                    ),
-                    np.flatnonzero((lat >= south) & (lat <= north)),
-                    np.flatnonzero((lon >= west) & (lon <= east)),
-                ]
-                if any(len(indices) == 0 for indices in selectors):
-                    continue
-                # Split discontinuous longitude indices rather than fetching intervening cells.
-                longitude_runs = np.split(
-                    selectors[2], np.flatnonzero(np.diff(selectors[2]) != 1) + 1
+        granules = self._granules(product, version, boxes, period)
+        # Downloads are independent, so they overlap; every netCDF read and write
+        # stays on this thread, because netCDF/HDF5 is not thread-safe.
+        coordinates = [directory / f"coordinates-{n}.nc4" for n in range(len(granules))]
+        _download_all(
+            [
+                (self._subset(self._url(granule), "/time;/lat;/lon"), path)
+                for granule, path in zip(granules, coordinates)
+            ],
+            token,
+        )
+        plans = []
+        for n, (granule, path) in enumerate(zip(granules, coordinates)):
+            plan = self._plan(path, window, boxes)
+            if plan is None:
+                continue
+            url = self._url(granule)
+            runs = [
+                (
+                    self._subset(url, self._constraint(field, plan, run)),
+                    directory / f"grid-{n}-{part}.nc4",
                 )
-                for run in longitude_runs:
-                    slices = [
-                        f"[{int(axis[0])}:1:{int(axis[-1])}]"
-                        for axis in [*selectors[:2], run]
-                    ]
-                    constraint = f"/{field}" + "".join(slices)
-                    constraint += ";" + ";".join(
-                        f"/{name}{part}"
-                        for name, part in zip(("time", "lat", "lon"), slices)
-                    )
-                    path = directory / f"grid-{len(records)}.nc4"
-                    subset_url = self._subset(url, constraint)
-                    download(subset_url, path, token)
-                    with Dataset(path, "a") as ds:
-                        # Keep native cell areas even when the subset has one cell.
-                        ds.createDimension("weather_bounds", 2)
-                        for name, values, indices in (
-                            ("lat", lat, selectors[1]),
-                            ("lon", lon, run),
-                        ):
-                            delta = np.diff(values)
-                            edges = np.r_[
-                                values[0] - delta[0] / 2,
-                                (values[:-1] + values[1:]) / 2,
-                                values[-1] + delta[-1] / 2,
-                            ]
-                            if name == "lat":
-                                edges = np.clip(edges, -90, 90)
-                            bounds_name = name + "_bounds"
-                            bounds = ds.createVariable(
-                                bounds_name, "f8", (name, "weather_bounds")
-                            )
-                            bounds[:] = np.column_stack(
-                                (edges[indices], edges[indices + 1])
-                            )
-                            ds[name].bounds = bounds_name
-                    if variable == "soil-moisture":
-                        # GLDAS has a static land-only footprint; preserve it for the Quality gate.
-                        with Dataset(path, "a") as ds:
-                            data = ds[field][:]
-                            valid = np.any(
-                                ~np.ma.getmaskarray(data) & np.isfinite(data), axis=0
-                            )
-                            mask = ds.createVariable(
-                                "weather_land", "i1", ("lat", "lon")
-                            )
-                            mask[:] = valid
-                    records.append(
-                        {
-                            "collection_id": product,
-                            "dataset": product,
-                            "granule_id": granule["id"],
-                            "file": str(path.resolve()),
-                            "url": subset_url,
-                            "start": granule.get("time_start"),
-                            "end": granule.get("time_end"),
-                        }
-                    )
+                for part, run in enumerate(plan["runs"])
+            ]
+            plans.append((granule, url, plan, runs))
+        _download_all([run for *_, runs in plans for run in runs], token)
+        records = []
+        for granule, url, plan, runs in plans:
+            if len(runs) == 1:
+                path = runs[0][1]
+            else:
+                # One file per granule: separate files would repeat its timestamps.
+                path = directory / f"grid-{len(records)}.nc4"
+                _merge_longitude_runs([run_path for _, run_path in runs], path, field)
+            self._finish_grid(path, plan, field, variable)
+            records.append(
+                {
+                    "collection_id": product,
+                    "dataset": product,
+                    "granule_id": granule["id"],
+                    "file": str(path.resolve()),
+                    "url": runs[0][0] if len(runs) == 1 else url,
+                    "start": granule.get("time_start"),
+                    "end": granule.get("time_end"),
+                }
+            )
         if not records:
             raise SeriesSelectionError(
                 "series_source_unavailable",
@@ -193,6 +196,105 @@ class NasaGridAcquisitionSource:
             )
         )
         return config
+
+    @staticmethod
+    def _granules(product, version, boxes, period):
+        """Each granule once, in time order, whichever boxes it was found for."""
+        found = {}
+        for box in boxes:
+            query = {
+                "short_name": product,
+                "version": version,
+                "bounding_box": ",".join(map(str, box)),
+                "temporal": temporal_range(period["start"], period["end"]),
+                "sort_key[]": ["start_date", "producer_granule_id"],
+            }
+            for granule in cmr_entries("granules", query):
+                found.setdefault(granule["id"], granule)
+        return sorted(
+            found.values(),
+            key=lambda granule: (granule.get("time_start") or "", granule["id"]),
+        )
+
+    @staticmethod
+    def _plan(coordinates, window, boxes):
+        """Time, latitude and longitude indices covering every box, or None.
+
+        Boxes that touch or overlap span one block of latitudes; their
+        longitudes may form several runs (always two across the antimeridian).
+        """
+        with Dataset(coordinates) as ds:
+            lat = np.asarray(ds["lat"][:])
+            lon = (np.asarray(ds["lon"][:]) + 180) % 360 - 180
+            time = ds["time"]
+            dates = cast(
+                np.ndarray,
+                num2date(time[:], time.units, getattr(time, "calendar", "standard")),
+            )
+        timestamps = np.array([date.isoformat() for date in np.atleast_1d(dates)])
+        times = np.flatnonzero(
+            (timestamps >= window.lower) & (timestamps < window.upper)
+        )
+        rows = np.flatnonzero(
+            np.any(
+                [(lat >= south) & (lat <= north) for _, south, _, north in boxes],
+                axis=0,
+            )
+        )
+        cols = np.flatnonzero(
+            np.any(
+                [(lon >= west) & (lon <= east) for west, _, east, _ in boxes], axis=0
+            )
+        )
+        if not (times.size and rows.size and cols.size):
+            return None
+        rows = np.arange(rows[0], rows[-1] + 1)
+        runs = np.split(cols, np.flatnonzero(np.diff(cols) != 1) + 1)
+        return {"lat": lat, "lon": lon, "times": times, "rows": rows, "runs": runs}
+
+    @staticmethod
+    def _constraint(field, plan, run):
+        slices = [
+            f"[{int(axis[0])}:1:{int(axis[-1])}]"
+            for axis in (plan["times"], plan["rows"], run)
+        ]
+        names = ("time", "lat", "lon")
+        return (
+            f"/{field}"
+            + "".join(slices)
+            + ";"
+            + ";".join(f"/{name}{part}" for name, part in zip(names, slices))
+        )
+
+    @staticmethod
+    def _finish_grid(path, plan, field, variable):
+        """Add native cell bounds (and GLDAS's land footprint) to a grid file."""
+        cols = np.concatenate(plan["runs"])
+        with Dataset(path, "a") as ds:
+            # Keep native cell areas even when the subset has one cell.
+            ds.createDimension("weather_bounds", 2)
+            for name, values, indices in (
+                ("lat", plan["lat"], plan["rows"]),
+                ("lon", plan["lon"], cols),
+            ):
+                delta = np.diff(values)
+                edges = np.r_[
+                    values[0] - delta[0] / 2,
+                    (values[:-1] + values[1:]) / 2,
+                    values[-1] + delta[-1] / 2,
+                ]
+                if name == "lat":
+                    edges = np.clip(edges, -90, 90)
+                bounds_name = name + "_bounds"
+                bounds = ds.createVariable(bounds_name, "f8", (name, "weather_bounds"))
+                bounds[:] = np.column_stack((edges[indices], edges[indices + 1]))
+                ds[name].bounds = bounds_name
+            if variable == "soil-moisture":
+                # GLDAS has a static land-only footprint; keep it for the Quality gate.
+                data = ds[field][:]
+                valid = np.any(~np.ma.getmaskarray(data) & np.isfinite(data), axis=0)
+                mask = ds.createVariable("weather_land", "i1", ("lat", "lon"))
+                mask[:] = valid
 
     @staticmethod
     def _boxes(boxes):

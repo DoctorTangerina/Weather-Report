@@ -22,7 +22,7 @@ async function start(page, handler) {
     const data = path === '/api/catalog' ? catalog : path === '/api/series/available' ? [] : { series: [], trends: [] }
     await route.fulfill({ json: { data, notice: null } })
   })
-  await page.goto('/')
+  await page.goto('/#explore')
   await expect(page.getByRole('heading', { name: 'Correlation map', exact: true })).toBeVisible()
 }
 
@@ -173,7 +173,7 @@ test('too few retained inputs show reasons and no empty heatmap', async ({ page 
 })
 
 test('browser connects to the real API and computes a map from acquired catalog data', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByLabel('Area with acquired data').selectOption('sahel')
   await page.getByRole('checkbox', { name: 'Air temperature', exact: true }).check()
   await page.getByRole('checkbox', { name: 'Precipitation', exact: true }).check()

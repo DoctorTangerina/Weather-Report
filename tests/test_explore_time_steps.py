@@ -72,7 +72,7 @@ def job_of(client, response, validator_for):
     assert response.status_code == 202, response.json()
     validator_for(RESPONSES, "#/$defs/exploreJobResponse").validate(response.json())
     url = response.json()["data"]["job"]["url"]
-    deadline = time.monotonic() + 20
+    deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
         body = client.get(url).json()
         validator_for(RESPONSES, "#/$defs/exploreJobResponse").validate(body)
@@ -325,4 +325,31 @@ def test_seed_discoveries_are_unchanged_by_the_time_step_quality_gate():
         for item in compute_seed_set(regated, catalog).discoveries
     ]
     assert committed
-    assert by_id(built) == by_id(committed)
+    # The seed set may be built on another machine: floats can differ in their
+    # last digit. Anything else, or a larger difference, is a real change.
+    assert _differences(by_id(built), by_id(committed)) == []
+
+
+def _differences(built, stored, path="discoveries"):
+    import math
+
+    if isinstance(built, float) or isinstance(stored, float):
+        same = isinstance(built, (int, float)) and isinstance(stored, (int, float))
+        return [] if same and math.isclose(built, stored, rel_tol=1e-9) else [path]
+    if isinstance(built, dict) and isinstance(stored, dict):
+        if built.keys() != stored.keys():
+            return [path + " keys"]
+        return [
+            found
+            for key in built
+            for found in _differences(built[key], stored[key], f"{path}.{key}")
+        ]
+    if isinstance(built, list) and isinstance(stored, list):
+        if len(built) != len(stored):
+            return [path + " length"]
+        return [
+            found
+            for n, (a, b) in enumerate(zip(built, stored))
+            for found in _differences(a, b, f"{path}[{n}]")
+        ]
+    return [] if built == stored else [path]

@@ -33,7 +33,7 @@ async function clickRegionOnGlobe(page, name) {
 }
 
 async function openFromSidebar(page, regionId) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByLabel('Region to explore', { exact: true }).selectOption(regionId)
   await expect(page.locator('.explore')).toBeVisible()
 }
@@ -41,8 +41,8 @@ async function openFromSidebar(page, regionId) {
 test('clicking Sahel on the globe opens its Explore My World view', async ({ page }) => {
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto('/')
-  await expect(page.locator('.welcome')).toBeVisible()
+  await page.goto('/#explore')
+  await expect(page.locator('.explore-entry')).toBeVisible()
   await page.waitForTimeout(1500)
   await clickRegionOnGlobe(page, 'Sahel')
   await expect(page.getByRole('heading', { name: 'Sahel', exact: true })).toBeVisible()
@@ -79,8 +79,8 @@ test('a shorter period is requested from the API and shared by every chart', asy
   await openFromSidebar(page, 'sahel')
   await page.getByRole('checkbox', { name: 'Precipitation', exact: true }).check()
   await expect(page.locator('.explore .chart')).toHaveCount(2)
-  await page.getByLabel('From', { exact: true }).fill('2010-01')
-  await page.getByLabel('To', { exact: true }).fill('2010-12')
+  await page.getByRole('slider', { name: 'Range start', exact: true }).fill('120')
+  await page.getByRole('slider', { name: 'Range end', exact: true }).fill('131')
   await expect.poll(() => requests.at(-1)?.searchParams.get('period_end')).toBe('2010-12')
   expect(requests.at(-1).searchParams.get('period_start')).toBe('2010-01')
   await expect(page.locator('.explore .chart')).toHaveCount(2)
@@ -89,18 +89,14 @@ test('a shorter period is requested from the API and shared by every chart', asy
   }
 })
 
-test('a period starting before 2000-01 is refused without a request', async ({ page }) => {
-  const requests = exploreRequests(page)
+test('timeline bounds prevent choosing months outside the requestable span', async ({ page }) => {
   await openFromSidebar(page, 'sahel')
   await expect(page.locator('.explore .chart')).toHaveCount(1)
-  const before = requests.length
-  await page.getByLabel('From', { exact: true }).fill('1999-12')
-  await expect(page.locator('.explore [role="status"]')).toHaveText(
-    /Periods run from 2000-01 to \d{4}-\d{2}, the latest available month\./,
-  )
-  await page.waitForTimeout(500)
-  expect(requests.length).toBe(before)
-  await expect(page.locator('.explore .chart')).toHaveCount(0)
+  const start = page.getByRole('slider', { name: 'Range start', exact: true })
+  await start.press('Home')
+  await start.press('ArrowLeft')
+  await expect(start).toHaveAttribute('aria-valuetext', '2000-01')
+  await expect(start).toHaveAttribute('min', '0')
 })
 
 test('Variables without data are not offered, and Back returns to the welcome', async ({ page }) => {
@@ -119,5 +115,5 @@ test('Variables without data are not offered, and Back returns to the welcome', 
   await expect(page.getByRole('checkbox', { name: /vegetation/i })).toHaveCount(0)
   await expect(page.locator('.explore')).toContainText('No data yet for vegetation index (ndvi).')
   await page.getByRole('button', { name: '← Back' }).click()
-  await expect(page.locator('.welcome')).toBeVisible()
+  await expect(page.locator('.explore-entry')).toBeVisible()
 })

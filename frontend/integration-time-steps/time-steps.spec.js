@@ -6,17 +6,21 @@ import { test, expect } from '@playwright/test'
 // Monthly 2010-01 comes from the seed set; finer Time steps go through a job.
 const charts = (page) => page.locator('.explore .chart')
 const chart = (page, name) => page.locator('.explore .chart', { hasText: name })
+const chooseTimeStep = (page, step) => page.getByRole('group', { name: 'Time step', exact: true })
+  .getByRole('button', { name: step === '3-hourly' ? step : step[0].toUpperCase() + step.slice(1), exact: true }).click()
+const chooseMonth = (page, boundary, month) => page.getByRole('slider', { name: `Range ${boundary}`, exact: true })
+  .fill(String((Number(month.slice(0, 4)) - 2000) * 12 + Number(month.slice(5, 7)) - 1))
 
 async function openSahel(page) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect(charts(page)).toHaveCount(1)
 }
 
 async function showTemperatureAndPrecipitation(page, start = '2010-01', end = '2010-01') {
   await openSahel(page)
-  await page.getByLabel('From', { exact: true }).fill(start)
-  await page.getByLabel('To', { exact: true }).fill(end)
+  await chooseMonth(page, 'start', start)
+  await chooseMonth(page, 'end', end)
   await page.getByRole('checkbox', { name: 'Precipitation', exact: true }).check()
   await expect(charts(page)).toHaveCount(2)
 }
@@ -38,10 +42,10 @@ for (const [timeStep, unit, count] of [
     await showTemperatureAndPrecipitation(page)
     if (timeStep === 'monthly') {
       // Leave monthly and come back, so the choice is a real change.
-      await page.getByLabel('Time step', { exact: true }).selectOption('daily')
+      await chooseTimeStep(page, 'daily')
       await expect(chart(page, 'Air temperature').getByRole('img')).toHaveAttribute('aria-label', /per day/)
     }
-    await page.getByLabel('Time step', { exact: true }).selectOption(timeStep)
+    await chooseTimeStep(page, timeStep)
     for (const name of ['Air temperature', 'Precipitation']) {
       await expect(chart(page, name).getByRole('img')).toHaveAttribute(
         'aria-label',
@@ -53,7 +57,7 @@ for (const [timeStep, unit, count] of [
 
 test('daily values are drawn from the API, with daily totals of precipitation', async ({ page }) => {
   await showTemperatureAndPrecipitation(page)
-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
+  await chooseTimeStep(page, 'daily')
   const ticks = (name) => chart(page, name).locator('text.chart-tick:not(.chart-time)')
   await expect(ticks('Air temperature')).toHaveText(['31', '1'])
   await expect(ticks('Precipitation')).toHaveText(['24', '24'])
@@ -66,15 +70,15 @@ for (const [timeStep, limit, start, end] of [
 ]) {
   test(`a ${timeStep} period longer than ${limit} is refused before any data is requested`, async ({ page }) => {
     await openSahel(page)
-    await page.getByLabel('From', { exact: true }).fill('2010-01')
-    await page.getByLabel('To', { exact: true }).fill('2010-01')
-    await page.getByLabel('Time step', { exact: true }).selectOption(timeStep)
+    await chooseMonth(page, 'start', '2010-01')
+    await chooseMonth(page, 'end', '2010-01')
+    await chooseTimeStep(page, timeStep)
     await expect(charts(page)).toHaveCount(1)
     const requested = recordSeriesRequests(page)
-    await page.getByLabel('From', { exact: true }).fill(start)
-    await page.getByLabel('To', { exact: true }).fill(end)
+    await chooseMonth(page, 'start', start)
+    await chooseMonth(page, 'end', end)
     const label = timeStep === 'daily' ? 'Daily' : '3-hourly'
-    await expect(page.locator('.explore [role="status"]')).toContainText(
+    await expect(page.locator('.timeline-panel [role="status"]')).toContainText(
       `${label} periods are limited to ${limit}.`,
     )
     await page.waitForTimeout(500)
@@ -92,34 +96,34 @@ test('the view explains UTC days and the caps before any data is requested', asy
 
 test('a Variable without data at the chosen Time step is not offered', async ({ page }) => {
   await openSahel(page)
-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
+  await chooseTimeStep(page, 'daily')
   await expect(page.getByRole('checkbox', { name: /vegetation/i })).toHaveCount(0)
   await expect(page.getByRole('checkbox', { name: 'Air temperature', exact: true })).toBeVisible()
 })
 
 test('changing the Time step removes a chosen Variable without data at it, with a note', async ({ page }) => {
   await openSahel(page)
-  await page.getByLabel('From', { exact: true }).fill('2010-01')
-  await page.getByLabel('To', { exact: true }).fill('2010-01')
+  await chooseMonth(page, 'start', '2010-01')
+  await chooseMonth(page, 'end', '2010-01')
   await page.getByRole('checkbox', { name: /vegetation/i }).check()
   await expect(charts(page)).toHaveCount(2)
-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
+  await chooseTimeStep(page, 'daily')
   await expect(page.locator('.explore')).toContainText(
     'Vegetation index (NDVI) was removed: it has no daily data.',
   )
   await expect(charts(page)).toHaveCount(1)
   await expect(chart(page, 'Air temperature')).toBeVisible()
   // Removed, not hidden: going back to monthly does not bring it back.
-  await page.getByLabel('Time step', { exact: true }).selectOption('monthly')
+  await chooseTimeStep(page, 'monthly')
   await expect(page.getByRole('checkbox', { name: /vegetation/i })).not.toBeChecked()
   await expect(charts(page)).toHaveCount(1)
 })
 
 test('progress is shown while daily data is fetched, until the chart appears', async ({ page }) => {
   await openSahel(page)
-  await page.getByLabel('From', { exact: true }).fill('2010-03')
-  await page.getByLabel('To', { exact: true }).fill('2010-03')
-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
+  await chooseMonth(page, 'start', '2010-03')
+  await chooseMonth(page, 'end', '2010-03')
+  await chooseTimeStep(page, 'daily')
   await expect(page.getByRole('progressbar')).toBeVisible()
   await expect(charts(page)).toHaveCount(1)
   await expect(page.getByRole('progressbar')).toHaveCount(0)
@@ -128,9 +132,9 @@ test('progress is shown while daily data is fetched, until the chart appears', a
 
 test('a failed fetch says which Series could not be obtained', async ({ page }) => {
   await openSahel(page)
-  await page.getByLabel('From', { exact: true }).fill('2010-02')
-  await page.getByLabel('To', { exact: true }).fill('2010-02')
-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
+  await chooseMonth(page, 'start', '2010-02')
+  await chooseMonth(page, 'end', '2010-02')
+  await chooseTimeStep(page, 'daily')
   await expect(page.getByRole('progressbar')).toBeVisible()
   const status = page.locator('.explore [role="status"]')
   await expect(status).toContainText('The Series could not be obtained')

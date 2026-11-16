@@ -25,7 +25,10 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel
 
 from data.data_gathering.config import settings
@@ -55,12 +58,14 @@ from .explore import (
     TIME_STEPS,
     AcquisitionNeeded,
     Refusal,
+    _cut,
     explore_series,
 )
 from .field_map import FieldCache, FieldJobs, field_view
 from .grid_source import GridAcquisitionSource
 from .jobs import SeriesJobs
 from .processing import run_recipe
+from .products import PRODUCTS
 from .results import example_response, select_example, usable
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -86,6 +91,27 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Weather Report", version=ENGINE_VERSION, lifespan=lifespan)
+# The Discovery list alone is over 2 MB of JSON; compressed it is a tenth of that.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(request: Request, exc: RequestValidationError) -> Any:
+    """FastAPI's own request validation, in the documented error envelope."""
+    problem = exc.errors()[0] if exc.errors() else {}
+    where = ".".join(str(part) for part in problem.get("loc", ()) if part != "body")
+    detail = problem.get("msg", "Invalid request")
+    return error(422, "invalid_request", f"{where}: {detail}" if where else detail)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_problem(request: Request, exc: StarletteHTTPException) -> Any:
+    """Unknown routes and wrong methods, in the documented error envelope."""
+    code = {404: "not_found", 405: "method_not_allowed"}.get(
+        exc.status_code, "http_error"
+    )
+    return error(exc.status_code, code, str(exc.detail))
+
 
 app.include_router(correlation_router)
 
@@ -205,6 +231,22 @@ async def get_series(
     payload = store.series(region_id, variable_id, period)
     if payload is not None and usable(payload, catalog):
         return {**ok(payload), "provenance": "preloaded"}
+    # A period inside a stored Series is cut from it, gated again on its months.
+    covering = next(
+        (
+            Period(**item["period"])
+            for item in store.available_series()
+            if (item["region_id"], item["variable_id"]) == (region_id, variable_id)
+            and item["period"]["start"] <= period.start
+            and item["period"]["end"] >= period.end
+        ),
+        None,
+    )
+    stored = covering and store.series(region_id, variable_id, covering)
+    if stored is not None and usable(stored, catalog):
+        payload = _cut(stored, period.start, period.end)
+        if payload["quality"]["included"]:
+            return {**ok(payload), "provenance": "preloaded"}
     try:
         token = settings().get("EARTHDATA_TOKEN")
         if not token and acquisition_source is None:
@@ -427,6 +469,7 @@ def get_explore_options() -> Any:
         {
             "latest_month": explore_latest_month(),
             "area_variable_ids": variable_ids(AREA_VARIABLES),
+            "field_map_variable_ids": variable_ids(PRODUCTS),
             # Each Time step with the Variables that have data at it and its cap.
             "time_steps": [
                 {
@@ -448,7 +491,7 @@ async def process_explore_series(request: Request) -> Any:
     """Apply a Processing recipe to Source or Derived series (#83). Stateless."""
     try:
         body = json.loads(await request.body())
-    except ValueError:
+    except (ValueError, RecursionError):
         return error(422, "invalid_processing_request", "Send the request as JSON.")
     try:
         return ok(await run_in_threadpool(run_recipe, body))

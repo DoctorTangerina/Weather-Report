@@ -11,7 +11,7 @@ const matrix = page => page.getByRole('table', { name: 'Pearson correlation matr
 const rowLabels = page => matrix(page).locator('tbody th').allTextContents()
 
 async function open(page) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await expect(page.getByRole('heading', { name: 'Correlation map', exact: true })).toBeVisible()
 }
 

@@ -8,8 +8,11 @@ export default function useFieldMap(place, view) {
   const open = Boolean(place && openedFor === placeKey)
   useEffect(() => { setOpenedFor(null) }, [placeKey])
   const [choice, setChoice] = useState(null)
-  const variableId = choice?.placeKey === placeKey && view.chosen.includes(choice.id)
-    ? choice.id : view.chosen[0]
+  const variableIds = view.chosen.filter(
+    (id) => !view.fieldMapVariableIds || view.fieldMapVariableIds.includes(id),
+  )
+  const variableId = choice?.placeKey === placeKey && variableIds.includes(choice.id)
+    ? choice.id : variableIds[0]
   const key = open && variableId && !view.periodError
     ? JSON.stringify([place, variableId, view.start, view.end, view.timeStep, view.aggregation]) : null
   const [state, setState] = useState({})
@@ -46,7 +49,7 @@ export default function useFieldMap(place, view) {
     open, toggle: () => {
       if (!open) { setChoice(null); setPosition({}) }
       setOpenedFor(open ? null : placeKey)
-    }, variableId,
+    }, variableId, variableIds,
     setVariableId: (id) => setChoice({ placeKey, id }),
     index, setIndex: (next) => setPosition({ key, index: next }), data, frame,
     loading: Boolean(key && (state.key !== key || state.loading)),

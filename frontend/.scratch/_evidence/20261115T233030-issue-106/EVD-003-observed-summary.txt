@@ -1,0 +1,7 @@
+Reused observation summary, not a raw terminal transcript.
+Conversation tool chunk: e7677c
+Command: npm run build
+Exit code: 0
+Result: 183 modules transformed; production build succeeded in 6.09s. Existing large-chunk warning remains.
+Original run UTC: not captured.
+Summary captured UTC: 2026-11-15T23:30:30.811087Z

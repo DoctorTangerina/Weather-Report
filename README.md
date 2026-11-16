@@ -27,12 +27,30 @@ Python 3.11 or newer, Node 18 or newer.
 
 ```sh
 pip install -e ".[api,dev]"
-python -m pytest                                  # the whole suite, no network
-python -m uvicorn api.main:app --port 8000        # API on :8000
+cd frontend && npm install && cd ..
+cp .env.example .env                              # then set EARTHDATA_TOKEN
+python scripts/run_app.py                         # API on :8000, UI on :5173
 ```
 
+Open http://localhost:5173. `run_app.py` checks the setup first (packages, free
+ports, the token) and says what is missing; `--check` runs only the checks.
+Ctrl+C stops both servers. It passes `.env` to the API, so any setting listed in
+`.env.example` can live there. Without a token the app runs on the committed seed
+set; live requests fall back to it or report that live data is unavailable.
+
+To run the two servers yourself:
+
 ```sh
-cd frontend && npm install && npm run dev         # UI on :5173, /api proxied to :8000
+python -m uvicorn api.main:app --port 8000        # API on :8000
+cd frontend && npm run dev                        # UI on :5173, /api proxied to :8000
+```
+
+Tests, all without network:
+
+```sh
+python -m pytest                                  # Python suite
+cd frontend && npm test                           # frontend unit tests
+cd frontend && npm run test:browser               # every Playwright suite (see below)
 ```
 
 `WEATHER_REPORT_DATA_DIR` points the API at a different result set; it defaults to
@@ -41,7 +59,20 @@ cd frontend && npm install && npm run dev         # UI on :5173, /api proxied to
 
 Run the browser suite against the real API and committed seed with
 `npm run test:integration` from `frontend/`. It starts and stops both servers.
+`npm run test:browser` runs all seven suites in turn.
 See [browser end-to-end setup and configuration](frontend/docs/browser-end-to-end.md).
+
+## The sidebar tabs
+
+Each tool is a tab (#114): Start, Surprise Me!, Become a Detective, Explore My
+World and Compare Regions. `#<id>` in the URL opens a tab, and every tab keeps
+its state until the page is reloaded. To add one, write a component in
+`frontend/src/tabs/` and add one entry to `TABS` in `frontend/src/tabs/registry.js`
+(`id`, `label`, `description`, `icon` as an SVG path, `Component` as a lazy
+import); `MainScreen` and `App` need no change. The component reads the catalog,
+session and Selected area from `useShell()` and tells the shell what the globe
+and timeline show while it is active with `useTabDeclaration()`
+(`frontend/src/tabs/shell.js` documents the fields).
 
 ## The seed set
 
@@ -121,7 +152,7 @@ A Region or Variable outside the catalog is rejected with `422` and an
 `errorResponse`. A Series cache miss attempts acquisition and then uses a labelled
 preloaded fallback; if neither is available it returns `503 live_data_unavailable`.
 
-The welcome screen lets students compare two catalog Regions using a Variable
+The Compare Regions tab lets students compare two catalog Regions using a Variable
 offered for both. The comparison endpoint analyzes their stored series with the
 engine's Trend methods and rates the two Trends together as the family for
 multiple-comparison correction. A pair does not need to be a stored Discovery.
@@ -181,8 +212,9 @@ its way down the list instead of running dry the moment it has seen a fixed top 
 
 ### Live results and preloaded fallback (#13)
 
-`GET /api/series` checks the persistent live cache, then an exact preloaded
-example, before attempting acquisition. Series responses add `provenance`:
+`GET /api/series` checks the persistent live cache, then the preloaded Series
+(a period inside one is cut from it and gated again on its own months), before
+attempting acquisition. Series responses add `provenance`:
 `live`, `cache`, or `preloaded`. A fallback also sets
 `notice.code = "live_data_unavailable"`; a normal cache hit does not.
 The UI labels preloaded and cached data separately. Different examples retain
@@ -294,7 +326,7 @@ Time steps `--config playwright.time-steps.config.js`.
 
 ## Correlation map (#56, #60–#62)
 
-In the welcome screen's **Correlation map** panel, add Variables for an area,
+In the **Explore My World** tab's **Correlation map** panel, add Variables for an area,
 repeat for other areas, choose a common period and build. You can also select
 rectangles on the globe or enter joined rectangle coordinates, prepare a named
 calculation, and choose an explicit coarser Time step. The labeled heatmap shows

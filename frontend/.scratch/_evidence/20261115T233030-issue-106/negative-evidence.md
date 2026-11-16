@@ -1,0 +1,13 @@
+# Negative evidence and chronology
+- Initial browser expectations failed while the Period fieldset still existed; later green runs cover its removal.
+- Original browser runs under competing workloads timed out in Investigation and Selected-area acquisition; isolated/longer-wait runs passed. Wait limits were changed to allow real acquisition workers.
+- An earlier debounce assertion was timing-dependent; it was replaced with controlled browser time. A pauseAt target too near the current time failed once; advancing the pause target fixed the test, not product behavior.
+- Mutation disabling debounce failed as intended (EVD-009); the mutation was restored.
+- A playhead-rescaling regression was exposed and fixed during the now-superseded rescaling iteration. Final requirement is full-span highlighting.
+- Full real-API integration run has a stale Amazon Basin availability assertion (EVD-008, issue #108). No claim of all integration suites passing on this snapshot.
+- Early daily/3-hourly requests returned 501 before #80 merged. Current HEAD includes #107 / #80, and EVD-004 verifies finer Time steps against the real API with synthetic grids. The old 501 limitation is superseded, not a current finding.
+- Reported local 404s were reproduced as route-level missing Explore routes in a stale running API; Eastern China seed data existed. Restart guidance was supplied; user server restart was not performed or verified.
+- Git ownership warnings were handled with a command-local safe.directory override, not a global configuration change. Sandbox GitHub network denial was retried outside the sandbox. Initial unauthenticated reads failed before authentication became available.
+- Evidence discovery used Get-Date -AsUTC once; Windows PowerShell did not support it. UTC was then obtained via DateTime.UtcNow and Python timezone-aware datetime. No execution timestamp was fabricated.
+- Original test command UTC start/end timestamps were not captured. Reused observations are explicitly labeled summaries, with collection UTC and conversation chunk references. Local raw stdout from those tests was not persisted.
+- No authenticated NASA request, deployment, Python full-suite run, lint, formatter or type checker was run for this frontend change. No exact base-revision browser run was performed.

@@ -2,14 +2,19 @@ import { test, expect } from '@playwright/test'
 
 test.use({ reducedMotion: 'reduce' })
 
+async function januaryTwentyTenDaily(page) {
+  await page.getByRole('slider', { name: 'Range start', exact: true }).fill('120')
+  await page.getByRole('slider', { name: 'Range end', exact: true }).fill('120')
+  await page.getByRole('group', { name: 'Time step', exact: true })
+    .getByRole('button', { name: 'Daily', exact: true }).click()
+}
+
 async function openSahel(page) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await expect(page.locator('.globe-viewport canvas')).toBeVisible()
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect(page.locator('.explore .chart')).toHaveCount(1)
-  await page.getByLabel('From', { exact: true }).fill('2010-01')
-  await page.getByLabel('To', { exact: true }).fill('2010-01')
-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
+  await januaryTwentyTenDaily(page)
   await page.getByRole('checkbox', { name: 'Precipitation', exact: true }).check()
 }
 
@@ -39,7 +44,7 @@ test('the Field map shows native cells on a fixed scale and changes Variable', a
 
 // BS-014: Selected area over land and ocean, through the same map view.
 test('cells without valid data remain uncoloured with a no data swatch', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await expect(page.locator('.globe-viewport canvas')).toBeVisible()
   await page.getByText('Or type its edges in degrees').click()
   for (const [label, value] of [['West', '-1'], ['South', '14'], ['East', '4'], ['North', '16']]) {
@@ -47,9 +52,7 @@ test('cells without valid data remain uncoloured with a no data swatch', async (
   }
   await page.getByRole('button', { name: 'Use these edges' }).click()
   await page.getByRole('button', { name: 'Explore this area' }).click()
-  await page.getByLabel('From', { exact: true }).fill('2010-01')
-  await page.getByLabel('To', { exact: true }).fill('2010-01')
-  await page.getByLabel('Time step', { exact: true }).selectOption('daily')
+  await januaryTwentyTenDaily(page)
   await page.getByRole('checkbox', { name: 'Air temperature', exact: true }).uncheck()
   await page.getByRole('checkbox', { name: 'Soil moisture', exact: true }).check()
   await page.getByRole('button', { name: 'Open Field map' }).click()
@@ -62,4 +65,17 @@ test('cells without valid data remain uncoloured with a no data swatch', async (
   await expect(rows.nth(3)).toContainText('no data')
   await expect(rows.nth(2).locator('.field-cell-swatch')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
   await expect(rows.nth(0)).toContainText('3 mm')
+})
+
+// A Field map is drawn from NASA grids; vegetation index has none, so it is not offered.
+test('the Field map offers only Variables that have NASA grids', async ({ page }) => {
+  await page.goto('/#explore')
+  await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
+  await expect(page.locator('.explore .chart')).toHaveCount(1)
+  await page.getByRole('checkbox', { name: 'Vegetation index (NDVI)', exact: true }).check()
+  await page.getByRole('button', { name: 'Open Field map' }).click()
+  const offered = await page.getByLabel('Field map Variable').locator('option').evaluateAll(
+    (options) => options.map((option) => option.value),
+  )
+  expect(offered).toEqual(['temperature'])
 })

@@ -9,6 +9,7 @@ import {
   timeStepOf,
 } from './timeSteps.js'
 import useExploreSeries from './useExploreSeries.js'
+import { monthIndex } from './timeline.js'
 
 export const FIRST_MONTH = '2000-01'
 export const MAX_VARIABLES = 5
@@ -111,6 +112,11 @@ export default function useExploreView(catalog, region, available, area = null) 
     periodError = periodLimitProblem(steps, current.timeStep, current.start, current.end)
   }
 
+  const cap = { daily: [120, '10 years'], '3-hourly': [12, '1 year'] }[current.timeStep]
+  if (!periodError && cap && monthIndex(current.end) - monthIndex(current.start) + 1 > cap[0]) {
+    periodError = `${current.timeStep[0].toUpperCase()}${current.timeStep.slice(1)} periods are limited to ${cap[1]}.`
+  }
+
   // Charts follow the catalog's order, whatever order the Variables were chosen in.
   const chosen = offered
     .filter((item) => current.chosen.includes(item.variable_id))
@@ -131,8 +137,7 @@ export default function useExploreView(catalog, region, available, area = null) 
     toggle,
     start: current.start,
     end: current.end,
-    setStart: (start) => update({ start }),
-    setEnd: (end) => update({ end }),
+    setPeriod: (period) => update(period),
     aggregation: current.aggregation,
     setAggregation: (aggregation) => update({ aggregation }),
     timeStep: current.timeStep,
@@ -144,6 +149,8 @@ export default function useExploreView(catalog, region, available, area = null) 
     latest,
     range,
     periodError,
+    // Field maps are drawn from NASA grids; null until the API has said which.
+    fieldMapVariableIds: options?.field_map_variable_ids ?? null,
     ...series,
   }
 }

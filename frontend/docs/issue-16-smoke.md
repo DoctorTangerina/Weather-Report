@@ -7,7 +7,7 @@ desktop and mobile screenshots were also inspected visually.
 To repeat, start the API and frontend as described in the root README and open
 http://127.0.0.1:5173/.
 
-1. On the welcome screen, choose Amazon Basin and Sahel. Confirm both selectors
+1. In the Compare Regions tab, choose Amazon Basin and Sahel. Confirm both selectors
    contain only catalog Regions and exclude the Region selected in the other.
    Confirm two Trend cards show computed rates, 95% intervals and Evidence labels,
    followed by two charts matching the Regions' colors on the globe.

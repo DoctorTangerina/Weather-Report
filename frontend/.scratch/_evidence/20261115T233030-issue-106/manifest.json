@@ -1,0 +1,519 @@
+{
+  "manifest_version": "1.0",
+  "pack_id": "issue-106-8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+  "task": {
+    "mode": "github",
+    "reference": "#106"
+  },
+  "repository": {
+    "name": "DoctorTangerina/Weather-Report",
+    "branch": "frontend",
+    "base_revision": "8659a51e2efc9a89094bf387f770201dd1843d55",
+    "current_revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4"
+  },
+  "generated": {
+    "at_utc": "2026-11-15T23:33:15.728959Z",
+    "producer": "Codex"
+  },
+  "claims": [
+    {
+      "id": "CLM-001",
+      "status": "PASS",
+      "evidence_ids": [
+        "EVD-001",
+        "EVD-010"
+      ]
+    },
+    {
+      "id": "CLM-002",
+      "status": "PASS",
+      "evidence_ids": [
+        "EVD-001",
+        "EVD-010"
+      ]
+    },
+    {
+      "id": "CLM-003",
+      "status": "PASS",
+      "evidence_ids": [
+        "EVD-001",
+        "EVD-005",
+        "EVD-009",
+        "EVD-010"
+      ]
+    },
+    {
+      "id": "CLM-004",
+      "status": "PASS",
+      "evidence_ids": [
+        "EVD-001",
+        "EVD-004"
+      ]
+    },
+    {
+      "id": "CLM-005",
+      "status": "PASS",
+      "evidence_ids": [
+        "EVD-004",
+        "EVD-007",
+        "EVD-010"
+      ]
+    },
+    {
+      "id": "CLM-006",
+      "status": "PASS",
+      "evidence_ids": [
+        "EVD-001",
+        "EVD-010"
+      ]
+    },
+    {
+      "id": "CLM-007",
+      "status": "PARTIAL",
+      "evidence_ids": [
+        "EVD-001",
+        "EVD-004",
+        "EVD-005",
+        "EVD-006",
+        "EVD-007",
+        "EVD-008",
+        "EVD-010"
+      ]
+    },
+    {
+      "id": "CLM-008",
+      "status": "PASS",
+      "evidence_ids": [
+        "EVD-001"
+      ]
+    },
+    {
+      "id": "CLM-009",
+      "status": "PASS",
+      "evidence_ids": [
+        "EVD-001",
+        "EVD-013",
+        "EVD-014"
+      ]
+    },
+    {
+      "id": "CLM-010",
+      "status": "PASS",
+      "evidence_ids": [
+        "EVD-001",
+        "EVD-013",
+        "EVD-014",
+        "EVD-015",
+        "EVD-016"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "EVD-001",
+      "category": "test",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-001",
+        "CLM-002",
+        "CLM-003",
+        "CLM-004",
+        "CLM-006",
+        "CLM-008",
+        "CLM-009",
+        "CLM-010"
+      ],
+      "command": "npm run test:e2e -- --workers=1 --timeout=90000",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "18 passed (1.5m). Final desktop/mobile test covers full span before/after load, debounce, exact cap boundaries, English under pt-BR locale, moving labels, centered timestamp, compact header and error placement without height growth.",
+      "generated_at_utc": "2026-11-15T23:32:30.034206Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "original_run_at_utc": null,
+      "timestamp_note": "Artifact generation UTC is the observed summary file modification UTC, not original command execution UTC; original run time was not recorded.",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\EVD-001-observed-summary.txt",
+      "sha256": "2794ad589f7674887faf93595fb15c41bf276f1f349671990334b534fef417d4",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-002",
+      "category": "test",
+      "status": "PASS",
+      "claim_ids": [],
+      "command": "npm test; git -c safe.directory=C:/Users/ADM/Documents/Weather-Report diff --check",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "18 unit tests passed; no whitespace errors. Tests include caps, UTC stepping and inclusive range slicing.",
+      "generated_at_utc": "2026-11-15T23:32:30.040228Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "original_run_at_utc": null,
+      "timestamp_note": "Artifact generation UTC is the observed summary file modification UTC, not original command execution UTC; original run time was not recorded.",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\EVD-002-observed-summary.txt",
+      "sha256": "7a9fd2bba2835a70c7cc430e9c290176d918bf9f321d59056440d9fceb8ea0ed",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-003",
+      "category": "build",
+      "status": "PASS",
+      "claim_ids": [],
+      "command": "npm run build",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "183 modules transformed; production build succeeded in 6.09s. Existing large-chunk warning remains.",
+      "generated_at_utc": "2026-11-15T23:32:30.044228Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "original_run_at_utc": null,
+      "timestamp_note": "Artifact generation UTC is the observed summary file modification UTC, not original command execution UTC; original run time was not recorded.",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\EVD-003-observed-summary.txt",
+      "sha256": "08c67931467e35823258433fd7bcc4a45f5f3d6a453a2a89e71665c825ee2eb3",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-004",
+      "category": "test",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-004",
+        "CLM-005",
+        "CLM-007"
+      ],
+      "command": "npm run test:time-steps",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "11 real-API tests passed (1.2m): all three Time steps, computed daily values/precipitation totals, caps without requests, UTC explanations, Variable removal, progress and failed-fetch reporting. Run after full-span migration, before final label/error-position CSS changes.",
+      "generated_at_utc": "2026-11-15T23:32:30.049246Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "original_run_at_utc": null,
+      "timestamp_note": "Artifact generation UTC is the observed summary file modification UTC, not original command execution UTC; original run time was not recorded.",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\EVD-004-observed-summary.txt",
+      "sha256": "de79b67412317c2412dcde9a917b9a7a213dca6391c2ba8f8eda002aa0ac714a",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-005",
+      "category": "test",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-003",
+        "CLM-007"
+      ],
+      "command": "npm run test:areas",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "7 passed (43.0s) in an earlier UI iteration, including Selected-area 12-month opening period and Quality gate exclusions. Not rerun in full after the final layout changes.",
+      "generated_at_utc": "2026-11-15T23:32:30.054247Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "original_run_at_utc": null,
+      "timestamp_note": "Artifact generation UTC is the observed summary file modification UTC, not original command execution UTC; original run time was not recorded.",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\EVD-005-observed-summary.txt",
+      "sha256": "947ac4ec6e2385e456f015d03f5929ed892b6be4d6224175767de63dd9042aa3",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-006",
+      "category": "test",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-007"
+      ],
+      "command": "npm run test:integration -- --config playwright.jobs.config.js",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "2 passed (53.3s) in an earlier UI iteration: background acquisition, cached repeat and failure reporting. Not rerun after final full-span migration/layout.",
+      "generated_at_utc": "2026-11-15T23:32:30.059266Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "original_run_at_utc": null,
+      "timestamp_note": "Artifact generation UTC is the observed summary file modification UTC, not original command execution UTC; original run time was not recorded.",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\EVD-006-observed-summary.txt",
+      "sha256": "dbbf87af81013113a9bb282a1524f7ba87bd3813d7b693e1193b9446420b7812",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-007",
+      "category": "test",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-005",
+        "CLM-007"
+      ],
+      "command": "npm run test:integration -- --config playwright.aggregations.config.js",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "2 passed (1.4m) in an earlier UI iteration: seven Aggregations and rebuilding all charts using maximum. Not rerun after final full-span migration/layout.",
+      "generated_at_utc": "2026-11-15T23:32:30.064265Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "original_run_at_utc": null,
+      "timestamp_note": "Artifact generation UTC is the observed summary file modification UTC, not original command execution UTC; original run time was not recorded.",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\EVD-007-observed-summary.txt",
+      "sha256": "40a8ae7d519723268e56a817e2368afee2f43445b81dace3097e22a6befe12a9",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-008",
+      "category": "test",
+      "status": "FAIL",
+      "claim_ids": [
+        "CLM-007"
+      ],
+      "command": "npm run test:integration",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 1,
+      "result": "6 passed; 1 failed: Variables without data are not offered, and Back returns to welcome expected 3 Amazon Basin checkboxes, received 4. Seed contains vegetation-index. Subsequently tracked independently in issue #108. No clean full-suite pass is claimed.",
+      "generated_at_utc": "2026-11-15T23:32:30.070859Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "original_run_at_utc": null,
+      "timestamp_note": "Artifact generation UTC is the observed summary file modification UTC, not original command execution UTC; original run time was not recorded.",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\EVD-008-observed-summary.txt",
+      "sha256": "087ab1bc479a805d1304a8f98549cf7ea3488fea5515ec8733e7f3252d06dd78",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-009",
+      "category": "test",
+      "status": "FAIL",
+      "claim_ids": [
+        "CLM-003"
+      ],
+      "command": "npm run test:e2e -- e2e/explore-timeline.spec.js --workers=1",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 1,
+      "result": "Expected mutation failure: temporarily disabling debounce produced 2 requests where 1 was required. Restored to 300 ms; later complete browser run passed.",
+      "generated_at_utc": "2026-11-15T23:32:30.075866Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "original_run_at_utc": null,
+      "timestamp_note": "Artifact generation UTC is the observed summary file modification UTC, not original command execution UTC; original run time was not recorded.",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\EVD-009-observed-summary.txt",
+      "sha256": "39df9cab73ab947641a75ef2718ef87124581a2461b3e4474c98c91ce1d45c77",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-010",
+      "category": "diff",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-001",
+        "CLM-002",
+        "CLM-003",
+        "CLM-005",
+        "CLM-006",
+        "CLM-007"
+      ],
+      "command": "git -c safe.directory=C:/Users/ADM/Documents/Weather-Report diff HEAD --binary -- .",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "Actual dirty-tree patch captured against HEAD; default Region/Selected-area periods remain unchanged, stable Explore timeline key omits period/Variables; only Explore uses the controlled request domain.",
+      "generated_at_utc": "2026-11-15T23:30:30.895753Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\worktree.patch",
+      "sha256": "e7c3c67f0cfa80f42f836492cfec63f3e8c539d1a65ee2facc3e0d039dbcc357",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-011",
+      "category": "other",
+      "status": "PASS",
+      "claim_ids": [],
+      "command": "Python pathlib/hashlib source snapshot",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "SHA-256 hashes and actual last-write UTC for all 15 changed frontend files; current HEAD and working-tree revision recorded.",
+      "generated_at_utc": "2026-11-15T23:30:30.982003Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\source-snapshot.json",
+      "sha256": "525851e1a7092799efc463201ddeccaeb4b708e4da21a9cd053917bad8f1d1c1",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-012",
+      "category": "decision",
+      "status": "NOT_APPLICABLE",
+      "claim_ids": [],
+      "command": "bdd-scenarios review-mode applicability inspection",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": null,
+      "result": "No in-scope Gherkin or Behavioral Specifications section in #106. All eight review attributes NOT_APPLICABLE; no scenarios invented. Reference to BS-002 alone is not a scenario body.",
+      "generated_at_utc": "2026-11-15T23:30:31.016737Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\bdd-review.md",
+      "sha256": "17842f2f823c57c5133a8065b72099b0bf3b0af5104a2d696903d104ae0d6fdf",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-013",
+      "category": "other",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-009",
+        "CLM-010"
+      ],
+      "command": "Playwright timeline locator screenshot in EVD-001",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "Real screenshot from final successful browser run; file retained locally. Generation time below is collection time; actual file modification time retained by copy2.",
+      "generated_at_utc": "2026-11-15T23:23:04.391012Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\explore-timeline-1440.png",
+      "sha256": "809033625988cb83012b5d8d8847e1a895e625664bb444424931de27e3aef937",
+      "file_modified_at_utc": "2026-11-15T23:23:04.391012+00:00",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-014",
+      "category": "other",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-009",
+        "CLM-010"
+      ],
+      "command": "Playwright timeline locator screenshot in EVD-001",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "Real screenshot from final successful browser run; file retained locally. Generation time below is collection time; actual file modification time retained by copy2.",
+      "generated_at_utc": "2026-11-15T23:23:11.520455Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\explore-timeline-390.png",
+      "sha256": "651abff7454645bd8324bd81261b57cd4b0707a0d22352508644bb8791921049",
+      "file_modified_at_utc": "2026-11-15T23:23:11.520455+00:00",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-015",
+      "category": "other",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-009",
+        "CLM-010"
+      ],
+      "command": "Playwright timeline locator screenshot in EVD-001",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "Real screenshot from final successful browser run; file retained locally. Generation time below is collection time; actual file modification time retained by copy2.",
+      "generated_at_utc": "2026-11-15T23:23:04.557150Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\explore-timeline-error-1440.png",
+      "sha256": "95aaa38819146bb18414d8f4c891a51749bc2b3d52f7f3a27245114861d4cac8",
+      "file_modified_at_utc": "2026-11-15T23:23:04.557150+00:00",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-016",
+      "category": "other",
+      "status": "PASS",
+      "claim_ids": [
+        "CLM-009",
+        "CLM-010"
+      ],
+      "command": "Playwright timeline locator screenshot in EVD-001",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": 0,
+      "result": "Real screenshot from final successful browser run; file retained locally. Generation time below is collection time; actual file modification time retained by copy2.",
+      "generated_at_utc": "2026-11-15T23:23:11.671566Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\explore-timeline-error-390.png",
+      "sha256": "6ea6648b1270818ef5654719ecab6710e6085403d3be835192206c7f3f1f6fc4",
+      "file_modified_at_utc": "2026-11-15T23:23:11.671566+00:00",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    },
+    {
+      "id": "EVD-017",
+      "category": "risk",
+      "status": "PARTIAL",
+      "claim_ids": [],
+      "command": "Conversation/tool result audit",
+      "working_directory": "C:\\Users\\ADM\\Documents\\Weather-Report\\frontend",
+      "exit_code": null,
+      "result": "Chronological failures, superseded limitations, missing checks and timestamp limitations retained.",
+      "generated_at_utc": "2026-11-15T23:32:30.110931Z",
+      "producer": "Codex",
+      "tool": "functions.exec / exec_command",
+      "tool_version": "not captured",
+      "repository": "DoctorTangerina/Weather-Report",
+      "branch": "frontend",
+      "revision": "8659a51e2efc9a89094bf387f770201dd1843d55+worktree-e7c3c67f0cfa80f4",
+      "pointer": ".scratch\\_evidence\\20261115T233030-issue-106\\negative-evidence.md",
+      "sha256": "df2843352a272033bce7ea644a511803b4ff9a3db962d8e20edc49748b2ceeff",
+      "collection_started_at_utc": "2026-11-15T23:30:30.811087Z"
+    }
+  ]
+}

@@ -295,3 +295,15 @@ def test_a_source_series_whose_length_does_not_fit_its_period_is_refused(
         "invalid_processing_request",
     )
     assert "365" in error["message"]
+
+
+@pytest.mark.parametrize("depth", [100_000, 900])
+def test_a_deeply_nested_body_is_refused_not_a_server_error(
+    client, validator_for, depth
+):
+    # Too deep for the JSON parser, or parseable but too deep to validate.
+    body = "[" * depth + "]" * depth
+    response = client.post(
+        ENDPOINT, content=body, headers={"Content-Type": "application/json"}
+    )
+    refused(response, validator_for, "invalid_processing_request")

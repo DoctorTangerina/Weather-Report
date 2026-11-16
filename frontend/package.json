@@ -13,7 +13,10 @@
     "test:areas": "playwright test --config playwright.areas.config.js",
     "test:time-steps": "playwright test --config playwright.time-steps.config.js",
     "test:field-map": "playwright test --config playwright.field-map.config.js",
-    "test:correlation": "playwright test --config playwright.correlation.config.js"
+    "test:correlation": "playwright test --config playwright.correlation.config.js",
+    "test:jobs": "playwright test --config playwright.jobs.config.js",
+    "test:aggregations": "playwright test --config playwright.aggregations.config.js",
+    "test:browser": "npm run test:e2e && npm run test:integration && npm run test:jobs && npm run test:areas && npm run test:time-steps && npm run test:aggregations && npm run test:field-map && npm run test:correlation"
   },
   "dependencies": {
     "react": "^18.3.1",
