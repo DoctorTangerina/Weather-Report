@@ -46,7 +46,7 @@ test('choosing the Aggregation "maximum" rebuilds every chart with it', async ({
   await page.getByLabel('Aggregation', { exact: true }).selectOption('maximum')
   await expect(ticks(page, 'Air temperature')).toHaveText(['14', '6'])
   await expect(ticks(page, 'Precipitation')).toHaveText(['9', '5'])
-  await expect(page.locator('.explore')).toContainText("highest value among the area's grid cells")
+  await expect(page.locator('.explore')).toContainText('highest value among the grid cells of the Region')
   expect(requested.map((params) => params.get('aggregation'))).toEqual(['maximum'])
   expect(requested[0].getAll('variable_id')).toEqual(['temperature', 'precipitation'])
 })

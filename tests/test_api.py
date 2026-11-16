@@ -67,13 +67,35 @@ def test_a_period_with_no_stored_result_returns_a_labelled_example(client):
         params={
             "region_id": "sahel",
             "variable_id": "temperature",
-            "period_start": "2010-01",
-            "period_end": "2019-12",
+            "period_start": "2025-01",
+            "period_end": "2025-12",
         },
     )
     assert response.status_code == 200
     assert response.json()["notice"]["code"] == "live_data_unavailable"
     assert response.json()["provenance"] == "preloaded"
+
+
+def test_a_period_inside_a_stored_series_is_cut_from_it(client, validator_for):
+    full = client.get(
+        "/api/series", params={"region_id": "sahel", "variable_id": "temperature"}
+    ).json()["data"]
+    response = client.get(
+        "/api/series",
+        params={
+            "region_id": "sahel",
+            "variable_id": "temperature",
+            "period_start": "2010-01",
+            "period_end": "2019-12",
+        },
+    )
+    assert response.status_code == 200
+    validator_for(RESPONSES, "#/$defs/seriesResponse").validate(response.json())
+    body = response.json()
+    assert body["provenance"] == "preloaded"
+    assert body["notice"] is None
+    assert body["data"]["period"] == {"start": "2010-01", "end": "2019-12"}
+    assert body["data"]["values"] == full["values"][120:240]
 
 
 def test_discoveries_are_listed_highest_scoring_first(client, validator_for):

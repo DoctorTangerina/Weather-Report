@@ -181,8 +181,9 @@ its way down the list instead of running dry the moment it has seen a fixed top 
 
 ### Live results and preloaded fallback (#13)
 
-`GET /api/series` checks the persistent live cache, then an exact preloaded
-example, before attempting acquisition. Series responses add `provenance`:
+`GET /api/series` checks the persistent live cache, then the preloaded Series
+(a period inside one is cut from it and gated again on its own months), before
+attempting acquisition. Series responses add `provenance`:
 `live`, `cache`, or `preloaded`. A fallback also sets
 `notice.code = "live_data_unavailable"`; a normal cache hit does not.
 The UI labels preloaded and cached data separately. Different examples retain

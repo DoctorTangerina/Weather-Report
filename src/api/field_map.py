@@ -4,6 +4,8 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
+import tempfile
 from collections.abc import Callable
 from typing import Any
 
@@ -11,8 +13,14 @@ from data.data_gathering.config import settings
 from engine.contracts import Period
 
 from .acquisition import AcquisitionUnavailable, acquire_series
-from .explore import _validate_geometry, _validate_time_step_variables, _validate_view
+from .explore import (
+    Refusal,
+    _validate_geometry,
+    _validate_time_step_variables,
+    _validate_view,
+)
 from .jobs import SeriesJobs
+from .products import PRODUCTS
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +37,13 @@ def field_view(
     latest,
 ):
     area = _validate_geometry(catalog, region_id, rectangles or [], [variable_id])
+    if variable_id not in PRODUCTS:
+        # A Field map is always built from NASA grids, which this Variable lacks.
+        raise Refusal(
+            422,
+            "variable_not_available_for_field_map",
+            f"{variable_id} has no Field map yet: it has no NASA grids to draw.",
+        )
     _validate_view(aggregation, time_step, start, end, latest)
     _validate_time_step_variables(catalog, time_step, [variable_id])
     return {
@@ -51,17 +66,22 @@ class FieldCache:
         return self.root / (key + ".json")
 
     def read(self, view):
+        # A missing or unreadable entry is a cache miss: the job rebuilds it.
         try:
-            return json.loads(self.path(view).read_text())
-        except FileNotFoundError:
+            return json.loads(self.path(view).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
             return None
 
     def save(self, view, result):
         self.root.mkdir(parents=True, exist_ok=True)
-        path = self.path(view)
-        temporary = path.with_suffix(".tmp")
-        temporary.write_text(json.dumps(result, allow_nan=False))
-        temporary.replace(path)
+        handle, temporary = tempfile.mkstemp(dir=self.root, suffix=".tmp")
+        try:
+            with os.fdopen(handle, "w", encoding="utf-8") as output:
+                json.dump(result, output, allow_nan=False)
+            os.replace(temporary, self.path(view))
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
 
 
 class FieldJobs(SeriesJobs):
@@ -104,6 +124,10 @@ class FieldJobs(SeriesJobs):
         except asyncio.CancelledError:
             self._fail(job)
             raise
+        except AcquisitionUnavailable as reason:
+            # Expected: no token, or NASA could not supply the grids.
+            logger.warning("Field map acquisition failed: %s", reason)
+            self._fail(job)
         except Exception:
             logger.exception("Field map acquisition failed")
             self._fail(job)

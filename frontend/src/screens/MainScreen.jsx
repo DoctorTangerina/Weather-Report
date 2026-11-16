@@ -323,7 +323,7 @@ export default function MainScreen({
             timestamp={timestamp}
             onBack={onCloseExplore}
           >
-            <FieldMap field={field} view={exploreView} catalog={catalog} />
+            <FieldMap field={field} catalog={catalog} />
             {areaPanel}
           </ExploreMyWorld>
         )}

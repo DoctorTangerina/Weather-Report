@@ -101,7 +101,13 @@ def _malformed(body: Any) -> Refusal:
 
 def run_recipe(body: Any) -> dict[str, Any]:
     """The Derived series, comparisons, recipe and warnings for one request."""
-    if not _REQUEST.is_valid(body):
+    try:
+        valid = _REQUEST.is_valid(body)
+    except RecursionError:
+        raise Refusal(
+            422, "invalid_processing_request", "The request is nested too deeply."
+        ) from None
+    if not valid:
         raise _malformed(body)
     inputs = {
         name: item["derived"] if "derived" in item else _source(name, item)
