@@ -23,6 +23,8 @@ from .area_cache import AreaSeriesCache
 from .grid_source import GridAcquisitionSource
 
 logger = logging.getLogger(__name__)
+# Jobs live in this process; finished ones beyond this many are forgotten.
+MAX_JOBS = 500
 
 
 class SeriesJobs:
@@ -52,6 +54,7 @@ class SeriesJobs:
         )
         if key in self.pending:
             return self.jobs[self.pending[key]]
+        self._prune()
         job_id = uuid4().hex
         job = {
             "id": job_id,
@@ -123,11 +126,25 @@ class SeriesJobs:
         except asyncio.CancelledError:
             self._fail(job)
             raise
+        except AcquisitionUnavailable as reason:
+            # Expected: no token, or NASA could not supply the data.
+            logger.warning("Explore Series job failed: %s", reason)
+            self._fail(job)
         except Exception:
             logger.exception("Explore Series job failed")
             self._fail(job)
         finally:
             self.pending.pop(key, None)
+
+    def _prune(self):
+        """Forget the oldest finished jobs once more than MAX_JOBS are held."""
+        finished = [
+            job_id
+            for job_id, job in self.jobs.items()
+            if job["status"] in {"succeeded", "failed"}
+        ]
+        for job_id in finished[: max(0, len(self.jobs) - MAX_JOBS + 1)]:
+            del self.jobs[job_id]
 
     @staticmethod
     def _fail(job):

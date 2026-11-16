@@ -124,6 +124,10 @@ class FieldJobs(SeriesJobs):
         except asyncio.CancelledError:
             self._fail(job)
             raise
+        except AcquisitionUnavailable as reason:
+            # Expected: no token, or NASA could not supply the grids.
+            logger.warning("Field map acquisition failed: %s", reason)
+            self._fail(job)
         except Exception:
             logger.exception("Field map acquisition failed")
             self._fail(job)
