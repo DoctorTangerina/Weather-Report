@@ -71,6 +71,23 @@ button:focus-visible { outline: 3px solid #47b5d7; outline-offset: 4px; }
 }
 
 .sidebar .eyebrow { color: var(--accent); }
+
+/* #114: one tab per tool, a vertical rail beside the content on wide screens and
+   a horizontal scrolling row above it on narrow ones. */
+.sidebar.has-tabs { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; padding: 0; }
+.sidebar-content { min-width: 0; padding: clamp(1rem, 2.4vw, 2rem); }
+.tab-bar { position: sticky; top: 0; z-index: 1; display: flex; flex-direction: column; gap: 0.25rem; padding: 0.75rem 0.4rem; border-right: 1px solid #d3dce3; background: #e6edf1; }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; width: 5.5rem; margin: 0; padding: 0.55rem 0.25rem; border: 1px solid transparent; border-radius: 0.5rem; background: transparent; color: var(--muted); font-size: 0.72rem; line-height: 1.2; text-align: center; }
+.tab:hover { background: #dbe5ea; color: var(--ink); }
+.tab[aria-selected="true"] { background: #fff; border-color: #c6d3dc; color: var(--accent); font-weight: 650; }
+.tab:focus-visible { outline: 3px solid #47b5d7; outline-offset: 1px; }
+.tab-panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.tab-panel .explore-entry, .tab-panel .explorer { margin-top: 0; padding-top: 0; border-top: 0; }
+@media (max-width: 760px) {
+  .sidebar.has-tabs { grid-template-columns: minmax(0, 1fr); }
+  .tab-bar { flex-direction: row; overflow-x: auto; padding: 0.4rem; border-right: 0; border-bottom: 1px solid #d3dce3; }
+  .tab { flex: 0 0 auto; width: auto; min-width: 5.75rem; }
+}
 .sidebar h2 { margin: 0.6rem 0; font-size: clamp(1.15rem, 1.6vw, 1.5rem); line-height: 1.4; }
 .sidebar h3 { font-size: 0.9rem; margin: 1.5rem 0 0.75rem; }
 .sidebar .chart { margin: 1rem 0; }
@@ -304,8 +321,6 @@ button.link {
 /* ---- #14: Surprise Me! and the Discovery view ---------------------------- */
 
 .main-header { justify-content: space-between; }
-.home-button { float: right; display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: 0 0 0.5rem 0.75rem; padding: 0.5rem; color: var(--accent); border-color: #9fb4c3; background: transparent; border-radius: 0.5rem; }
-.home-button:hover { background: #e1ebf0; }
 .brand { display: flex; align-items: center; gap: 0.6rem; margin: 0; font-size: 1rem; font-weight: 650; letter-spacing: 0.01em; }
 .brand-mark {
   width: 1.1rem; height: 1.1rem; border-radius: 50%;

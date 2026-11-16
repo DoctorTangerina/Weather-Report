@@ -38,10 +38,11 @@ test(`Explore timeline stays compact and requests the chosen period at ${width}p
     } else return route.fulfill({ status: 404, json: {} })
     await route.fulfill({ json: { data } })
   })
-  await page.goto('/')
-  const initialHeight = (await page.locator('.timeline-panel').boundingBox()).height
+  await page.goto('/#explore')
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect.poll(() => requests.length).toBe(1)
+  // The Explore tab shows its timeline once a place is open.
+  const initialHeight = (await page.locator('.timeline-panel').boundingBox()).height
   await expect(page.getByRole('group', { name: 'Period', exact: true })).toHaveCount(0)
   const start = page.getByRole('slider', { name: 'Range start', exact: true })
   const end = page.getByRole('slider', { name: 'Range end', exact: true })

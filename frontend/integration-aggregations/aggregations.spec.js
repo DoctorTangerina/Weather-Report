@@ -9,7 +9,7 @@ const ticks = (page, name) =>
   page.locator('.explore .chart', { hasText: name }).locator('text.chart-tick:not(.chart-time)')
 
 async function openWithTemperatureAndPrecipitation(page) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect(page.locator('.explore .chart')).toHaveCount(1)
   await page.getByRole('slider', { name: 'Range end', exact: true }).fill('301')

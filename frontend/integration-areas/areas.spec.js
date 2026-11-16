@@ -37,8 +37,8 @@ const exploreRequests = (page) => {
 }
 
 test('drawing a rectangle on the globe creates a Selected area', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.locator('.welcome')).toBeVisible()
+  await page.goto('/#explore')
+  await expect(page.locator('.explore-entry')).toBeVisible()
   await page.waitForTimeout(1500)
   await drawOnGlobe(page, [-80, -60], [80, 40])
   await expect(areaLabel(page)).toHaveText('Selected area')
@@ -50,7 +50,7 @@ test('drawing a rectangle on the globe creates a Selected area', async ({ page }
 })
 
 test('drawing a new Selected area replaces the existing one', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.waitForTimeout(1500)
   await drawOnGlobe(page, [-80, -60], [80, 40])
   const first = await summary(page).textContent()
@@ -63,7 +63,7 @@ test('drawing a new Selected area replaces the existing one', async ({ page }) =
 })
 
 test('Escape stops drawing without making an area', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByRole('button', { name: 'Draw an area' }).click()
   await expect(page.getByTestId('globe-draw')).toHaveCount(1)
   await page.keyboard.press('Escape')
@@ -72,18 +72,18 @@ test('Escape stops drawing without making an area', async ({ page }) => {
 })
 
 test('a Selected area does not survive a page reload', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await typeEdges(page, [0, 0, 20, 10])
   await expect(areaLabel(page)).toHaveCount(1)
   await page.reload()
-  await expect(page.locator('.welcome')).toBeVisible()
+  await expect(page.locator('.explore-entry')).toBeVisible()
   await expect(areaLabel(page)).toHaveCount(0)
   await expect(summary(page)).toHaveCount(0)
 })
 
 test('a Selected area may cross the antimeridian from 170°E to 170°W', async ({ page }) => {
   const requests = exploreRequests(page)
-  await page.goto('/')
+  await page.goto('/#explore')
   await typeEdges(page, [170, -10, -170, 10])
   await expect(summary(page)).toContainText('Selected area: 10°S to 10°N, 170°E to 170°W')
   await expect(areaLabel(page)).toHaveText('Selected area')
@@ -94,7 +94,7 @@ test('a Selected area may cross the antimeridian from 170°E to 170°W', async (
 
 test('a Selected area opens the same view as a Region, with stacked charts', async ({ page }) => {
   const requests = exploreRequests(page)
-  await page.goto('/')
+  await page.goto('/#explore')
   await typeEdges(page, [0, 0, 30, 20])
   await page.getByRole('button', { name: 'Explore this area' }).click()
   await expect(page.getByRole('heading', { name: 'Selected area', exact: true })).toBeVisible()
@@ -116,7 +116,7 @@ test('a Selected area opens the same view as a Region, with stacked charts', asy
 })
 
 test('soil moisture over open ocean is shown as an Excluded series with its reason', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await typeEdges(page, [-40, -10, -20, 10])
   await page.getByRole('button', { name: 'Explore this area' }).click()
   await page.getByRole('checkbox', { name: 'Air temperature', exact: true }).uncheck()
@@ -182,7 +182,7 @@ async function drawAdded(page, from, to) {
 
 test('a rectangle drawn over the Selected area joins it into one shape', async ({ page }) => {
   const requests = exploreRequests(page)
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.waitForTimeout(1500)
   await drawOnGlobe(page, [-80, -60], [40, 40])
   await drawAdded(page, [0, -20], [100, 80])
@@ -198,7 +198,7 @@ test('a rectangle drawn over the Selected area joins it into one shape', async (
 })
 
 test('a rectangle that neither touches nor overlaps the Selected area is refused', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.waitForTimeout(1500)
   await drawOnGlobe(page, [-120, -60], [-60, -10])
   const before = await summary(page).textContent()
@@ -210,7 +210,7 @@ test('a rectangle that neither touches nor overlaps the Selected area is refused
 
 test('typed edges can join the Selected area across the antimeridian', async ({ page }) => {
   const requests = exploreRequests(page)
-  await page.goto('/')
+  await page.goto('/#explore')
   await typeEdges(page, [170, -10, -170, 10])
   await addEdges(page, [-170, -10, -160, 10])
   await expect(summary(page)).toContainText(
@@ -223,7 +223,7 @@ test('typed edges can join the Selected area across the antimeridian', async ({ 
 
 test('dragging a corner handle resizes that rectangle, and the view follows', async ({ page }) => {
   const requests = exploreRequests(page)
-  await page.goto('/')
+  await page.goto('/#explore')
   await typeEdges(page, [0, 0, 30, 20])
   await page.getByRole('button', { name: 'Explore this area' }).click()
   await expect(page.locator('.explore .chart')).toHaveCount(1)
@@ -241,7 +241,7 @@ test('dragging a corner handle resizes that rectangle, and the view follows', as
 })
 
 test('dragging an edge handle moves only that edge', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await typeEdges(page, [0, 0, 30, 20])
   await expect(handle(page, 0, 'e')).toBeVisible()
   await dragBy(page, handle(page, 0, 'e'), [60, 30])
@@ -255,7 +255,7 @@ test('dragging an edge handle moves only that edge', async ({ page }) => {
 })
 
 test('a resize that would part the Selected area is held back', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   // Taller than the second, so its east handle is clear of the second's west one.
   await typeEdges(page, [0, 0, 10, 20])
   await addEdges(page, [10, 0, 20, 10])
@@ -268,7 +268,7 @@ test('a resize that would part the Selected area is held back', async ({ page })
 })
 
 test('a resize handle can be moved with the keyboard and keeps focus', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await typeEdges(page, [0, 0, 20, 10])
   await expect(summary(page)).toContainText('0° to 10°N, 0° to 20°E')
   const east = page.getByRole('button', { name: /^Resize the east edge of rectangle 1/ })
@@ -281,4 +281,19 @@ test('a resize handle can be moved with the keyboard and keeps focus', async ({ 
   await page.getByRole('button', { name: /^Resize the north edge of rectangle 1/ }).focus()
   await page.keyboard.press('ArrowDown')
   await expect(summary(page)).toContainText('0° to 9°N, 0° to 27°E')
+})
+
+test('the Selected area shows in every tab but is edited only in Explore My World (#114)', async ({ page }) => {
+  await page.goto('/#explore')
+  await typeEdges(page, [0, 0, 20, 10])
+  await expect(areaLabel(page)).toHaveCount(1)
+  const handles = page.getByRole('button', { name: /^Resize the / })
+  await expect(handles).toHaveCount(8)
+  await page.getByRole('tab', { name: 'Compare Regions', exact: true }).click()
+  await expect(areaLabel(page)).toHaveCount(1)
+  await expect(handles).toHaveCount(0)
+  await expect(page.locator('.globe-hint')).not.toContainText('Drag a handle to resize')
+  await page.getByRole('tab', { name: 'Explore My World', exact: true }).click()
+  await expect(handles).toHaveCount(8)
+  await expect(summary(page)).toContainText('0° to 10°N, 0° to 20°E')
 })

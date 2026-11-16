@@ -10,7 +10,7 @@ async function januaryTwentyTenDaily(page) {
 }
 
 async function openSahel(page) {
-  await page.goto('/')
+  await page.goto('/#explore')
   await expect(page.locator('.globe-viewport canvas')).toBeVisible()
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect(page.locator('.explore .chart')).toHaveCount(1)
@@ -44,7 +44,7 @@ test('the Field map shows native cells on a fixed scale and changes Variable', a
 
 // BS-014: Selected area over land and ocean, through the same map view.
 test('cells without valid data remain uncoloured with a no data swatch', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await expect(page.locator('.globe-viewport canvas')).toBeVisible()
   await page.getByText('Or type its edges in degrees').click()
   for (const [label, value] of [['West', '-1'], ['South', '14'], ['East', '4'], ['North', '16']]) {
@@ -69,7 +69,7 @@ test('cells without valid data remain uncoloured with a no data swatch', async (
 
 // A Field map is drawn from NASA grids; vegetation index has none, so it is not offered.
 test('the Field map offers only Variables that have NASA grids', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#explore')
   await page.getByLabel('Region to explore', { exact: true }).selectOption('sahel')
   await expect(page.locator('.explore .chart')).toHaveCount(1)
   await page.getByRole('checkbox', { name: 'Vegetation index (NDVI)', exact: true }).check()

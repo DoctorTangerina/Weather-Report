@@ -45,28 +45,34 @@ test.afterEach(async ({ page }) => {
   expect(await page.evaluate(() => window.globeContextLosses)).toBe(0)
 })
 
-test('welcome waits for the student to select Regions', async ({ page }) => {
+// #114: every tool has its own tab; the same field labels appear in more than
+// one tab, so each flow scopes its fields to its tab's panel.
+const compare = (page) => page.locator('#panel-compare')
+const detective = (page) => page.locator('#panel-detective')
+const surprise = (page) => page.locator('#panel-surprise')
+
+test('Compare waits for the student to select Regions', async ({ page }) => {
   const comparisons = []
   page.on('request', (request) => {
     if (request.url().includes('/api/comparison')) comparisons.push(request.url())
   })
-  await page.goto('/')
-  await expect(page.getByLabel('First Region', { exact: true })).toHaveValue('')
-  await expect(page.getByLabel('Second Region', { exact: true })).toHaveValue('')
+  await page.goto('/#compare')
+  await expect(compare(page).getByLabel('First Region', { exact: true })).toHaveValue('')
+  await expect(compare(page).getByLabel('Second Region', { exact: true })).toHaveValue('')
   await expect(page.locator('.globe-label')).toHaveCount(0)
   expect(comparisons).toEqual([])
-  await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
+  await compare(page).getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
   await expect(page.locator('.globe-label')).toHaveCount(1)
-  await expect(page.getByLabel('Second Region', { exact: true })).toHaveValue('')
-  await page.getByLabel('Second Region', { exact: true }).selectOption('antarctic-peninsula')
-  await page.getByLabel('Variable', { exact: true }).selectOption('temperature')
+  await expect(compare(page).getByLabel('Second Region', { exact: true })).toHaveValue('')
+  await compare(page).getByLabel('Second Region', { exact: true }).selectOption('antarctic-peninsula')
+  await compare(page).getByLabel('Variable', { exact: true }).selectOption('temperature')
   await expect(page.locator('.explorer .chart')).toHaveCount(2)
   await expect(page.locator('.globe-label')).toHaveCount(2)
 })
 
-test('Become a Detective can start directly from welcome', async ({ page }) => {
-  await page.goto('/')
-  await page.getByRole('button', { name: /Become a Detective/ }).click()
+test('Become a Detective lets the engine pick a pair when none is chosen', async ({ page }) => {
+  await page.goto('/#detective')
+  await detective(page).getByRole('button', { name: /Become a Detective/ }).click()
   await expect(page.getByRole('heading', { name: discovery.narrative.investigation.steps[0].question, exact: true })).toBeVisible()
   await expect(page.locator('.globe-label')).toHaveCount(2)
   await expect(page.getByLabel('Select month', { exact: true })).toBeDisabled()
@@ -77,10 +83,10 @@ test('Become a Detective investigates the selected Regions instead of drawing a 
   page.on('request', (request) => {
     if (request.url().includes('/api/discoveries/surprise')) randomDraws.push(request.url())
   })
-  await page.goto('/')
-  await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
-  await page.getByLabel('Second Region', { exact: true }).selectOption('sahel')
-  await page.getByRole('button', { name: /Become a Detective/ }).click()
+  await page.goto('/#detective')
+  await detective(page).getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
+  await detective(page).getByLabel('Second Region', { exact: true }).selectOption('sahel')
+  await detective(page).getByRole('button', { name: /Become a Detective/ }).click()
   await expect(page.getByRole('heading', { name: selectedDiscovery.narrative.investigation.steps[0].question, exact: true })).toBeVisible()
   await expect(page.locator('.globe-label')).toHaveText(['Amazon Basin', 'Sahel'])
   expect(randomDraws).toEqual([])
@@ -88,50 +94,49 @@ test('Become a Detective investigates the selected Regions instead of drawing a 
 
 test('a pair without a Discovery stays selected and explains why the investigation cannot start', async ({ page }) => {
   await page.route('**/api/discoveries', (route) => route.fulfill({ json: { data: [], notice: null } }))
-  await page.goto('/')
-  await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
-  await page.getByLabel('Second Region', { exact: true }).selectOption('sahel')
-  await page.getByRole('button', { name: /Become a Detective/ }).click()
+  await page.goto('/#detective')
+  await detective(page).getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
+  await detective(page).getByLabel('Second Region', { exact: true }).selectOption('sahel')
+  await detective(page).getByRole('button', { name: /Become a Detective/ }).click()
   await expect(page.getByRole('alert')).toHaveText(/There is no Discovery to investigate for these Regions yet/)
-  await expect(page.getByLabel('First Region', { exact: true })).toHaveValue('amazon-basin')
-  await expect(page.getByLabel('Second Region', { exact: true })).toHaveValue('sahel')
+  await expect(detective(page).getByLabel('First Region', { exact: true })).toHaveValue('amazon-basin')
+  await expect(detective(page).getByLabel('Second Region', { exact: true })).toHaveValue('sahel')
 })
 
-test('checking an unavailable Discovery keeps the welcome page and charts mounted', async ({ page }) => {
+test('checking an unavailable Discovery keeps the Detective panel mounted', async ({ page }) => {
   await page.route('**/api/discoveries', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 400))
     await route.fulfill({ json: { data: [], notice: null } })
   })
-  await page.goto('/')
-  await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
-  await page.getByLabel('Second Region', { exact: true }).selectOption('sahel')
-  await expect(page.locator('.explorer .chart')).toHaveCount(2)
-  await page.locator('.welcome').evaluate((node) => { window.originalWelcome = node })
-  await page.getByRole('button', { name: /Become a Detective/ }).click()
-  expect(await page.evaluate(() => window.originalWelcome.isConnected)).toBe(true)
-  await expect(page.getByLabel('First Region', { exact: true })).toBeDisabled()
-  await expect(page.locator('.explorer .chart')).toHaveCount(2)
+  await page.goto('/#detective')
+  await detective(page).getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
+  await detective(page).getByLabel('Second Region', { exact: true }).selectOption('sahel')
+  const panel = detective(page).locator('.welcome')
+  await panel.evaluate((node) => { window.originalDetective = node })
+  await detective(page).getByRole('button', { name: /Become a Detective/ }).click()
+  expect(await page.evaluate(() => window.originalDetective.isConnected)).toBe(true)
+  await expect(detective(page).getByLabel('First Region', { exact: true })).toBeDisabled()
   await expect(page.getByRole('alert')).toHaveText(/There is no Discovery to investigate/)
-  expect(await page.locator('.welcome').evaluate((node) => node === window.originalWelcome)).toBe(true)
-  await expect(page.getByLabel('First Region', { exact: true })).toBeEnabled()
+  expect(await panel.evaluate((node) => node === window.originalDetective)).toBe(true)
+  await expect(detective(page).getByLabel('First Region', { exact: true })).toBeEnabled()
 })
 
 test('one selected Region asks for a second Region before investigating', async ({ page }) => {
-  await page.goto('/')
-  await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
-  await page.getByRole('button', { name: /Become a Detective/ }).click()
+  await page.goto('/#detective')
+  await detective(page).getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
+  await detective(page).getByRole('button', { name: /Become a Detective/ }).click()
   await expect(page.getByRole('alert')).toHaveText('Choose a second Region to investigate this pair.')
-  await expect(page.getByLabel('First Region', { exact: true })).toHaveValue('amazon-basin')
+  await expect(detective(page).getByLabel('First Region', { exact: true })).toHaveValue('amazon-basin')
 })
 
 test('Surprise Me! → Become a Detective → How do we know? keeps the globe mounted', async ({ page }) => {
   const errors = []
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.goto('/')
+  await page.goto('/#surprise')
   const canvas = page.locator('.globe-viewport canvas')
   await expect(canvas).toBeVisible()
   await canvas.evaluate((node) => { window.originalGlobeCanvas = node })
-  await page.getByRole('button', { name: /Surprise Me!/ }).click()
+  await surprise(page).getByRole('button', { name: /Surprise Me!/ }).click()
   await expect(page.getByRole('heading', { name: discovery.narrative.question, exact: true })).toBeVisible()
   await expect(page.locator('.globe-label')).toHaveCount(2)
   await page.getByRole('button', { name: 'Become a Detective', exact: true }).click()
@@ -174,11 +179,13 @@ test('Earth textures load from the app with external network blocked', async ({ 
 
 
 test('timeline handles filter charts inclusively and constrain playback', async ({ page }) => {
-  await page.goto('/')
+  // With no series yet (Compare before a pair is chosen) the range is disabled.
+  await page.goto('/#compare')
   const start = page.getByRole('slider', { name: 'Range start', exact: true })
   const end = page.getByRole('slider', { name: 'Range end', exact: true })
   await expect(start).toBeDisabled()
-  await page.getByRole('button', { name: /Surprise Me!/ }).click()
+  await page.getByRole('tab', { name: 'Surprise Me!' }).click()
+  await surprise(page).getByRole('button', { name: /Surprise Me!/ }).click()
   await expect(start).toBeEnabled()
   const max = Number(await end.getAttribute('max'))
   const rail = await page.locator('.timeline-range-rail').boundingBox()
@@ -243,12 +250,13 @@ for (const view of ['Surprise Me!', 'Explore', 'Investigation']) {
       if (message.type() === 'error') errors.push(message.text())
     })
     page.on('pageerror', (error) => errors.push(error.message))
-    await page.goto('/')
     if (view === 'Explore') {
-      await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
-      await page.getByLabel('Second Region', { exact: true }).selectOption('antarctic-peninsula')
+      await page.goto('/#compare')
+      await compare(page).getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
+      await compare(page).getByLabel('Second Region', { exact: true }).selectOption('antarctic-peninsula')
     } else {
-      await page.getByRole('button', { name: /Surprise Me!/ }).click()
+      await page.goto('/#surprise')
+      await surprise(page).getByRole('button', { name: /Surprise Me!/ }).click()
       if (view === 'Investigation') {
         await page.getByRole('button', { name: 'Become a Detective', exact: true }).click()
         await page.getByRole('button', { name: discovery.narrative.investigation.steps[0].options[0].label, exact: true }).click()
@@ -315,8 +323,8 @@ for (const view of ['Surprise Me!', 'Explore', 'Investigation']) {
 
 test('playback speed choices change the interval while playing', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
-  await page.getByRole('button', { name: /Surprise Me!/ }).click()
+  await page.goto('/#surprise')
+  await surprise(page).getByRole('button', { name: /Surprise Me!/ }).click()
   const month = page.getByLabel('Select month', { exact: true })
   await expect(month).toBeEnabled()
   const speed = page.getByRole('group', { name: 'Playback speed' })
@@ -344,14 +352,21 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
       await new Promise((resolve) => setTimeout(resolve, 500))
       await route.fallback()
     })
-    await page.goto('/')
+    await page.goto('/#compare')
     const canvas = page.locator('.globe-viewport canvas')
     await expect(canvas).toBeVisible()
     await canvas.evaluate((node) => { window.navigationCanvas = node })
-    await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
-    await page.getByLabel('Second Region', { exact: true }).selectOption('antarctic-peninsula')
+    await compare(page).getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
+    await compare(page).getByLabel('Second Region', { exact: true }).selectOption('antarctic-peninsula')
     await expect(page.locator('.chart')).toHaveCount(2)
     const originalLabels = await page.locator('.globe-label').allTextContents()
+    // Switching tabs hands the globe to Surprise Me!, which shows nothing until
+    // it draws a Discovery; from then on its Region labels must stay put.
+    await page.getByRole('tab', { name: 'Surprise Me!' }).click()
+    await surprise(page).getByRole('button', { name: /Surprise Me!/ }).click()
+    await expect(page.getByRole('heading', { name: discovery.narrative.question, exact: true })).toBeVisible()
+    await expect(page.locator('.globe-label')).toHaveCount(2)
+    const surpriseLabels = await page.locator('.globe-label').allTextContents()
     await page.evaluate(() => {
       window.navigationLabels = [...document.querySelectorAll('.globe-label')]
       window.navigationLabelRemovals = 0
@@ -366,8 +381,6 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
       })
       window.navigationObserver.observe(document.querySelector('.globe-viewport'), { childList: true, subtree: true })
     })
-    await page.getByRole('button', { name: /Surprise Me!/ }).click()
-    await expect(page.getByRole('heading', { name: discovery.narrative.question, exact: true })).toBeVisible()
     await expect(page.getByLabel('Select month', { exact: true })).toBeEnabled()
     await page.getByRole('button', { name: 'Become a Detective', exact: true }).click()
     await expect(page.getByLabel('Select month', { exact: true })).toBeDisabled()
@@ -382,33 +395,34 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
     await page.setViewportSize({ width: viewport.width + 60, height: viewport.height - 80 })
     await expect(canvas).toBeVisible()
     await page.screenshot({ path: `test-results/timeline-${viewport.width}.png` })
-    expect(await page.locator('.globe-label').allTextContents()).toEqual(originalLabels)
+    expect(await page.locator('.globe-label').allTextContents()).toEqual(surpriseLabels)
     expect(await page.evaluate(() => {
       window.navigationObserver.disconnect()
       return window.navigationLabelRemovals
     })).toBe(0)
     expect(await canvas.evaluate((node) => node === window.navigationCanvas)).toBe(true)
-    await page.getByRole('button', { name: 'Home', exact: true }).click()
+    // Back to Compare: its pair is still chosen, so its Regions return to the globe.
+    await page.getByRole('tab', { name: 'Compare Regions' }).click()
     await expect(page.locator('.globe-label')).toHaveText(originalLabels)
-    await page.getByLabel('Second Region', { exact: true }).selectOption('sahel')
+    await compare(page).getByLabel('Second Region', { exact: true }).selectOption('sahel')
     await expect(page.locator('.globe-label')).toHaveText(['Amazon Basin', 'Sahel'])
-    await expect(page.locator('.chart')).toHaveCount(2)
+    await expect(compare(page).locator('.chart')).toHaveCount(2)
     expect(await canvas.evaluate((node) => node === window.navigationCanvas)).toBe(true)
   })
 }
 
 
 test('selecting another Region preserves the existing Region layer during camera flight', async ({ page }) => {
-  await page.goto('/')
-  await page.getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
+  await page.goto('/#compare')
+  await compare(page).getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
   const amazon = page.locator('.globe-label').filter({ hasText: 'Amazon Basin' })
   await expect(amazon).toBeVisible()
   await amazon.evaluate((node) => { window.retainedRegionLabel = node })
   // Change the pair while the camera is still moving.
-  await page.getByLabel('Second Region', { exact: true }).selectOption('antarctic-peninsula')
+  await compare(page).getByLabel('Second Region', { exact: true }).selectOption('antarctic-peninsula')
   await expect(page.locator('.globe-label')).toHaveCount(2)
   expect(await amazon.evaluate((node) => node === window.retainedRegionLabel)).toBe(true)
-  await page.getByLabel('Second Region', { exact: true }).selectOption('sahel')
+  await compare(page).getByLabel('Second Region', { exact: true }).selectOption('sahel')
   await expect(page.locator('.globe-label')).toHaveText(['Amazon Basin', 'Sahel'])
   expect(await amazon.evaluate((node) => node === window.retainedRegionLabel)).toBe(true)
   await expect(page.locator('.chart')).toHaveCount(2)
