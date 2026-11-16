@@ -697,3 +697,44 @@ def test_acquired_time_steps_still_follow_utc_in_a_local_map():
 
     assert error.value.code == "invalid_timezone"
     assert "UTC" in str(error.value)
+
+
+def test_requested_order_b_then_a_returns_matching_identities_and_metadata():
+    # #60 BS-005: "A complete sample returns a symmetric ordered matrix".
+    months = ["2024-01-01", "2024-02-01", "2024-03-01"]
+    available = {
+        "B": source([2, 4, 6], time_step="monthly", timestamps=months),
+        "A": source([1, 2, 3], time_step="monthly", timestamps=months),
+    }
+
+    result = map_of(available, period={"start": "2024-01", "end": "2024-03"})
+
+    assert [item["variable"] for item in result["inputs"]] == ["B", "A"]
+    assert [item["label"] for item in result["inputs"]] == ["B — test", "A — test"]
+    assert result["matrix"] == [[1, 1], [1, 1]]
+    assert result["observation_count"] == 3
+    assert result["settings"] == {
+        "period": {"start": "2024-01", "end": "2024-03"},
+        "time_step": "monthly",
+        "timezone": "UTC",
+    }
+    assert result["warnings"] == []
+    assert result["excluded"] == []
+
+
+def test_daily_aggregation_without_a_chosen_zone_uses_utc_days():
+    # #62 BS-003: "Default aggregation boundaries use UTC".
+    stamps = [f"2024-01-0{day}T{hour:02d}:00Z" for day in (1, 2, 3) for hour in (0, 21)]
+    three_hourly = {
+        "A": source([1, 3, 2, 6, 4, 8], time_step="3-hourly", timestamps=stamps),
+        "B": source([5, 1, 3, 1, 1, 1], time_step="3-hourly", timestamps=stamps),
+    }
+
+    result = map_of(three_hourly, time_step="daily")
+
+    assert result["settings"]["timezone"] == "UTC"
+    assert result["timestamps"] == [f"2024-01-0{d}T00:00:00+00:00" for d in (1, 2, 3)]
+    assert [x["metadata"]["resampling"]["timezone"] for x in result["inputs"]] == [
+        "UTC",
+        "UTC",
+    ]
