@@ -359,6 +359,9 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
     await compare(page).getByLabel('First Region', { exact: true }).selectOption('amazon-basin')
     await compare(page).getByLabel('Second Region', { exact: true }).selectOption('antarctic-peninsula')
     await expect(page.locator('.chart')).toHaveCount(2)
+    // The globe draws its labels on its own cycle, not with the charts: wait for
+    // both before recording them.
+    await expect(page.locator('.globe-label')).toHaveCount(2)
     const originalLabels = await page.locator('.globe-label').allTextContents()
     // Switching tabs hands the globe to Surprise Me!, which shows nothing until
     // it draws a Discovery; from then on its Region labels must stay put.
